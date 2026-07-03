@@ -332,8 +332,11 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
 ## 10. Gotchas / constraints (inherited — verified painful in the sibling repo)
 
 - **`_examples/` must be excluded** from git & deploy (`.gitignore`).
-- **Vite 8 uses Rolldown**; on Apple-silicon an npm optional-dep bug can leave the native
-  binary missing (`…-darwin-arm64`) — reinstall platform package. CI (linux-x64) unaffected.
+- **Vite 8 uses Rolldown**; an npm optional-dep bug can leave the native binding missing for
+  the current platform — reinstall it. On the Mac it's `@rolldown/binding-darwin-arm64`; in
+  **this sandbox (linux-arm64)** it's `@rolldown/binding-linux-arm64-gnu` (S2:
+  `npm i @rolldown/binding-linux-arm64-gnu@<rolldown ver> --no-save` unblocks `vite build`).
+  CI (linux-x64) unaffected.
 - **This Linux sandbox blocks `unlink`** on the mounted FS → Vite `emptyOutDir` fails on
   rebuild (EPERM). Workaround: fresh `--outDir` or `build.emptyOutDir:false`. User's Mac +
   CI are unaffected.
@@ -440,3 +443,32 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   here) — do a 5-min manual QA of the sandbox after first deploy. **S1 CLOSED pending
   user push** (repo `computer-science`, Pages → GitHub Actions). **Next: S2 — P1
   Information: ch.1–3, bit-inspector HERO, huffman-lab HERO, P1 boss.**
+- **2026-07-03 · S2 (P1 · Information)** — Whole of Part 1 built to the ch.4 golden bar.
+  **Three chapters authored** (stubs → full) in `curriculum.ts`: **ch.1 Bits & numbers**
+  (story: Shannon/Tukey coin "bit"; two's complement, overflow, IEEE-754; formal corner +
+  int-vs-float compare), **ch.2 Encoding the world** (story: Morse counting type cases;
+  ASCII→Unicode→UTF-8, images, sampling; UTF-8 templates formal corner), **ch.3 Compression
+  & entropy** (story: Huffman's dropped assignment; entropy floor, Huffman, RLE, LZ77, lossy;
+  Kraft/source-coding formal corner). Each: story hook, RecapBox, mental model, lens-tagged
+  sections (≤2 prose run), ≥5 keyPoints, 4 pitfalls, ≥4 sources (web-verified), flashcards.
+  **2 HERO sims** — `bit-inspector` (int lane: 8/16/32-bit, signed/unsigned, click-to-flip,
+  MAX+1 wrap animation, two's-comp mirror; float lane: colored sign/exp/mantissa fields,
+  live snap-to-representable, 0.1+0.2, ULP gap) and `huffman-lab` (freq bars → transport-
+  stepped tree assembly → shrink meter → bitstream; **boss mode hosts P1 "decode the mystery
+  file"** → `markChallengeDone("boss-p1")`, badge *Bitreader*). **6 micros** — base-converter,
+  utf8-encoder, pixel-zoom, sampling-toy, rle-visualizer, lz-window. **3 figs** —
+  float-number-line, unicode-planes (Unicode 17.0 / 297,334 assigned, web-verified; 18.0
+  Sept 2026), entropy-meter. **3 predict-quizzes** (overflow-, encoding-, compress-predict).
+  **15 interview Qs** (iv-ch1..3-*). **4 pure engines** (`bit-inspector/model`,
+  `utf8-encoder/model`, `compression/model`, `huffman-lab/model`) + **`scripts/test-info.ts`
+  (66 truth-tests: two's-complement round-trips, IEEE-754 known values & bit round-trip,
+  UTF-8 byte sequences + the char/unit/byte trap, entropy/RLE/LZ77 round-trips, Huffman
+  prefix-free + Shannon bound + boss decode)**, wired into `npm test`. registryKeys/registry
+  extended (10 sims, 4 figs). New P1 CSS block in `global.css` (semantic palette, WCAG,
+  reduced-motion inherited). **verify = typecheck ✓ · lint ✓ (same 2 benign fast-refresh
+  warns) · qa ✓ (4 live chapters, mandate holds) · test ✓ (16 logic + 66 info) · build ✓**
+  (built to fresh `dist-s2`: 67 modules, CSS 36.5 KB, per-sim chunks 2.7–15.6 KB, react-
+  vendor 190 KB — the `dist/` unlink block is sandbox-only). §10 updated with the linux-arm64
+  Rolldown binding fix. NOT sandbox-testable: real-browser interaction pass — 5-min manual QA
+  after deploy (bit-flipping, huffman tree animation, boss decode, sliders). **S2 CLOSED
+  pending user commit. Next: S3 — P2 machine core: ch.5 (adders/ALU) + ch.6 (latches/RAM).**
