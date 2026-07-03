@@ -1,0 +1,13 @@
+# dependencies / build
+node_modules
+dist
+dist-*
+
+# reference assets — NEVER ship, NEVER commit (CLAUDE.md §10)
+_examples/
+
+# OS / IDE / logs
+.DS_Store
+.idea
+*.log
+npm-debug.log*
