@@ -1,0 +1,39 @@
+{
+  "name": "computer-science",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Computer Science — The Interactive Journey: electron → logic gate → CPU → program → algorithm → theory → OS → network → data → security → AI. By Vasyl Krupka.",
+  "homepage": "https://endorrfin.github.io/computer-science/",
+  "author": "Vasyl Krupka",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "qa": "npm run qa:interactivity",
+    "qa:interactivity": "node --experimental-strip-types scripts/qa-interactivity.ts",
+    "test": "node --experimental-strip-types scripts/test-logic.ts",
+    "verify": "npm run typecheck && npm run lint && npm run qa && npm test && npm run build"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "eslint": "^10.6.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.62.1",
+    "vite": "^8.1.3"
+  }
+}

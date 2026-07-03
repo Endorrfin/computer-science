@@ -1,0 +1,51 @@
+/* ============================================================
+   Design tokens — CLAUDE.md §7: dark base + layer-spectrum brand.
+   Part accents render the journey warm→cool, silicon → AI.
+   All accent-on-bg text pairs checked ≥ 4.5:1 against --bg (WCAG AA).
+   ============================================================ */
+
+:root {
+  /* base surfaces */
+  --bg: #0b0c0e;
+  --surface: #121417;
+  --s2: #171a1e;
+  --line: #262b32;
+  --tx: #f2f5f7;
+  --tx2: #9aa7b4;
+  --tx3: #64707c;
+
+  /* part accents (P0/P11 neutral) */
+  --p0: #94a3b8;
+  --p1: #facc15;
+  --p2: #fb923c;
+  --p3: #a3e635;
+  --p4: #34d399;
+  --p5: #2dd4bf;
+  --p6: #22d3ee;
+  --p7: #38bdf8;
+  --p8: #60a5fa;
+  --p9: #818cf8;
+  --p10: #a78bfa;
+  --p11: #94a3b8;
+
+  /* semantic palette inside diagrams & sims — identical across ALL parts (§7):
+     data flow = cyan · control/active = orange · memory/state = violet ·
+     error/blocked = red · success/done = green */
+  --sem-data: #22d3ee;
+  --sem-control: #fb923c;
+  --sem-state: #a78bfa;
+  --sem-err: #f87171;
+  --sem-ok: #4ade80;
+
+  /* contextual accent — components override per part via inline style */
+  --accent: #94a3b8;
+
+  /* type */
+  --font-head: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* shape */
+  --r: 12px;
+  --r-s: 8px;
+}
