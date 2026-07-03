@@ -408,3 +408,31 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   PredictQuiz framework. Recursion & call stack added to ch.10 (gap found in
   verification). **S0 CLOSED. Next: S1 — scaffold + golden chapter (ch.4 +
   logic-sandbox).** Repo name confirmed by user: **`computer-science`**.
+- **2026-07-03 · S1 (scaffold + golden chapter)** — Versions verified & pinned: Vite 8.1.3
+  (Rolldown) · React 19.2.7 · TS ~5.9.3 (TS 6.0 exists; held back one minor for ecosystem
+  maturity — ts-eslint peer allows <6.1, revisit ~S6) · ESLint 10.6 flat · CI Node 24
+  (Active LTS; sandbox runs 22 — scripts use `--experimental-strip-types`, works on both).
+  Infra mirrored from the sibling Node-guide (eslint flat config, `tsc && vite build`,
+  gated deploy.yml, hash router, Google Fonts). Shipped: full app shell + dark/spectrum
+  theme (tokens per §7, WCAG-checked) · Stack-Map landing (rings, boss badges, expandable
+  parts, spectrum spine) · content contract in `lib/types.ts` + `curriculum.ts` with all
+  11 parts / 37 chapters (36 stubs carry `plannedSession`) · shared framework: **SimShell**
+  (transport, speed, keyboard, ARIA live, reduced-motion→step) + **FigureStepper** +
+  **PredictQuiz** (commit→reveal, persisted) + **Flashcards** (keyPoints "front — back"
+  convention — NEW, documented in types.ts) · **ch.4 fully authored** (story hook, lens-
+  tagged sections, formal corner, NAND/NOR compare, 5 pitfalls, 10 keyPoints, 6 interview
+  Qs, 6 sources — YouTube ids web-verified) · **logic-sandbox HERO** (tick-based gate-delay
+  model, drag/click-click wiring, live truth table with probe column + row-click, 4 presets
+  incl. oscillator, 3 NAND challenges w/ validator + badge persist) · transistor-switch
+  fig (5 frames) · demorgan-flip micro · `qa:interactivity` gate (mandate + integrity,
+  in `verify` + CI) · `test-logic.ts` engine truth-tests (16 checks: gate semantics,
+  settle, floating-input, oscillation, challenge validation incl. canonical 4-NAND XOR).
+  **verify = typecheck ✓ lint ✓ (2 benign fast-refresh warns) qa ✓ test 16/16 ✓ build ✓**
+  (bundle: react-vendor 190 KB + app 59 KB + per-sim chunks 3–16 KB). Committed on top of
+  user's S0 init commit (5674466, 51 files). NEW gotcha for §10: the sandbox unlink-block
+  also hits `.git` lock files — workaround: `mv` lock to `.git/trash/` (rename allowed);
+  harmless `tmp_obj_*` clutter accumulates in `.git/objects` (run `git gc` on the Mac
+  occasionally). NOT in sandbox-testable scope: real-browser interaction pass (no browser
+  here) — do a 5-min manual QA of the sandbox after first deploy. **S1 CLOSED pending
+  user push** (repo `computer-science`, Pages → GitHub Actions). **Next: S2 — P1
+  Information: ch.1–3, bit-inspector HERO, huffman-lab HERO, P1 boss.**
