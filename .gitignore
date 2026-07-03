@@ -10,7 +10,11 @@ _examples/
 .DS_Store
 .idea
 .idea/
-_test_ops/        # stray sandbox test dir — not part of the site
+
+# stray sandbox test dir — not part of the site
+# CHANGED: gitignore has no inline comments — a trailing "# …" makes the
+# pattern literal and the dir was NOT ignored (verified via git check-ignore)
+_test_ops/
 _arhive/
 
 *.log

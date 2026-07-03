@@ -318,6 +318,10 @@ P9 Security #818CF8 · P10 Intelligence #A78BFA · P0/P11 neutral #94A3B8
   AI landscape) at authoring time — never trust memory. Each session ends with
   typecheck + build + fact spot-check.
 - Per user rule: mark in-code edits with `// CHANGED:`; propose change + why before doing it.
+- **Session hand-off (user rule, added after S1):** every session / change-set ends with a
+  suggested **branch name**, **commit message**, and a **1–2-line description**. Default:
+  Claude stages the changes and the user commits/merges on the Mac (sandbox `git checkout`
+  is unlink-constrained — see §10); Claude commits directly only when asked.
 
 ## 9. Deploy (GitHub Pages via Actions)
 
