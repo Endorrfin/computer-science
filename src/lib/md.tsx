@@ -2,32 +2,35 @@
 // authored in src/data/* and only needs headings, paragraphs, lists, quotes,
 // bold/italic/inline-code and links. React escapes everything by default.
 import type { ReactNode } from "react";
+import { isExternal, tokenizeInline } from "./mdInline.ts";
+import type { InlineTok } from "./mdInline.ts";
 
-const INLINE_RE = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\*[^*\s][^*]*\*)|\[([^\]]+)\]\(([^)\s]+)\)/g;
-
-export function renderInline(text: string): ReactNode[] {
-  const out: ReactNode[] = [];
-  let last = 0;
-  let m: RegExpExecArray | null;
-  let k = 0;
-  INLINE_RE.lastIndex = 0;
-  while ((m = INLINE_RE.exec(text)) !== null) {
-    if (m.index > last) out.push(text.slice(last, m.index));
-    if (m[1]) out.push(<code key={k++}>{m[1].slice(1, -1)}</code>);
-    else if (m[2]) out.push(<strong key={k++}>{renderInline(m[2].slice(2, -2))}</strong>);
-    else if (m[3]) out.push(<em key={k++}>{m[3].slice(1, -1)}</em>);
-    else if (m[4] !== undefined && m[5] !== undefined) {
-      const ext = /^https?:/.test(m[5]);
-      out.push(
-        <a key={k++} href={m[5]} target={ext ? "_blank" : undefined} rel={ext ? "noreferrer" : undefined}>
-          {m[4]}
-        </a>,
+// CHANGED (S2 hotfix): render pre-tokenized inline nodes. The tokenizer lives
+// in mdInline.ts with a fresh regex per call — the old shared /g regex + this
+// recursion infinite-looped on any **bold** text and crashed the renderer.
+function renderTok(tok: InlineTok, key: number): ReactNode {
+  switch (tok.t) {
+    case "text":
+      return tok.v;
+    case "code":
+      return <code key={key}>{tok.v}</code>;
+    case "strong":
+      return <strong key={key}>{tok.children.map((c, i) => renderTok(c, i))}</strong>;
+    case "em":
+      return <em key={key}>{tok.v}</em>;
+    case "link": {
+      const ext = isExternal(tok.href);
+      return (
+        <a key={key} href={tok.href} target={ext ? "_blank" : undefined} rel={ext ? "noreferrer" : undefined}>
+          {tok.text}
+        </a>
       );
     }
-    last = m.index + m[0].length;
   }
-  if (last < text.length) out.push(text.slice(last));
-  return out;
+}
+
+export function renderInline(text: string): ReactNode[] {
+  return tokenizeInline(text).map((tok, i) => renderTok(tok, i));
 }
 
 type Block =
