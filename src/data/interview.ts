@@ -417,6 +417,133 @@ export const INTERVIEW: InterviewQ[] = [
       "The frame is the **roofline**: establish compute-bound vs memory-bound first, because that decides which of the above matters.",
   },
 
+  // ---- P3 · Code (S6) ----
+  {
+    id: "iv-ch10-1",
+    chapterId: "ch10",
+    level: "senior",
+    q: "At the machine level, what actually happens when you call a function?",
+    a:
+      "The CPU pushes a **stack frame** (also called an activation record) for the call: the arguments, a **return address** (where to resume in the caller), and space for the callee's locals. It jumps to the function's code, which runs using that frame; on return it puts the result in a register, pops the frame, and jumps back to the return address.\n" +
+      "The ch.7 CPU had no CALL/RET — that's the missing piece ch.10 adds. The stack pointer just moves down on call and up on return; 'the stack' is that region of memory plus the discipline of using it LIFO.",
+  },
+  {
+    id: "iv-ch10-2",
+    chapterId: "ch10",
+    level: "senior",
+    q: "Why does deep recursion overflow the stack when an equivalent loop doesn't?",
+    a:
+      "Each recursive call pushes a new frame that isn't freed until it returns, so depth-N recursion holds N frames at once. The call stack is a **fixed-size** region (often ~1 MB / tens of thousands of frames), so beyond some depth it overflows and the program crashes.\n" +
+      "A loop reuses a **single** frame — it mutates counters in place, never growing the stack. That's why an iterative sum of a million items is fine but the recursive version explodes: same work, very different memory profile.",
+  },
+  {
+    id: "iv-ch10-3",
+    chapterId: "ch10",
+    level: "staff",
+    q: "What is tail-call optimization, and why can't you rely on it in most languages?",
+    a:
+      "A call is in **tail position** if it's the last thing a function does — its result is returned directly, with no pending work. Then the caller's frame is dead and the engine can **reuse** it instead of pushing a new one, turning tail recursion into a loop with O(1) stack.\n" +
+      "It's in the ES2015 spec (proper tail calls), but among the major engines effectively only Safari/JavaScriptCore ships it: V8 implemented it and then **removed** it (broken stack traces and debuggability), and SpiderMonkey only ever had it behind a flag. So in Node/Chrome, tail-recursive code still overflows — you convert to an explicit loop or an explicit stack. Scheme/Lua and most functional languages guarantee it; treat it as language-specific, never assumed.",
+  },
+  {
+    id: "iv-ch10-4",
+    chapterId: "ch10",
+    level: "mid",
+    q: "Imperative, OOP, functional — not 'which is best', but what does each optimize for?",
+    a:
+      "They're different ways to **decompose** a problem, mostly differing in where state lives. **Imperative:** explicit steps that mutate state — closest to the machine, great for tight algorithms. **OOP:** bundle state with the methods that guard it — organizes large systems around 'things' and their responsibilities. **Functional:** pure functions over immutable data — easy to reason about, test, and parallelize, since nothing hidden changes.\n" +
+      "Most real languages are multi-paradigm; seniority is picking the right one per problem (a pure reducer here, a stateful object there) rather than dogma.",
+  },
+  {
+    id: "iv-ch10-5",
+    chapterId: "ch10",
+    level: "senior",
+    q: "Stack vs heap — what lives where, and what are the trade-offs?",
+    a:
+      "The **stack** holds call frames: locals and arguments, allocated/freed automatically as calls push and pop. It's tiny, fast (just move the stack pointer), and strictly LIFO, so it can't hold anything that must outlive its function. The **heap** holds dynamically allocated, longer-lived data (objects, arrays, closures); allocation is more expensive and reclaiming it needs manual free (C) or a garbage collector (JS/Java).\n" +
+      "Rule of thumb: short-lived, known-size → stack; lives beyond the call or size unknown → heap. Deep dive in ch.23.",
+  },
+  {
+    id: "iv-ch11-1",
+    chapterId: "ch11",
+    level: "senior",
+    q: "Walk me through the stages a compiler puts source code through.",
+    a:
+      "**Lex** (characters → tokens) → **parse** (tokens → AST, per the grammar) → **semantic analysis** (name resolution, type checking, the errors the parser can't see) → **IR / code generation** (AST → an intermediate representation or target instructions) → **optimization** → **emit** the target (machine code or bytecode).\n" +
+      "The front end (lex/parse/check) is language-specific; the back end (optimize/emit) is target-specific; the IR in the middle is what lets one compiler target many CPUs. The compiler-pipeline sim shows the first four stages live.",
+  },
+  {
+    id: "iv-ch11-2",
+    chapterId: "ch11",
+    level: "senior",
+    q: "Compiler vs interpreter — and where does a JIT fit?",
+    a:
+      "A **compiler** translates the whole program ahead of time into machine code you run later (fast execution, slower edit-run loop, errors up front). An **interpreter** executes the program directly — walking the AST or running bytecode — so it starts instantly but each operation costs more.\n" +
+      "A **JIT** is the hybrid: start by interpreting bytecode, profile which functions are 'hot', then compile just those to optimized machine code at runtime, on assumptions it can **deoptimize** if violated (the jit-tiers figure). It's how V8/JVM get interpreter-fast startup with compiler-fast steady state — the line between 'compiled' and 'interpreted' is really a spectrum.",
+  },
+  {
+    id: "iv-ch11-3",
+    chapterId: "ch11",
+    level: "staff",
+    q: "What is a bytecode virtual machine, and why do JVM, CPython, V8 and Wasm all use one?",
+    a:
+      "A **VM** is an interpreter for an invented instruction set (bytecode). You compile the source **once** to that portable bytecode, then any platform with a small VM can run it — 'write once, run anywhere' without shipping source or N native builds. It also simplifies the compiler (one target), enables a **security sandbox** (the VM mediates every op), and gives the JIT a clean unit to profile and optimize.\n" +
+      "Most are **stack machines** (operands on a stack — like ch.11's VM and the JVM) because codegen is trivial; some are **register machines** (Lua, Dalvik) which are faster to interpret but harder to emit. The cost is a warm-up / indirection tax, which the JIT then buys back.",
+  },
+  {
+    id: "iv-ch11-4",
+    chapterId: "ch11",
+    level: "senior",
+    q: "Where does operator precedence actually get decided — how does `2 + 3 * 4` become 14, not 20?",
+    a:
+      "In the **parser**, via the grammar. The rules are layered by precedence — an additive rule calls a multiplicative rule beneath it — so `*` gets grouped before `+`. The result is an AST where `(3 * 4)` sits **under** the `+` node; evaluation just walks that tree bottom-up and gets 14.\n" +
+      "The key insight interviewers want: precedence and associativity live in the **tree shape**, not in the tokens or the evaluator. Same tokens, a different grammar, would give a different tree and a different answer.",
+  },
+  {
+    id: "iv-ch11-5",
+    chapterId: "ch11",
+    level: "staff",
+    q: "A function is JIT-compiled but still runs slowly. Why might that happen?",
+    a:
+      "Because the JIT optimizes on **type stability**, and this code breaks it. If a call site sees many shapes/types (**polymorphic → megamorphic**), the engine can't specialize and falls back to generic, slow paths. If a hot function's assumptions keep getting violated it **deoptimizes** and re-optimizes repeatedly (deopt churn), paying compile cost without keeping the payoff.\n" +
+      "Other causes: the function never got hot enough to tier up, it's dominated by allocation/GC pressure, or it does I/O (the CPU JIT can't help there). Diagnosis: profile, look for deopt/IC-miss events, and make the hot path monomorphic and allocation-light.",
+  },
+  {
+    id: "iv-ch12-1",
+    chapterId: "ch12",
+    level: "senior",
+    q: "What actually keeps a million-line codebase maintainable?",
+    a:
+      "Managing **human** attention, not machine limits. The tools: **modularity** (split into pieces that fit in one head), **encapsulation** (hide internals behind small interfaces so callers can't couple to them), **low coupling + high cohesion** (each module does one thing; changes stay local), and **automated tests** so you can change code without re-verifying everything by hand.\n" +
+      "The metric that matters is the **blast radius** of a change: in a healthy system a change touches one module; in a ball of mud it ripples everywhere. Everything else — naming, docs, CI, review — serves that.",
+  },
+  {
+    id: "iv-ch12-2",
+    chapterId: "ch12",
+    level: "senior",
+    q: "Explain coupling vs cohesion, and how an interface 'seam' reduces the blast radius of change.",
+    a:
+      "**Cohesion** is how focused a module is (do its parts belong together?); **coupling** is how much modules depend on each other's details. You want high cohesion, low coupling. Tight coupling means a change in one place forces changes in many — a wide blast radius.\n" +
+      "An **interface seam** (Dependency Inversion) makes callers depend on a stable **abstraction** rather than a concrete implementation. Now you can change or swap the implementation behind the interface and nothing downstream needs to move — the dependency-blast sim shows the radius shrinking the moment you insert the seam. That's the core move behind testability, plugins, and swappable infrastructure.",
+  },
+  {
+    id: "iv-ch12-3",
+    chapterId: "ch12",
+    level: "senior",
+    q: "Why the test pyramid rather than the 'ice-cream cone'?",
+    a:
+      "The pyramid says: **many** fast, isolated **unit** tests at the base, **fewer integration** tests, a **thin** cap of end-to-end tests. It optimizes the trade-off between confidence and cost. Unit tests run in milliseconds and pinpoint failures, so they give fast, precise feedback; E2E tests give the most realistic confidence but are slow, expensive, and **flaky** (they fail for timing reasons, not real bugs).\n" +
+      "Invert it — mostly E2E, few units — and you get the **ice-cream cone**: a slow suite people stop trusting and stop running. Keep E2E for a handful of critical user journeys; catch everything else lower down.",
+  },
+  {
+    id: "iv-ch12-4",
+    chapterId: "ch12",
+    level: "staff",
+    q: "What does semantic versioning promise, and where does it break down in practice?",
+    a:
+      "**MAJOR.MINOR.PATCH**: patch = backward-compatible bug fixes, minor = backward-compatible new features, major = **breaking** changes. It's a contract that lets consumers auto-upgrade patches/minors safely and brace for majors — the basis for lockfiles and version ranges.\n" +
+      "Where it breaks: compatibility is about **behavior**, not just the type signature, so a 'patch' can still break you (a changed default, a tightened validation, a perf regression). Transitive dependencies can pull incompatible versions; and plenty of projects practice 'semver in name only'. So treat it as a strong hint, not a guarantee — pin versions, keep a lockfile, and let tests be the real safety net.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {
