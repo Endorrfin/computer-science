@@ -27,6 +27,11 @@ export const SIM_KEYS = [
   "cache-sim", // ch.8 micro — direct-mapped cache: access patterns, line-size, hit/miss/hit-rate
   "rasterizer-toy", // ch.9 micro — drag a triangle; scanline fill; wireframe/filled/depth
   "cpu-vs-gpu-race", // ch.9 micro — 1 fast lane vs 1000 slow lanes; launch/transfer overhead
+  // P3 · Code (S6)
+  "abstraction-elevator", // ch.10 micro — one program at four heights (TS/C/asm/machine)
+  "call-stack-viz", // ch.10 micro — recursive fib frames push/pop; stack-overflow demo
+  "compiler-pipeline", // ch.11 HERO — source → tokens → AST → bytecode → stack VM, live + boss
+  "dependency-blast", // ch.12 micro — change a module, watch the blast radius; interface seam shrinks it
 ] as const;
 
 export const FIG_KEYS = [
@@ -44,6 +49,10 @@ export const FIG_KEYS = [
   // P2 · The Machine (S5)
   "branch-predictor", // ch.8 — 2-bit saturating counter, stepped over a loop
   "gfx-pipeline", // ch.9 — vertices → assembly → raster → fragments → pixels
+  // P3 · Code (S6)
+  "paradigm-lens", // ch.10 — one problem in imperative / OOP / functional shape
+  "jit-tiers", // ch.11 — interpret → optimize on assumptions → deoptimize
+  "test-pyramid", // ch.12 — many fast unit tests, few slow end-to-end
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

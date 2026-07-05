@@ -1601,6 +1601,465 @@ const ch9: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.10 — From machine code to languages  (built in S6)
+// ---------------------------------------------------------------
+const ch10: Chapter = {
+  id: "ch10",
+  part: "p3",
+  order: 12,
+  title: "From machine code to languages",
+  tagline: "Nobody should write raw opcodes by hand — so we build an elevator of abstractions up from the CPU, and add the one mechanism ch.7 lacked: the call stack",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "1952. Computers are programmed by hand in raw numeric codes, and the reigning wisdom is that they always will be — a machine can only obey numbers, so a human must think in them. **Grace Hopper** disagrees. She writes the **A-0 system**, the first program that takes higher-level, human-readable instructions and *automatically* assembles the machine code for them by pulling routines from a library. She calls it a **“compiler”** — because it *compiles* subroutines out of a library the way you compile references for a paper. Colleagues are skeptical that a computer could ever write its own programs. It could; the abstraction elevator you're about to ride was her idea, and every language since sits on top of it.",
+  },
+  assumes: [
+    {
+      chapterId: "ch7",
+      oneLiner: "A CPU runs one-byte instructions (opcode + operand) in a fetch–decode–execute loop; loops are backward JMPs and ifs are conditional jumps. You wrote programs in that raw assembly by hand.",
+    },
+  ],
+  mentalModel:
+    "Stack a ladder of languages — machine code at the bottom, then assembly, C, and high-level languages on top — with a translator (a compiler or interpreter) that walks any rung down to the one below. High-level control flow (if/while) and functions are conveniences that compile back down to ch.7's jumps and instructions. The one genuinely new mechanism is the call stack: each function call pushes a frame (its arguments, locals, and return address) and each return pops one. Recursion is that stack applied to a function that calls itself — and it overflows when the finite stack fills.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "In ch.7 you programmed a real (emulated) CPU — but you did it in **assembly**, hand-assembling `LDA`/`ADD`/`JMP` into bytes. That works for sixteen bytes; it is agony for sixteen thousand. The whole history of programming is the search for ways to say *more* with *less*, and to say it in terms humans can hold in their heads. This chapter is the bridge from the machine you built to the languages you actually write in — and, crucially, it stays honest: everything up here still turns into the instructions down there.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The abstraction elevator\n" +
+        "Think of languages as floors in an elevator. At the bottom is **machine code** — the bytes in RAM. One floor up, **assembly** gives those bytes names (`ADD` instead of `0x4?`). Up again, **C** lets you write `sum = a + b` and forget which registers are involved. Higher still, **TypeScript** hands you objects, closures and garbage collection. Each floor **hides** detail to buy expressiveness — and something has to translate between floors. Ride it: hover any line and watch the *same* program light up on every floor.",
+    },
+    { kind: "sim", sim: "abstraction-elevator" },
+    {
+      kind: "prose",
+      md:
+        "## Control flow, structured\n" +
+        "The first thing high-level languages add is **structure**. In assembly, a loop is a bare backward jump and an `if` is a conditional jump to a label — powerful, but easy to tangle into “spaghetti” (the reason Dijkstra wrote *Go To Statement Considered Harmful*). Languages replace raw jumps with named shapes — `if`/`else`, `while`, `for` — that nest cleanly and can't jump into the middle of each other. None of it is new capability; it's the *same* jumps from ch.7, packaged so humans stop making mistakes.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "…and it all compiles back to ch.7's jumps",
+      lens: "senior",
+      md:
+        "A `while (cond) { body }` becomes exactly the pattern you built by hand: evaluate `cond`, a conditional jump *past* the body when it's false, the body, then an unconditional jump *back* to re-test. An `if/else` is a conditional jump to the else-block and an unconditional jump over it. You'll watch a real compiler emit precisely these jumps as bytecode in ch.11 — the structured statement is the human interface; the jump is what runs.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Functions, and the stack they need\n" +
+        "The second big idea is the **function**: a named, parameterized block you can call from anywhere and return from. But calling raises a question ch.7's CPU couldn't answer — when the function finishes, *where does it return to*, and where does it keep its own variables while it runs? The answer is a **stack**. Each call **pushes a frame** holding the arguments, the local variables, and the **return address**; when the function returns, its frame is **popped** and control resumes where it left off. Nested calls stack up and unwind in perfect last-in-first-out order.",
+    },
+    { kind: "sim", sim: "call-stack-viz" },
+    {
+      kind: "prose",
+      md:
+        "## Recursion — and its limit\n" +
+        "Once calls have their own frames, a function can call **itself**, each invocation with its own arguments — **recursion**. It's the natural way to express anything self-similar (a factorial, a tree walk, `fib`). The rule that keeps it from running forever is the **base case**: a condition that returns *without* recursing. Miss it — or recurse deeper than the finite stack allows — and you don't get an infinite loop, you get a **stack overflow**: the frames pile up until the stack is full and the program crashes. Predict what this trace does before you run it:",
+    },
+    { kind: "quiz", quiz: "trace-recursion" },
+    {
+      kind: "code",
+      lang: "ts",
+      note: "The classic. Each call waits on two more until n < 2 — and that waiting is exactly what stacks frames. Run it in call-stack-viz.",
+      code:
+        "function fib(n: number): number {\n" +
+        "  if (n < 2) return n;             // base case — stops the recursion\n" +
+        "  return fib(n - 1) + fib(n - 2);  // two recursive calls, two more frames\n" +
+        "}",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Different shapes of thought: paradigms\n" +
+        "Languages don't just differ in syntax; they nudge you to **decompose** problems differently. A **paradigm** is that style of decomposition. The same “sum a list” task looks genuinely different as imperative steps, as interacting objects, or as composed pure functions — and most real languages let you mix all three. Flip through the same problem three ways:",
+    },
+    { kind: "figure", fig: "paradigm-lens" },
+    {
+      kind: "table",
+      caption: "The three big paradigms — not rivals to pick between, but tools; seniority is choosing the right one per problem.",
+      head: ["Paradigm", "Core idea", "You think in…"],
+      rows: [
+        ["Imperative", "Steps that mutate state", "Sequences of commands (closest to the CPU)"],
+        ["Object-oriented", "Bundle state with the behavior that guards it", "Interacting objects and their responsibilities"],
+        ["Functional", "Compose pure functions over immutable data", "Data flowing through transformations, no mutation"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the call stack as activation records",
+      md:
+        "Each call allocates an **activation record** (stack frame) containing its parameters, local variables, saved registers, and a **return address**. A **stack pointer** marks the top; **call** decrements it to allocate a frame and saves the return address, **return** reads that address and increments the pointer to free the frame.\n" +
+        "For `fib(n)` the maximum stack depth is `O(n)` (the longest chain fib(n)→fib(n−1)→…→fib(1)), even though the total number of calls is `O(φⁿ)`. That gap — deep vs. wide — is why the naive `fib` is *slow* (exponential calls) but doesn't *overflow* for modest n (linear depth). A real CPU implements this with `CALL`/`RET` instructions and a hardware stack pointer — the two instructions ch.7's ISA deliberately left out.",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where this model simplifies",
+      md:
+        "Frames live on the **stack**; longer-lived data (objects, arrays, closures that outlive their call) lives on the **heap** and is reclaimed by a garbage collector (ch.23). Some languages perform **tail-call optimization** — reusing a frame when a call is the last thing a function does — turning certain recursions into O(1)-stack loops; most JS engines don't, so deep recursion still overflows. And real ISAs *do* have `CALL`/`RET` plus interrupts (ch.22). What carries all the way up: calls push frames, returns pop them, and the stack is finite.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You've ridden the elevator up — but who *drives* it? When you write `sum = a + b`, some program turns that text into the bytes ch.7 executes. That program is a **compiler**, and in ch.11 you'll build one end to end: it reads source, breaks it into tokens, parses it into a tree, and emits bytecode for a little virtual machine you can single-step — Grace Hopper's idea, running in your browser.",
+    },
+  ],
+  keyPoints: [
+    "The abstraction elevator — machine code → assembly → C → high-level; each floor hides detail to buy expressiveness, and a compiler or interpreter translates between floors.",
+    "High-level languages add no new machine power — their control structures (if/while) and functions all compile back down to ch.7's jumps and instructions; they exist so humans make fewer mistakes.",
+    "A function call needs a stack — each call pushes a frame (arguments, locals, return address) and each return pops it; that frame + return-address machinery is exactly what ch.7's ISA lacked (CALL/RET).",
+    "Recursion is the call stack applied to itself — a function calling itself piles a frame per call, each with its own arguments, unwound in last-in-first-out order; a base case is what stops it.",
+    "Stack overflow is not an infinite loop — missing base case or too-deep recursion fills the finite stack and crashes, because frames aren't freed until they return; the equivalent loop reuses one frame.",
+    "Paradigms are decomposition strategies — imperative mutates state step by step, OOP bundles state with behavior, functional composes pure functions; most languages mix them and seniority is picking the right one.",
+    "Stack vs heap — the stack holds call frames (fast, LIFO, bounded); the heap holds longer-lived dynamically allocated data (garbage-collected, larger). Deep dive in ch.23.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking 'higher-level' means 'slower' or 'worse'",
+      body: "Abstraction is about human productivity, not a performance tax you can't afford. Optimizing compilers and JITs (ch.11) routinely make high-level code run as fast as hand-written assembly — the FORTRAN team proved that in 1957. You climb the elevator to think clearly, and the translator gives back the speed.",
+      lens: "both",
+    },
+    {
+      title: "Forgetting recursion has a memory cost",
+      body: "Every recursive call is a live stack frame until it returns, so depth-N recursion holds N frames at once. Elegant recursion over a deep or unbounded structure can overflow where a boring loop — reusing one frame — wouldn't. Know your maximum depth.",
+      lens: "both",
+    },
+    {
+      title: "Confusing 'the stack' the data structure with 'the call stack'",
+      body: "They're the same idea: the call stack IS a stack (the LIFO structure you'll meet as an ADT in ch.14). Calls push, returns pop, and only the top frame is active. Seeing them as one thing demystifies both.",
+      lens: "senior",
+    },
+    {
+      title: "Treating paradigms as tribes",
+      body: "Imperative/OOP/functional aren't rival religions to pick one of forever. They're lenses; a single function might use a pure functional reduce inside an object's method inside an imperative loop. Dogma costs more than it saves.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch10-1", "iv-ch10-2", "iv-ch10-3", "iv-ch10-4", "iv-ch10-5"],
+  kataIds: [],
+  seeAlso: ["ch7", "ch11", "ch14", "ch23"],
+  sources: [
+    { title: "Grace Hopper — the A-0 system (1952), the first compiler, and coining 'compiler' (Wikipedia)", url: "https://en.wikipedia.org/wiki/Grace_Hopper" },
+    { title: "A-0 System — automatic programming for an electronic computer (Wikipedia)", url: "https://en.wikipedia.org/wiki/A-0_System" },
+    { title: "Call stack — activation records, return addresses, the LIFO discipline (Wikipedia)", url: "https://en.wikipedia.org/wiki/Call_stack" },
+    { title: "Recursion (computer science) — base cases and stack depth (Wikipedia)", url: "https://en.wikipedia.org/wiki/Recursion_(computer_science)" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.11 — Compilers & interpreters  (built in S6)
+// ---------------------------------------------------------------
+const ch11: Chapter = {
+  id: "ch11",
+  part: "p3",
+  order: 13,
+  title: "Compilers & interpreters",
+  tagline: "The program that drives the abstraction elevator: source → tokens → tree → bytecode → a running machine, one honest stage at a time",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "1954, IBM. **John Backus** pitches a system that will let scientists write formulas instead of assembly. The reaction is disbelief — everyone *knows* a machine can't generate code as tight as a good human, and on machines this small and slow, wasteful code is unaffordable. His team spends three years on it. When **FORTRAN** ships in 1957 it includes the first serious **optimizing compiler**, and the generated code runs *nearly as fast as hand-written assembly* — close enough that by 1958 more than half the code on IBM machines is compiler-generated. The skeptics weren't wrong that efficiency mattered; they were wrong that only humans could deliver it. This chapter builds the machine that changed their minds.",
+  },
+  assumes: [
+    {
+      chapterId: "ch10",
+      oneLiner: "Languages stack in an abstraction elevator, and a translator walks each floor down to the one below; high-level control flow compiles to ch.7's jumps.",
+    },
+    {
+      chapterId: "ch7",
+      oneLiner: "A simple machine runs a linear list of instructions in a fetch–execute loop, with jumps for control flow.",
+    },
+  ],
+  mentalModel:
+    "A compiler is an assembly line of representations. Draw four boxes with an arrow between each and push one example — 2 + 3 * 4 — through them: the raw text, then a token stream [2][+][3][*][4] (the lexer), then a tree (+ 2 (× 3 4)) that encodes precedence (the parser/AST), then a flat instruction list PUSH 2 · PUSH 3 · PUSH 4 · MUL · ADD for a stack machine (codegen/bytecode), then the answer 14 (the VM runs it). An interpreter runs the tree or bytecode directly; a compiler emits machine code ahead of time; a JIT does both — interpret first, compile the hot parts at runtime.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "In ch.10 you rode the abstraction elevator by hand, seeing one program on four floors. This chapter builds the **elevator operator**: the program that takes source text on the top floor and mechanically produces the instructions on the bottom floor. A **compiler** does the whole descent ahead of time; an **interpreter** rides down and executes each step live. Either way the journey is the same four stages — and you're about to watch all four happen as you type.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Four stages, one pipeline\n" +
+        "Turning text into behavior is too big a leap to make at once, so a compiler makes it in stages, each handing a cleaner representation to the next: **lex** (characters → tokens), **parse** (tokens → a tree), **generate** (tree → bytecode), and **run** (a virtual machine executes the bytecode). Type a program into the mini-language below and watch all four panes update live — then break the syntax and see exactly which stage complains.",
+    },
+    { kind: "sim", sim: "compiler-pipeline" },
+    {
+      kind: "prose",
+      md:
+        "## Stage 1 — the lexer: characters become words\n" +
+        "The **lexer** (or scanner) reads the raw character stream and groups it into **tokens** — the language's words. `let total = 0;` becomes five tokens: the keyword `let`, the identifier `total`, the operator `=`, the number `0`, and the semicolon. Whitespace and comments are discarded. The lexer knows nothing about grammar; it just chunks characters and records where each token came from, so later stages can point at the exact spot on an error. This is the same “group a stream into units” job as ch.2's UTF-8 decoder, one level up.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Stage 2 — the parser: words gain structure\n" +
+        "Tokens are still flat. The **parser** imposes **structure**, following the language's grammar to build an **Abstract Syntax Tree (AST)** — a tree where the *shape* encodes meaning. The crucial payoff is precedence: `2 + 3 * 4` parses into `(+ 2 (× 3 4))`, nesting the multiply *underneath* the add, so “× binds tighter than +” is a fact about the tree, not a rule the evaluator re-checks. Which stage catches which mistake? Commit an answer:",
+    },
+    { kind: "quiz", quiz: "find-parse-error" },
+    {
+      kind: "table",
+      caption: "One expression, `2 + 3 * 4`, flowing through all four stages. Each stage's output is the next stage's input.",
+      head: ["Stage", "What it produces", "For `2 + 3 * 4`"],
+      rows: [
+        ["Lexer", "a token stream", "2 · + · 3 · * · 4"],
+        ["Parser", "an AST (structure + precedence)", "(+ 2 (× 3 4))"],
+        ["Codegen", "bytecode for a stack machine", "PUSH 2 · PUSH 3 · PUSH 4 · MUL · ADD"],
+        ["VM", "the result", "14"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Stage 3 — codegen: a tree becomes instructions\n" +
+        "The AST says *what* the program means; **code generation** decides *how* to run it, by flattening the tree into instructions for a target machine. Our target is a **stack machine**: a CPU with no registers, just a push-down stack. `2 + 3` compiles to `PUSH 2; PUSH 3; ADD`, where `ADD` pops two values and pushes their sum. Control flow reuses ch.7's trick exactly — a `while` becomes a conditional jump past the loop and a backward jump to re-test. It's the ch.7 CPU idea again, but the machine is *invented in software*.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Why a virtual machine at all?",
+      lens: "senior",
+      md:
+        "Compiling to **bytecode** for a VM instead of straight to machine code buys **portability** — compile once, run anywhere a small VM exists (this is how the JVM, CPython, V8's Ignition and WebAssembly all work). It also simplifies the compiler (one clean target), enables a **security sandbox** (the VM mediates every operation), and gives a JIT a tidy unit to profile. Most VMs are **stack machines** because codegen is trivial (post-order-walk the AST and emit); some are **register machines** (Lua, Android's Dalvik) which interpret faster but are harder to emit for. The cost is a warm-up/indirection tax — which the next idea buys back.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Stage 4 — run it: compiler vs interpreter\n" +
+        "Finally the **virtual machine** executes the bytecode in the same fetch–execute loop as ch.7's CPU: read the instruction at the program counter, do it to the stack, advance, repeat. Here the deep split appears. An **interpreter** runs the tree or bytecode directly — instant startup, slower each step. A **compiler** translates everything to native machine code first — slower to get going, then full speed. Modern engines refuse to choose:",
+    },
+    { kind: "figure", fig: "jit-tiers" },
+    {
+      kind: "prose",
+      md:
+        "## The JIT: have it both ways\n" +
+        "A **Just-In-Time** compiler starts by *interpreting* bytecode (instant startup), counts how often each function runs, and **compiles the hot ones to optimized machine code at runtime** — betting on what it has seen (e.g. “this variable is always an integer”). If a bet is later violated it **deoptimizes**: throws the fast code away and falls back to the interpreter. That adaptive loop is why V8 gives you interpreter-fast startup *and* compiler-fast steady state — and why type-unstable code stays slow.",
+    },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "A darker thought: can you trust the compiler?",
+      md:
+        "In his 1984 Turing Award lecture *Reflections on Trusting Trust*, **Ken Thompson** showed a compiler could be rigged to insert a backdoor into a program it compiles — and to insert *that same rigging* when it compiles a new copy of itself, so the malicious code vanishes from all source yet survives forever in the binary. The unsettling moral: you can read every line of source and still not know what your binary does, unless you trust the entire toolchain that built it (a live concern for supply-chain security, ch.32).",
+    },
+    {
+      kind: "compare",
+      a: "Compiler (ahead-of-time)",
+      b: "Interpreter",
+      rows: [
+        ["When it translates", "The whole program, before running", "Each construct, while running"],
+        ["Startup", "Slower — compile first", "Instant — just start executing"],
+        ["Run speed", "Fast — native machine code", "Slower — re-reads/dispatches each op"],
+        ["Errors", "Many caught up front (types, syntax)", "Often surface only at runtime"],
+        ["Typical examples", "C, Rust, Go", "Python, Ruby (and a JIT blends both)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — a language is a grammar",
+      md:
+        "A language's syntax is a **formal grammar**: a set of rules (productions) in a notation like **BNF**. Our expression grammar, roughly:\n" +
+        "`expr := term (('+' | '−') term)*`\n" +
+        "`term := factor (('×' | '÷') factor)*`\n" +
+        "`factor := NUMBER | IDENT | '(' expr ')'`\n" +
+        "Because `term` (with × ÷) sits *below* `expr` (with + −), multiplication binds tighter — precedence is literally the nesting of the rules. A **recursive-descent** parser is this grammar turned into code: one function per rule, the call stack (ch.10!) mirroring the tree it builds. Which strings a grammar can describe — and which no grammar can — is the subject of ch.19–20.",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where this model simplifies",
+      md:
+        "A production compiler does much more between parse and codegen: a **semantic/type-checking** pass, one or more **intermediate representations**, many **optimization** passes (inlining, constant folding, register allocation), and **linking**. Real errors also include type errors our tiny language has no types to catch. And industrial parsers handle ambiguity, error recovery, and precedence far more carefully. What's real and complete here: the four-stage spine — lex, parse, generate, run — that every compiler and interpreter shares.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now build a language *and* the machine that runs it — the top of the abstraction elevator meets the bottom. But a real system is millions of lines written by hundreds of people over years. Ch.12 asks the last question of Part 3: not how to make a program *run*, but how to keep a giant, ever-changing codebase from collapsing under its own weight.",
+    },
+  ],
+  keyPoints: [
+    "A compiler is a pipeline — source → tokens (lexer) → AST (parser) → bytecode (codegen) → result (VM); each stage does one job and hands a cleaner representation to the next.",
+    "The lexer groups characters into tokens; the parser gives them structure — precedence and grouping live in the AST's shape, not in the text or the tokens.",
+    "Errors have a stage — the lexer catches illegal characters, the parser catches grammar mistakes, and semantic checks (undefined variables, types) come after; which stage complains tells you what kind of bug it is.",
+    "Bytecode + a virtual machine = portability — compile once to an invented instruction set, run anywhere a small VM exists (JVM, CPython, V8, Wasm); a stack VM is ch.7's CPU idea reinvented in software.",
+    "Compiler vs interpreter is a spectrum, not a language property — AOT compilers translate up front for speed, interpreters run directly for instant startup, and a JIT interprets then compiles hot code at runtime, deoptimizing when its assumptions break.",
+    "Everything high-level bottoms out in ch.7 — if/while/functions compile to the machine's jumps and instructions; the compiler is what makes the abstraction elevator automatic.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking the parser understands meaning",
+      body: "The parser only checks structure — is this a grammatically valid program? Whether a variable exists, or a type fits, is a separate semantic stage after parsing. That's why `print y;` parses fine but fails in codegen: 'undefined variable' is a meaning error, not a grammar error.",
+      lens: "senior",
+    },
+    {
+      title: "Believing 'compiled' vs 'interpreted' is a property of the language",
+      body: "It's an implementation choice. The same language can be both: JavaScript is interpreted as bytecode and then JIT-compiled to machine code in the same engine. 'Is Python compiled?' is the wrong question — CPython compiles to bytecode, then interprets it.",
+      lens: "both",
+    },
+    {
+      title: "Assuming precedence lives in the tokens",
+      body: "The lexer emits `+` and `*` as equal, structureless tokens. It's the parser's grammar that decides `*` binds tighter, by nesting it deeper in the tree. Change the grammar and the same tokens compute a different answer — precedence is a parsing decision.",
+      lens: "both",
+    },
+    {
+      title: "Thinking JIT-compiled always means fast",
+      body: "The JIT's speed comes from assumptions about types. Type-unstable, megamorphic code forces the engine to bail out to generic paths or deoptimize repeatedly, so 'it's JIT-compiled' doesn't guarantee speed — monomorphic, predictable code does.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch11-1", "iv-ch11-2", "iv-ch11-3", "iv-ch11-4", "iv-ch11-5"],
+  kataIds: [],
+  seeAlso: ["ch7", "ch10", "ch19", "ch20"],
+  sources: [
+    { title: "Fortran — Backus's team and the first optimizing compiler, 1957 (IBM History)", url: "https://www.ibm.com/history/fortran" },
+    { title: "Compiler — stages, front/back end, IR (Wikipedia)", url: "https://en.wikipedia.org/wiki/Compiler" },
+    { title: "Just-in-time compilation — interpret, profile, compile hot code, deoptimize (Wikipedia)", url: "https://en.wikipedia.org/wiki/Just-in-time_compilation" },
+    { title: "Crafting Interpreters (Robert Nystrom) — the lexer→parser→bytecode→VM path this mini-language follows", url: "https://craftinginterpreters.com/" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.12 — Software engineering  (built in S6, the lighter P3 chapter)
+// ---------------------------------------------------------------
+const ch12: Chapter = {
+  id: "ch12",
+  part: "p3",
+  order: 14,
+  title: "Software engineering",
+  tagline: "Writing a program is ch.10–11; keeping a million-line system that hundreds of people change every day from collapsing is a different problem — this is how",
+  readMins: { foundations: 15, senior: 22 },
+  storyHook: {
+    md:
+      "1968, Garmisch, Germany. Fifty computer people gather at a **NATO conference** and discover, comparing notes, that they share the same secret shame: their projects are late, over budget, riddled with bugs, and impossible to change safely. Having never met, they're stunned the disease is universal. They give it a name — the **“software crisis”** — and a cure they can only gesture at: treat building software as an **engineering discipline**, not an art. Half a century later the systems are a million times bigger and the crisis never fully ended; this chapter is the hard-won toolkit for holding it at bay.",
+  },
+  assumes: [
+    {
+      chapterId: "ch11",
+      oneLiner: "You can build programs — and even the compiler that runs them. Now the problem is scale: many programs, many authors, many years.",
+    },
+  ],
+  mentalModel:
+    "Picture a dependency graph of modules. A healthy system is a shallow graph of small, cohesive modules that depend on stable interfaces, so any one change lights up a small blast radius. A 'big ball of mud' is a dense graph where everything touches everything and a change ripples everywhere. The practices of software engineering all serve to keep that graph shallow and the blast radius small: encapsulation hides internals, interface seams break dependency chains, the test pyramid catches regressions fast, and semantic versioning makes the contracts between parts explicit.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Parts 1–3 took you from electrons to a running language. But every real system is bigger than one person can hold in their head — and that, not the CPU, is the binding constraint. Software engineering is the study of managing **complexity and change across people and time**. Its enemies aren't slow algorithms (that's Part 4); they're tangled dependencies, silent regressions, and interfaces nobody can safely touch. Its tools are all about keeping a change **local**.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Modularity and the blast radius\n" +
+        "The master tool is **modularity**: split the system into pieces small enough to understand alone, each hiding its internals behind a small **interface** (encapsulation) so other modules can't depend on how it works — only on what it promises. Why it matters: when you change a module, everything that depends on it may have to change too. That ripple is the **blast radius** of a change. Click a module and watch the damage spread — then add an interface seam and watch it shrink:",
+    },
+    { kind: "sim", sim: "dependency-blast" },
+    {
+      kind: "prose",
+      md:
+        "## Coupling, cohesion, and the seam\n" +
+        "Two words name the health of that graph. **Cohesion** is how focused a module is — do its parts belong together? **Coupling** is how much modules lean on each other's *details*. You want high cohesion and low coupling: each piece does one thing, and depends on as little as possible. The trick that decouples is the **seam** — depend on a stable *interface*, not a concrete implementation, so you can change or replace what's behind it without anything downstream noticing.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Dependency inversion — the seam, formalized",
+      lens: "senior",
+      md:
+        "The principle behind the seam is **Dependency Inversion**: high-level policy shouldn't depend on low-level detail; both should depend on an **abstraction**. Concretely, `authService` shouldn't import the concrete `PostgresUserRepo`; it should depend on a `UserRepo` *interface* that Postgres (or an in-memory fake, for tests) implements. Now the database is a plug-in, not a load-bearing wall — you can swap it, mock it, or rewrite it, and `authService` never changes. This one move is what makes large systems testable and evolvable; it's the seam in the sim, named.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## You can't re-check it by hand: tests\n" +
+        "Once a system is too big to re-verify manually, **automated tests** are what let you change it without fear. But not all tests are equal. **Unit** tests check one piece in isolation — milliseconds each, so you run thousands on every save. **Integration** tests wire real pieces together (code + a real database) — slower, fewer, but they catch what units can't. **End-to-end** tests drive the whole system like a user — most realistic, but slow and flaky. Balance them like a pyramid:",
+    },
+    { kind: "figure", fig: "test-pyramid" },
+    {
+      kind: "prose",
+      md:
+        "## Contracts between parts: APIs and versioning\n" +
+        "Modules talk through **APIs** — the promised surface one part exposes to another. An API is a **contract**, and the moment other code depends on it, changing it can break them. **Semantic versioning** makes the contract explicit in the version number itself, so consumers know whether an upgrade is safe. Test your read of the discipline:",
+    },
+    { kind: "quiz", quiz: "blast-radius" },
+    {
+      kind: "table",
+      caption: "Semantic versioning: MAJOR.MINOR.PATCH. The number is a promise about compatibility.",
+      head: ["Bump", "Example", "Means → you should…"],
+      rows: [
+        ["PATCH", "2.4.1 → 2.4.2", "Backward-compatible bug fix → upgrade freely"],
+        ["MINOR", "2.4 → 2.5.0", "New features, still compatible → upgrade freely"],
+        ["MAJOR", "2.x → 3.0.0", "Breaking changes → read the migration notes first"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Conway's Law — the system mirrors the org",
+      lens: "senior",
+      md:
+        "A 1967 observation that keeps proving true: *organizations design systems that copy their own communication structure*. Four teams building a compiler tend to produce a four-pass compiler; a monolith often reflects one big team, microservices a set of small ones. The corollary is strategic — if you want a particular architecture, structure the teams to match it (the 'Inverse Conway Maneuver'). Software boundaries are as much social as technical, which is exactly why ch.12 sits at the human end of the stack.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That closes **Part 3 · Code** — from raw machine instructions (ch.10), up through the compiler that hides them (ch.11), to the discipline of keeping vast systems sane (ch.12). You now have a computer *and* the means to program it at scale. **Part 4** turns to the other half of the craft: not how to express a computation, but how to make it **fast** — Big-O thinking, the classic data structures, and the algorithms that separate a program that works from one that works at scale.",
+    },
+  ],
+  keyPoints: [
+    "Software engineering manages people and change, not just code — the binding constraint on a million-line system is human understanding, and every practice exists to keep a change local.",
+    "Modularity + encapsulation — split the system into pieces that fit in one head, each hiding its internals behind a small interface so callers can't couple to details.",
+    "Low coupling, high cohesion — a module should do one thing (cohesion) and depend on as little as possible (coupling); together they keep a change's blast radius small.",
+    "Depend on interfaces, not implementations — a stable interface (dependency inversion) is a seam that stops a change rippling downstream, and it's what makes systems testable and swappable.",
+    "The test pyramid — many fast isolated unit tests, fewer integration tests, a thin cap of slow end-to-end tests; inverting it into an 'ice-cream cone' gives a slow, flaky, distrusted suite.",
+    "Semantic versioning is a compatibility contract — MAJOR.MINOR.PATCH signals breaking changes / new features / fixes, so consumers know when an upgrade is safe.",
+  ],
+  pitfalls: [
+    {
+      title: "Chasing DRY straight into tight coupling",
+      body: "'Don't repeat yourself' is good until you fold two things that merely look alike into one shared unit — now an unrelated change to one caller breaks the other. A little duplication is often cheaper than the wrong abstraction; couple things that change together, not things that happen to match today.",
+      lens: "senior",
+    },
+    {
+      title: "Inverting the test pyramid",
+      body: "A suite that's mostly slow end-to-end tests (the 'ice-cream cone') runs for ages, fails for flaky timing reasons, and gets ignored — the worst outcome. Push most checks down to fast, deterministic unit tests; reserve E2E for a few critical user journeys.",
+      lens: "both",
+    },
+    {
+      title: "Treating semver as a guarantee",
+      body: "Compatibility is about behavior, not just the type signature — a 'patch' can still break you via a changed default or a tightened validation, and transitive deps can pull incompatible versions. Trust it as a strong hint, but keep a lockfile and let tests be the real safety net.",
+      lens: "senior",
+    },
+    {
+      title: "Adding abstraction before you need it",
+      body: "A seam is not free — every interface and layer is coupling and indirection you now maintain. Premature abstraction (an interface with one implementation, 'just in case') adds cost with no payoff. Add the seam when a change actually starts to hurt, not before.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch12-1", "iv-ch12-2", "iv-ch12-3", "iv-ch12-4"],
+  kataIds: [],
+  seeAlso: ["ch10", "ch11", "ch32"],
+  sources: [
+    { title: "NATO Software Engineering Conferences (1968 Garmisch) — where 'software engineering' and the 'software crisis' were named (Wikipedia)", url: "https://en.wikipedia.org/wiki/NATO_Software_Engineering_Conferences" },
+    { title: "The Practical Test Pyramid (Ham Vocke, martinfowler.com)", url: "https://martinfowler.com/articles/practical-test-pyramid.html" },
+    { title: "Semantic Versioning 2.0.0 — the MAJOR.MINOR.PATCH spec", url: "https://semver.org/" },
+    { title: "Conway's law — systems mirror the communication structure of the organizations that build them (Wikipedia)", url: "https://en.wikipedia.org/wiki/Conway%27s_law" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -1616,10 +2075,10 @@ export const CHAPTERS: Chapter[] = [
   ch7,
   ch8,
   ch9,
-  // P3 · Code
-  stub("ch10", "p3", 12, "From machine code to languages", "The abstraction elevator; functions, call stack, recursion", 6, { foundations: 22, senior: 35 }),
-  stub("ch11", "p3", 13, "Compilers & interpreters", "Lexer → parser → AST → bytecode → JIT", 6, { foundations: 22, senior: 38 }),
-  stub("ch12", "p3", 14, "Software engineering", "Abstraction, APIs, testing — how big systems stay sane", 6, { foundations: 15, senior: 22 }),
+  // P3 · Code (built in S6)
+  ch10,
+  ch11,
+  ch12,
   // P4 · Algorithms & Data Structures
   stub("ch13", "p4", 15, "Big-O & algorithmic thinking", "Growth, best/avg/worst, amortized cost", 7, { foundations: 20, senior: 32 }),
   stub("ch14", "p4", 16, "Linear structures", "Arrays, lists, stacks, queues, hash tables", 7, { foundations: 22, senior: 35 }),

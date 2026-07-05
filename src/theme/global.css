@@ -3763,3 +3763,718 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============ P3 · Code — ch.10–12 interactive styles ============ */
+/* Accent var(--accent) = #A3E635 (--p3), set on each sim root by SimShell.
+   Semantic palette per §7: data = cyan (VM stack / numbers), control =
+   orange (active / operators), state = violet (variables / memory),
+   err = red, ok = green. Mono for all code/token/bytecode/AST/stack text.
+   Mirrors the P2 .cpu-* card/panel look (10px cards, 6-8px chips,
+   color-mix accent tints). Reduced-motion handled globally. */
+
+/* ---------- compiler-pipeline HERO (accent lime) ---------- */
+.cmp {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cmp-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cmp-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cmp-caption {
+  font-size: 12px;
+  color: var(--tx2);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.cmp-code {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  resize: vertical;
+  min-height: 130px;
+  tab-size: 2;
+}
+.cmp-code:focus {
+  outline: none;
+  border-color: var(--accent, var(--p3));
+}
+.cmp-blurb {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin: 2px 0 0;
+}
+
+/* stage error line, tinted by pipeline stage */
+.cmp-err {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 6%, var(--surface));
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--sem-err);
+  border-radius: 8px;
+}
+.cmp-err.stage-lex {
+  color: var(--sem-state);
+  border-left-color: var(--sem-state);
+  background: color-mix(in srgb, var(--sem-state) 6%, var(--surface));
+}
+.cmp-err.stage-parse {
+  color: var(--sem-control);
+  border-left-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 6%, var(--surface));
+}
+.cmp-err.stage-compile {
+  color: var(--sem-err);
+  border-left-color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 6%, var(--surface));
+}
+.cmp-errtag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 22%, var(--surface));
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+}
+.cmp-errpos {
+  color: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+/* stage panes grid */
+.cmp-panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+.cmp-pane {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.cmp-pane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--tx2);
+  font-weight: 600;
+}
+.cmp-stage-num {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent, var(--p3));
+  background: color-mix(in srgb, var(--accent, var(--p3)) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent, var(--p3)) 50%, var(--line));
+}
+
+/* tokens */
+.cmp-tokens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.tk {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--s2);
+  color: var(--tx2);
+}
+.tk-kw {
+  color: var(--accent, var(--p3));
+  border-color: color-mix(in srgb, var(--accent, var(--p3)) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p3)) 12%, var(--s2));
+  font-weight: 700;
+}
+.tk-ident {
+  color: var(--sem-state);
+  border-color: color-mix(in srgb, var(--sem-state) 45%, var(--line));
+}
+.tk-num {
+  color: var(--sem-data);
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+}
+.tk-op {
+  color: var(--sem-control);
+  border-color: color-mix(in srgb, var(--sem-control) 45%, var(--line));
+}
+.tk-punct {
+  color: var(--tx2);
+}
+.tk-bad {
+  color: var(--sem-err);
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 10%, var(--s2));
+}
+
+/* AST tree */
+.cmp-ast {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ast-node {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0 2px 8px;
+  border-left: 2px solid var(--line);
+}
+.ast-node.ast-stmt {
+  border-left-color: var(--tx3);
+}
+.ast-node.ast-ctrl {
+  border-left-color: var(--sem-control);
+}
+.ast-node.ast-op {
+  border-left-color: color-mix(in srgb, var(--accent, var(--p3)) 60%, var(--line));
+}
+.ast-node.ast-slot {
+  border-left-color: var(--line);
+}
+.ast-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.ast-stmt > .ast-label {
+  color: var(--tx);
+}
+.ast-ctrl > .ast-label {
+  color: var(--sem-control);
+  font-weight: 700;
+}
+.ast-op > .ast-label {
+  color: var(--accent, var(--p3));
+  font-weight: 700;
+}
+.ast-slot > .ast-label {
+  color: var(--tx3);
+}
+.ast-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 10px;
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+}
+.ast-leaf {
+  color: var(--tx2);
+  padding-left: 8px;
+}
+.ast-num {
+  color: var(--sem-data);
+}
+.ast-var {
+  color: var(--sem-state);
+}
+
+/* bytecode listing */
+.cmp-bytecode {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.bc-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 2px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+}
+.bc-row.next {
+  border-color: color-mix(in srgb, var(--accent, var(--p3)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p3)) 12%, var(--surface));
+}
+.bc-row.ran {
+  opacity: 0.5;
+}
+.bc-addr {
+  color: var(--tx3);
+  font-family: var(--font-mono);
+  min-width: 34px;
+  text-align: right;
+}
+.bc-instr {
+  color: var(--tx);
+  font-family: var(--font-mono);
+}
+.bc-row.next .bc-instr {
+  color: var(--accent, var(--p3));
+  font-weight: 700;
+}
+
+/* VM state */
+.cmp-vm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vm-cols {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.vm-stack,
+.vm-vars,
+.vm-out {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.vm-sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tx3);
+}
+.vm-stackcells {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+.vm-cell {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: center;
+  padding: 3px 10px;
+  border-radius: 6px;
+  color: var(--sem-data);
+  border: 1px solid color-mix(in srgb, var(--sem-data) 35%, var(--line));
+  background: color-mix(in srgb, var(--sem-data) 10%, var(--s2));
+}
+.vm-cell.top {
+  color: var(--tx);
+  border-color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 22%, var(--surface));
+  box-shadow: 0 0 0 1px var(--sem-data);
+}
+.vm-var {
+  display: inline-flex;
+  gap: 6px;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  color: var(--sem-state);
+  border: 1px solid color-mix(in srgb, var(--sem-state) 35%, var(--line));
+  background: color-mix(in srgb, var(--sem-state) 10%, var(--s2));
+}
+.vm-var b {
+  color: var(--sem-state);
+  font-weight: 700;
+}
+.vm-outstrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.vm-outmore {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.vm-outval {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--tx);
+  border: 1px solid var(--line);
+  background: var(--s2);
+}
+.vm-outval.latest {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--accent, var(--p3)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p3)) 15%, var(--surface));
+}
+.cmp-transport2 {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.cmp-vmhint {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+
+/* compiler boss */
+.cmp-boss {
+  margin-top: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent, var(--p3)) 30%, var(--line));
+  border-radius: 10px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--accent, var(--p3)) 4%, var(--surface));
+}
+.cmp-boss.ok {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 8%, var(--surface));
+}
+.cmp-boss-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.cmp-boss-head strong {
+  color: var(--tx);
+}
+.cmp-boss-story {
+  font-size: 13px;
+  color: var(--tx2);
+  margin: 4px 0 10px;
+  line-height: 1.5;
+}
+.cmp-boss-checks {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cmp-check {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx3);
+}
+.cmp-check.on {
+  color: var(--sem-ok);
+}
+.cmp-boss-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cmp-verdict {
+  font-size: 13px;
+}
+.cmp-verdict.ok {
+  color: var(--sem-ok);
+}
+.cmp-verdict.no {
+  color: var(--sem-control);
+}
+.cmp-verdict.muted {
+  color: var(--tx3);
+}
+
+/* ---------- call-stack-viz (accent lime) ---------- */
+/* NOTE: .stk-hint is intentionally reused from the P2 cache-sim block
+   above (muted 11px hint line) — no override defined here on purpose. */
+.stk-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.stk-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+}
+.stk-result {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent, var(--p3));
+}
+.stk-overflow {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--sem-err);
+}
+.stk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.stk-code {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.stk-pre {
+  margin: 0;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--tx);
+  overflow-x: auto;
+}
+.stk-cmt {
+  color: var(--tx3);
+  font-style: italic;
+}
+.stk-stackwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.stk-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+.stk-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+}
+.stk-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.stk-frame.active {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 12%, var(--surface));
+  box-shadow: 0 0 0 1px var(--sem-control), 0 0 10px color-mix(in srgb, var(--sem-control) 30%, transparent);
+}
+.stk-frame.resolved {
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 10%, var(--surface));
+}
+.stk-frame-label {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tx);
+}
+.stk-frame-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.stk-frame-ret {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--sem-ok);
+}
+.stk-base {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  text-align: center;
+  padding-top: 2px;
+}
+
+/* ---------- abstraction-elevator (accent lime) ---------- */
+.elev {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.elev-hint {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin: 0;
+}
+.elev-floor {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.elev-floor-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.elev-floor-name {
+  font-weight: 600;
+  color: var(--tx);
+}
+.elev-floor-lang {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.elev-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.elev-line {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--tx2);
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 6px 6px 0;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.elev-line:hover,
+.elev-line:focus-visible {
+  background: var(--s2);
+  color: var(--tx);
+}
+.elev-line.lit {
+  color: var(--tx);
+  border-left-color: var(--accent, var(--p3));
+  background: color-mix(in srgb, var(--accent, var(--p3)) 12%, var(--surface));
+}
+.elev-line.dim {
+  opacity: 0.5;
+}
+
+/* ---------- dependency-blast (accent lime) ---------- */
+.db {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  touch-action: none;
+}
+.db-seamtoggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tx2);
+  cursor: pointer;
+}
+.db-seamtoggle input {
+  accent-color: var(--accent, var(--p3));
+}
+.db-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+}
+.db-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+}
+.db-key.origin {
+  color: var(--sem-control);
+}
+.db-key.blast {
+  color: var(--sem-err);
+}
+.db-key.safe {
+  color: var(--sem-ok);
+}
+.db-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+}
+.db-node {
+  cursor: pointer;
+}
+.db-node:focus,
+.db-node:focus-visible {
+  outline: 2px solid var(--accent, var(--p3));
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .cmp-panes {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .stk {
+    grid-template-columns: 1fr;
+  }
+}

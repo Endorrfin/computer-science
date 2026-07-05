@@ -632,6 +632,74 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   next session. NOT sandbox-testable: real-browser pass — **5-min manual QA after deploy**
   (pipeline presets fill diagonally; forwarding removes bubbles; taken branch flushes; cache
   patterns + line-size swing the hit rate; drag the rasterizer triangle + depth mode; race
-  crossover + PCIe toggle; branch-predictor & gfx-pipeline auto-play). **PART 2 COMPLETE.
-  S5 CLOSED pending user commit. Next: S6 — P3 Code: ch.10–12 + compiler-pipeline HERO +
-  P3 boss (Language Smith).**
+  crossover + PCIe toggle; branch-predictor & gfx-pipeline auto-play). **PART 2 COMPLETE —
+  merged by user (dist-s* cleaned). Next: S6 (full, fresh session) — P3 Code: ch.10–12 +
+  compiler-pipeline HERO + P3 boss (Language Smith).** Decision teed up at S6 kickoff (user
+  chose full-scope; confirm exact grammar then): **mini-language = small imperative** —
+  `let`, assignment, `+ − × ÷`, comparisons, `while`, `print` — compiling **source → tokens →
+  AST → stack-VM bytecode** (Crafting-Interpreters-style; fits the boss's "vars + loop that
+  computes a target"). Also fold in the **TS 6.0 / ts-eslint peer revisit** at the start of S6.
+- **2026-07-05 · S6 (P3 · Code — PART 3 COMPLETE)** — ch.10–12 built to the golden bar; the
+  guide now climbs electron → … → CPU → **language**. **Kickoff decisions** (user asked for the
+  best-practice recommendation on both): grammar = **imperative core + if/else** (`let`,
+  assignment, `+ − × ÷ %`, comparisons, `and/or/not`, `while`, `if/else`, `print`), **integer-only,
+  one flat scope, flat stack-VM, NO user functions** — recursion/call-frames are deliberately
+  ch.10's `call-stack-viz` story, keeping a clean teaching boundary and a stack-VM that contrasts
+  with ch.7's accumulator CPU; boss = **print a target (55) via a variable + loop**, validated by
+  running the REAL VM (mirrors the ch.7 Fibonacci boss). **TS 6.0 revisit → HELD at ~5.9.3**:
+  `typescript-eslint@8.62.1` still caps its peer at `typescript <6.1.0`, so TS 6.0 sits at the edge
+  with zero headroom; bumping a compiler major mid-content-session is pure risk for no needed
+  feature — revisit at a boundary (S19 polish). No package.json change. **ch.10 From machine code
+  to languages** (story: Grace Hopper's A-0, 1952, coining "compiler"): the abstraction elevator,
+  structured control flow → ch.7 jumps, functions + the call stack (the CALL/RET ch.7 lacked),
+  recursion + stack overflow, paradigms; formal corner (activation records, O(n) depth vs O(φⁿ)
+  calls), paradigm table, 4 pitfalls, 7 keyPoints, 4 sources. **ch.11 Compilers & interpreters**
+  (story: FORTRAN 1957, Backus's optimizing compiler beating the "can't match assembly" skeptics):
+  the four-stage pipeline, lexer→parser (precedence in the tree)→codegen (stack VM)→run, compiler
+  vs interpreter, the JIT, a *Reflections on Trusting Trust* callout; formal corner (BNF grammar →
+  recursive descent), compiler-vs-interpreter compare, 4-stage table for `2+3*4`, 4 pitfalls, 6
+  keyPoints, 4 sources. **ch.12 Software engineering** (lighter; story: NATO Garmisch 1968, the
+  "software crisis"): modularity + the blast radius, coupling/cohesion + the interface seam
+  (Dependency Inversion), the test pyramid, APIs + **semver**, a Conway's-Law callout; semver
+  table, 4 pitfalls, 6 keyPoints, 4 sources. **compiler-pipeline HERO** (`sims/compiler/`): a pure,
+  framework-free engine — `lexer.ts` (tokens + line/col positions) · `parser.ts` (recursive-descent
+  AST + precise errors + `usesWhile`/`declaresVar`) · `compiler.ts` (codegen to a stack-VM with a
+  slot symbol table, backpatched while/if jumps, semantic name errors) · `vm.ts` (a **stepped**
+  stack VM, one bytecode op per step like ch.7's micro-steps, with divide-by-zero + step-limit
+  guards) · `lang.ts` barrel (`compile`/`compileAndRun`, single precise error tagged by stage) ·
+  `presets.ts` (5 presets + the P3 boss). The component shows **four live panes** (tokens → AST tree
+  → bytecode → stepped stack VM) that update as you type; **boss mode** validates via `bossResult`
+  → `markChallengeDone("boss-p3")`, badge *Language Smith*. **ch.10 sims** — `abstraction-elevator`
+  (one program on 4 floors TS/C/asm/machine-code; the machine floor is the REAL output of ch.7's
+  `assemble()` — a cross-chapter tie, hover-linked) and `call-stack-viz` (`call-stack/model.ts`:
+  traced fib frames push/pop + a no-base-case overflow demo). **3 figs** — `paradigm-lens`
+  (imperative/OOP/functional shapes), `jit-tiers` (Ignition→Sparkplug→TurboFan, optimize-on-
+  assumptions→deopt), `test-pyramid`. **ch.12 sim** — `dependency-blast` (module graph; change a
+  node → reverse-dependency blast radius; an interface seam stops the ripple). **3 quizzes**
+  (trace-recursion, find-parse-error, blast-radius) + **14 interview Qs** (iv-ch10..12).
+  **`scripts/test-p3.ts` (~100 checks: lexer tokens+positions, AST precedence/associativity/if-else,
+  parse+semantic error stages, bytecode + jump targets, VM arithmetic/int-division/mod/comparisons/
+  control-flow/divide-by-zero/infinite-loop, every preset's exact output, boss pass/fail, the
+  call-stack trace, and the elevator↔ch.7 byte consistency)**, wired into `npm test`.
+  registryKeys/registry → **23 sims, 12 figs**; new **P3 CSS block** in `global.css` (~714 lines,
+  delegated to a subagent then reviewed). **Gotcha logged:** the P2 cache-sim already owns the
+  `.cs-*` namespace (incl. bare `.cs` + `.cs-hint`); since the appended P3 block loads later it would
+  have overridden and broken ch.8 — **resolved by renaming all call-stack-viz classes to `.stk-*`**
+  in the component + the P3 CSS block only (cache-sim untouched). **Adversarial review** (subagent
+  ran the engine independently with 67 hand-computed assertions + web-verified all 8 history/tech
+  facts): **zero blocking, zero factual errors, all 9 quiz indices correct**. Two polish items
+  actioned: (1) the `jit-tiers` figure drew a Sparkplug/baseline tier that was never highlighted →
+  reworked to **6 frames** so baseline gets its own beat, plus a Maglev (V8 4th-tier, 2023) footnote;
+  (2) tightened iv-ch10-3 to say V8 **implemented-then-removed** proper tail calls (not merely
+  "declined"). **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (12 live chapters;
+  23 sims · 12 figs · 12 quizzes · 58 interview Qs; mandate holds) · test ✓ (8 suites, +test-p3) ·
+  build ✓** (fresh `dist-s6v2`: CompilerPipeline 24.4 KB/7.8 gzip · CallStackViz 5.3 · ParadigmLens
+  6.2 · JitTiers 4.8 · react-vendor 190 KB). Sandbox notes: `dist-s6v*` gitignored (unlink block);
+  the CSS temp was `mv`'d over global.css (rename allowed); review scratch scripts in `_test_ops/`.
+  NOT sandbox-testable: real-browser pass — **5-min manual QA after deploy** (type in
+  compiler-pipeline → tokens/AST/bytecode update live; Step runs the VM stack; break the syntax →
+  the right stage error; boss mode: a variable + while loop printing 55 → *Language Smith*;
+  call-stack-viz fib frames push/pop + overflow; abstraction-elevator hover-links all four floors;
+  dependency-blast: change `db`, toggle the seam, radius shrinks; figures auto-play incl. jit-tiers'
+  6 frames). **PART 3 COMPLETE — pending user commit. Next: S7 — P4 · Algorithms & Data Structures I:
+  ch.13–14 (growth-racer HERO, hash-collision-lab) + kata runner v1.**

@@ -30,6 +30,11 @@ const sims: Record<SimKey, LazyComp> = {
   "cache-sim": lazy(() => import("../components/sims/cache-sim/CacheSim.tsx")),
   "rasterizer-toy": lazy(() => import("../components/sims/rasterizer-toy/RasterizerToy.tsx")),
   "cpu-vs-gpu-race": lazy(() => import("../components/sims/cpu-vs-gpu-race/CpuVsGpuRace.tsx")),
+  // P3 · Code
+  "abstraction-elevator": lazy(() => import("../components/sims/abstraction-elevator/AbstractionElevator.tsx")),
+  "call-stack-viz": lazy(() => import("../components/sims/call-stack-viz/CallStackViz.tsx")),
+  "compiler-pipeline": lazy(() => import("../components/sims/compiler/CompilerPipeline.tsx")),
+  "dependency-blast": lazy(() => import("../components/sims/dependency-blast/DependencyBlast.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -44,6 +49,10 @@ const figs: Record<FigKey, LazyComp> = {
   "datapath": lazy(() => import("../components/figures/Datapath.tsx")),
   "branch-predictor": lazy(() => import("../components/figures/BranchPredictor.tsx")),
   "gfx-pipeline": lazy(() => import("../components/figures/GfxPipeline.tsx")),
+  // P3 · Code
+  "paradigm-lens": lazy(() => import("../components/figures/ParadigmLens.tsx")),
+  "jit-tiers": lazy(() => import("../components/figures/JitTiers.tsx")),
+  "test-pyramid": lazy(() => import("../components/figures/TestPyramid.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

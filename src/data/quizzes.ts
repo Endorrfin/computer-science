@@ -250,6 +250,88 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  // P3 · Code (S6)
+  {
+    id: "trace-recursion",
+    chapterId: "ch10",
+    questions: [
+      {
+        prompt: "With `fib(n) = n` for `n < 2`, else `fib(n-1) + fib(n-2)` — what is `fib(4)`?",
+        options: ["2", "3", "5", "8"],
+        answer: 1,
+        explain:
+          "fib(4) = fib(3) + fib(2) = (fib2+fib1) + (fib1+fib0) = (1+1) + (1+0) = **3**. Counting from fib(0): 0, 1, 1, 2, 3. Step it in call-stack-viz and watch each frame hand its value back up.",
+      },
+      {
+        prompt: "While evaluating `fib(3)`, which call **returns first**?",
+        options: ["fib(3)", "fib(2)", "fib(1)", "they return together"],
+        answer: 2,
+        explain:
+          "Calls stack deepest-first: fib(3) → fib(2) → fib(1). fib(1) hits the base case and returns before anything else — the stack is **LIFO**, so the last frame pushed is the first popped. fib(3), the outermost call, returns **last**.",
+      },
+      {
+        prompt: "A recursive function is missing its base case. What happens at runtime?",
+        options: ["Loops forever in constant memory", "A stack overflow after a finite number of calls", "It returns undefined", "The compiler rejects it"],
+        answer: 1,
+        explain:
+          "Every call pushes a frame and none ever return, so the **finite** call stack fills and the program crashes with a stack-overflow error — not an infinite loop (which reuses one frame). The compiler can't catch it: whether recursion halts is undecidable in general (ch.20).",
+      },
+    ],
+  },
+  {
+    id: "find-parse-error",
+    chapterId: "ch11",
+    questions: [
+      {
+        prompt: "In our mini-language, `let x = 5` (no semicolon) fails. Which stage reports it?",
+        options: ["The lexer", "The parser", "The code generator", "It runs fine"],
+        answer: 1,
+        explain:
+          "Lexing succeeds — `let`, `x`, `=`, `5` are all valid tokens. The **parser** expects a `;` to end the statement and complains when it hits end-of-input instead. Grammar structure is the parser's job.",
+      },
+      {
+        prompt: "`print y;` where `y` was never declared with `let`. Which stage catches it?",
+        options: ["The lexer", "The parser", "The code generator (semantic check)", "Nothing — it prints 0"],
+        answer: 2,
+        explain:
+          "It lexes and parses fine — it's grammatically valid. The error is **semantic**: the code generator's symbol table has no slot for `y`, so it reports 'undefined variable'. Meaning-level errors live past the parser.",
+      },
+      {
+        prompt: "What tree does the parser build for `2 + 3 * 4`, and what does it evaluate to?",
+        options: ["(2 + 3) * 4 = 20", "2 + (3 * 4) = 14", "left-to-right: 20", "ambiguous — it errors"],
+        answer: 1,
+        explain:
+          "Precedence lives in the **tree**, not the text: `*` binds tighter than `+`, so the parser nests `(3 * 4)` under the `+`, giving 2 + 12 = **14**. Type it into compiler-pipeline and watch the AST — the shape *is* the precedence.",
+      },
+    ],
+  },
+  {
+    id: "blast-radius",
+    chapterId: "ch12",
+    questions: [
+      {
+        prompt: "Modules B, C and D all depend directly on A, which you change often. What best shrinks the blast radius of those changes?",
+        options: ["Couple B, C, D to A even more tightly", "Put a stable interface between A and its callers", "Delete B, C and D's tests", "Copy A's code into B, C and D"],
+        answer: 1,
+        explain:
+          "Depend on a **stable interface**, not A's implementation (Dependency Inversion). While the interface holds, changing A's internals doesn't ripple to B, C, D — exactly the seam in dependency-blast. Copying multiplies the change; tighter coupling widens the blast.",
+      },
+      {
+        prompt: "A team's suite is 90% slow end-to-end UI tests and almost no unit tests. The diagnosis?",
+        options: ["Ideal — E2E gives the most confidence", "The 'ice-cream cone': slow, flaky, costly — push tests down", "They need even more E2E tests", "Unit tests would add nothing"],
+        answer: 1,
+        explain:
+          "That's the inverted pyramid — the **ice-cream cone**. E2E tests are valuable but slow and flaky; a suite dominated by them gives unreliable, sluggish feedback. Most checks belong in fast, isolated unit tests, with a thin E2E cap for critical paths.",
+      },
+      {
+        prompt: "Under semantic versioning, a dependency goes `2.4.1` → `3.0.0`. What should you expect?",
+        options: ["A bug fix only", "New features, backward compatible", "Breaking changes — your code may need updating", "Nothing meaningful changed"],
+        answer: 2,
+        explain:
+          "The **major** bump signals **breaking changes** by contract: patch (2.4.1→2.4.2) = fixes, minor (2.4→2.5) = backward-compatible features, major = you may have to change your code. It's a compatibility promise encoded in the number.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
