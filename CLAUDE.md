@@ -472,3 +472,17 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   Rolldown binding fix. NOT sandbox-testable: real-browser interaction pass — 5-min manual QA
   after deploy (bit-flipping, huffman tree animation, boss decode, sliders). **S2 CLOSED
   pending user commit. Next: S3 — P2 machine core: ch.5 (adders/ALU) + ch.6 (latches/RAM).**
+- **2026-07-03 · S2 hotfix (chapter pages crashed the browser)** — Post-merge browser QA:
+  *every* chapter (ch.1–4) hung then died with Chrome "Aw, Snap!" (renderer OOM). Root
+  cause was a **latent S1 bug in `lib/md.tsx`**, never caught because nothing was ever opened
+  in a real browser (typecheck/lint/qa/Node-tests all pass regardless): `renderInline` used a
+  single **module-level global (`/g`) regex** *and recursed* for `**bold**`; the recursive
+  call reset the shared regex's `lastIndex`, so the outer `exec` loop re-matched the same bold
+  forever → array grew → OOM. Any `**bold**` text triggered it — i.e. all chapters. Fix:
+  extracted a pure, React-free tokenizer **`lib/mdInline.ts`** that builds a **fresh regex per
+  call** (independent `lastIndex`) + a zero-length-match guard; `md.tsx` now renders those
+  tokens. Added **`scripts/test-md.ts`** (12 checks — bold/italic/code/link/nested/multi-bold
+  all must *terminate*) wired into `npm test`, so this can never regress silently. **verify =
+  typecheck ✓ · lint ✓ · qa ✓ · test ✓ (16 logic + 66 info + 12 md) · build ✓ (68 modules).**
+  Lesson for §8/§10: Node gates can't catch render-time infinite loops — **a real-browser
+  smoke test of at least one chapter is now mandatory before closing any session.**
