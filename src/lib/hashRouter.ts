@@ -1,12 +1,13 @@
 // Custom hash router (no router lib — CLAUDE.md §2).
 // Routes: #/ (map) · #/part/<id> (map, part expanded) · #/chapter/<id> ·
-//         #/review · #/interview · #/bosses
+//         #/review · #/katas · #/interview · #/bosses
 import { useSyncExternalStore } from "react";
 
 export type Route =
   | { name: "map"; expandPart?: string }
   | { name: "chapter"; id: string }
   | { name: "review" }
+  | { name: "katas" }
   | { name: "interview" }
   | { name: "bosses" }
   | { name: "notfound"; hash: string };
@@ -18,6 +19,7 @@ export function parseHash(raw: string): Route {
   if (seg[0] === "chapter" && seg[1]) return { name: "chapter", id: seg[1] };
   if (seg[0] === "part" && seg[1]) return { name: "map", expandPart: seg[1] };
   if (seg[0] === "review") return { name: "review" };
+  if (seg[0] === "katas") return { name: "katas" };
   if (seg[0] === "interview") return { name: "interview" };
   if (seg[0] === "bosses") return { name: "bosses" };
   return { name: "notfound", hash: h };

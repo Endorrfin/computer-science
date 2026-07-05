@@ -7,6 +7,7 @@ import LensToggle from "./LensToggle.tsx";
 const NAV = [
   { hash: "#/", name: "map", label: "Map" },
   { hash: "#/review", name: "review", label: "Review" },
+  { hash: "#/katas", name: "katas", label: "Katas" },
   { hash: "#/interview", name: "interview", label: "Interview" },
   { hash: "#/bosses", name: "bosses", label: "Bosses" },
 ] as const;

@@ -6,6 +6,7 @@ import { CHAPTERS, PARTS, chapterById, isStub, partById } from "../src/data/curr
 import { QUIZZES, quizById } from "../src/data/quizzes.ts";
 import { INTERVIEW } from "../src/data/interview.ts";
 import { BOSSES, bossById } from "../src/data/bosses.ts";
+import { KATAS } from "../src/data/katas.ts";
 import { FIG_KEYS, SIM_KEYS } from "../src/lib/registryKeys.ts";
 
 const errors: string[] = [];
@@ -45,6 +46,11 @@ const warn = (msg: string) => warnings.push(msg);
       if (!q) err(`${c.id}: interview id ${iv} not found`);
       else if (q.chapterId !== c.id) err(`${c.id}: interview ${iv} is tagged to ${q.chapterId}`);
     }
+    for (const kid of c.kataIds) {
+      const kata = KATAS.find((x) => x.id === kid);
+      if (!kata) err(`${c.id}: kata id ${kid} not found`);
+      else if (kata.chapterId !== c.id) err(`${c.id}: kata ${kid} is tagged to ${kata.chapterId}`);
+    }
   }
   for (const b of BOSSES) {
     if (!chapterById(b.hostChapterId)) err(`boss ${b.id}: unknown host chapter ${b.hostChapterId}`);
@@ -58,6 +64,13 @@ const warn = (msg: string) => warnings.push(msg);
     q.questions.forEach((qq, i) => {
       if (qq.answer < 0 || qq.answer >= qq.options.length) err(`quiz ${q.id} #${i}: answer index out of range`);
     });
+  }
+  const kataIds = new Set<string>();
+  for (const k of KATAS) {
+    if (kataIds.has(k.id)) err(`duplicate kata id: ${k.id}`);
+    kataIds.add(k.id);
+    if (!chapterById(k.chapterId)) err(`kata ${k.id}: unknown chapter ${k.chapterId}`);
+    if (!k.exportName || k.tests.length === 0) err(`kata ${k.id}: missing exportName or tests`);
   }
 }
 
@@ -116,7 +129,7 @@ for (const q of QUIZZES) if (!usedQuizzes.has(q.id)) warn(`quiz '${q.id}' refere
 // ---------- report ----------
 const live = CHAPTERS.filter((c) => !isStub(c)).length;
 console.log(`qa:interactivity — ${CHAPTERS.length} chapters (${live} live), ${PARTS.length} parts, ` +
-  `${SIM_KEYS.length} sims, ${FIG_KEYS.length} figures, ${QUIZZES.length} quizzes, ${BOSSES.length} bosses, ${INTERVIEW.length} interview Qs`);
+  `${SIM_KEYS.length} sims, ${FIG_KEYS.length} figures, ${QUIZZES.length} quizzes, ${BOSSES.length} bosses, ${INTERVIEW.length} interview Qs, ${KATAS.length} katas`);
 for (const w of warnings) console.log(`  ⚠ ${w}`);
 if (errors.length > 0) {
   console.error(`\n✗ ${errors.length} violation(s):`);

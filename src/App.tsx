@@ -8,6 +8,7 @@ import ChapterPage from "./components/chapter/ChapterPage.tsx";
 import ReviewPage from "./components/pages/ReviewPage.tsx";
 import InterviewPage from "./components/pages/InterviewPage.tsx";
 import BossesPage from "./components/pages/BossesPage.tsx";
+import KatasPage from "./components/pages/KatasPage.tsx";
 import NotFound from "./components/pages/NotFound.tsx";
 
 export default function App() {
@@ -33,6 +34,9 @@ export default function App() {
       break;
     case "bosses":
       page = <BossesPage />;
+      break;
+    case "katas":
+      page = <KatasPage />;
       break;
     default:
       page = <NotFound />;
