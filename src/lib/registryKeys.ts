@@ -20,6 +20,8 @@ export const SIM_KEYS = [
   "alu-visualizer", // ch.5 micro — op select + Z/N/C/V flags
   "latch-playground", // ch.6 micro — SR latch feedback + D flip-flop clock edge
   "ram-grid", // ch.6 micro — address decoder + read/write (reused ch.8/14/23)
+  // P2 · The Machine (S4)
+  "cpu-8bit", // ch.7 HERO — full 8-bit CPU: assembler + micro-stepped emulator + Fibonacci boss
 ] as const;
 
 export const FIG_KEYS = [
@@ -32,6 +34,8 @@ export const FIG_KEYS = [
   // P2 · The Machine (S3)
   "mux-router", // ch.5 — select lines steer one of N inputs through
   "memory-hierarchy", // ch.6 — register→L1→L2→RAM→SSD as distances (reused ch.8/14/23)
+  // P2 · The Machine (S4)
+  "datapath", // ch.7 — the CPU block diagram, stepped micro-op by micro-op
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

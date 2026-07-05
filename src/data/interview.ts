@@ -272,6 +272,51 @@ export const INTERVIEW: InterviewQ[] = [
       "2³² = ~4.29 billion distinct addresses; with byte addressing that's **4 GiB**. The address *width* is the hard cap — not how many RAM chips you solder on.\n" +
       "Workloads (databases, media, big in-memory datasets) outgrew 4 GB, so 64-bit address spaces arrived: 2⁶⁴ ≈ 16 **EiB** in principle, though CPUs physically implement only part of it (e.g. 48–57 bits today). Stopgaps like x86 PAE widened *physical* addressing while each process stayed 32-bit — a patch, not a cure. The decoder in ram-grid makes the law visceral: one more address wire doubles the reach.",
   },
+  {
+    id: "iv-ch7-1",
+    chapterId: "ch7",
+    level: "mid",
+    q: "Walk me through the fetch–decode–execute cycle.",
+    a:
+      "It's the loop every CPU runs forever. **Fetch:** the Program Counter holds the address of the next instruction; that address goes to memory and the instruction byte comes back into the Instruction Register, and the PC increments. **Decode:** the control unit reads the opcode and works out what the instruction is and which control lines to raise. **Execute:** the data path does the work — read an operand from RAM, drive the ALU, write a register, or (for a jump) load a new value into the PC. Then it repeats.\n" +
+      "The key insight is that this is *mechanical and dumb*: the CPU doesn't 'understand' your program, it just fetches the next numbered byte and does the one tiny thing that byte encodes, billions of times a second. Each of those phases is itself several **micro-steps** (register transfers over the bus), which is what a clocked control unit sequences.",
+  },
+  {
+    id: "iv-ch7-2",
+    chapterId: "ch7",
+    level: "senior",
+    q: "What does 'stored-program' (von Neumann) mean, and what's the von Neumann bottleneck?",
+    a:
+      "**Stored-program** means instructions live in the *same* read/write memory as data — a program is just bytes you can load, store, and even generate at runtime. That's the idea that made general-purpose computers possible: to run a different program you don't rewire the machine, you load different bytes. (In the emulator you literally watch your assembly land in the same 16-byte RAM the data uses.)\n" +
+      "The **bottleneck**: because code and data share one memory over one bus, the CPU must funnel every instruction and every operand through that single channel — so memory bandwidth/latency, not the ALU, is often the limit. It's a major reason caches exist (ch.6/8) and why **Harvard**-style splits (separate instruction and data paths/caches) appear inside real chips even when the programmer's model stays von Neumann.",
+  },
+  {
+    id: "iv-ch7-3",
+    chapterId: "ch7",
+    level: "senior",
+    q: "Registers vs RAM — why does a CPU have both, and what is a register file?",
+    a:
+      "Registers are a handful of one-word storage cells built from flip-flops (ch.6) *inside* the CPU, right next to the ALU; the **register file** is that small bank plus a few special registers (PC, IR, flags). RAM is millions of bytes but 'far away' — tens to hundreds of cycles per access. So the CPU keeps the values it's actively computing on in registers (≈0-cycle access) and treats RAM as the big backing store you load from and store to.\n" +
+      "It's a speed/capacity trade — the top of the memory hierarchy. It's also why instruction sets are built around registers (load–store architectures make it explicit) and why compilers spend real effort on *register allocation*: keeping hot variables in that scarce, fast space instead of spilling them to memory.",
+  },
+  {
+    id: "iv-ch7-4",
+    chapterId: "ch7",
+    level: "senior",
+    q: "At the hardware level, how is an `if` or a loop actually implemented?",
+    a:
+      "With **flags** and a **conditional write to the PC**. An ALU op (or an explicit compare) sets condition flags — Zero, Negative, Carry, oVerflow. A conditional-branch instruction then tests a flag and, if the condition holds, loads a new address into the PC instead of letting it fall through to the next instruction. `if (a == b)` compiles to *compare a,b* (sets Z) then *branch-if-not-zero* past the body; a loop is the same test plus an unconditional backward jump.\n" +
+      "So control flow isn't special magic — it's arithmetic that conditionally changes *where the PC points next*. That's the whole trick, and it's why the flags register and the branch instructions are the bridge from 'a calculator' to 'a computer that can decide and repeat'. (It also sets up ch.8: branches are hard to predict, which is why fast CPUs guess.)",
+  },
+  {
+    id: "iv-ch7-5",
+    chapterId: "ch7",
+    level: "staff",
+    q: "Our emulator runs one instruction fully before starting the next. Why don't real high-performance CPUs work that way?",
+    a:
+      "Running strictly one-at-a-time wastes the hardware: while an instruction is in its execute stage, the fetch and decode logic sit idle. Real CPUs **pipeline** — overlap fetch of instruction *n+1* with decode of *n* and execute of *n−1*, so ideally one instruction *retires* per cycle even though each still takes several stages end-to-end (ch.8). On top of that: superscalar issue (multiple pipelines), out-of-order execution, branch prediction and speculation to keep the pipeline full across the branches from the previous question, and caches to hide the memory latency.\n" +
+      "The teaching model is deliberately the honest *semantics* (what the result must be) without the performance tricks. Every one of those tricks must preserve exactly the single-instruction-at-a-time result our micro-stepped machine shows — that observable contract is precisely what pipelines, caches and speculation are engineered not to violate.",
+  },
 
 ];
 

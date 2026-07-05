@@ -15,7 +15,7 @@
     "preview": "vite preview",
     "qa": "npm run qa:interactivity",
     "qa:interactivity": "node --experimental-strip-types scripts/qa-interactivity.ts",
-    "test": "node --experimental-strip-types scripts/test-logic.ts && node --experimental-strip-types scripts/test-info.ts && node --experimental-strip-types scripts/test-md.ts && node --experimental-strip-types scripts/test-machine.ts",
+    "test": "node --experimental-strip-types scripts/test-logic.ts && node --experimental-strip-types scripts/test-info.ts && node --experimental-strip-types scripts/test-md.ts && node --experimental-strip-types scripts/test-machine.ts && node --experimental-strip-types scripts/test-cpu.ts",
     "verify": "npm run typecheck && npm run lint && npm run qa && npm test && npm run build"
   },
   "dependencies": {

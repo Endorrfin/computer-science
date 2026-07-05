@@ -529,3 +529,53 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   play/step; ALU presets flip the right flags; SR latch step-settle + DFF waveform; RAM
   read/write + decoder one-hot; both figures auto-play). **S3 CLOSED pending user commit.
   Next: S4 — P2 CPU: ch.7 `cpu-8bit` HERO (mini-assembler + emulator) + P2 boss (Fibonacci).**
+- **2026-07-05 · S4 (P2 · the CPU)** — ch.7 built to the golden bar; Part 2's compute (ch.5
+  ALU) and memory (ch.6 registers/RAM) are finally wired into a running machine. **ISA
+  decision** (user asked for the best-practice recommendation): **Von Neumann accumulator,
+  Ben-Eater/SAP-1 lineage** — 16-byte RAM shared by code+data, **one-byte instructions**
+  (4-bit opcode + 4-bit operand), registers **A** (accumulator) · **B** (ALU operand latch) ·
+  **PC · IR · MAR** + **Z/N/C/V** flags, **16 opcodes** (LDA/LDI/STA/ADD/SUB/AND/OR/JMP/JZ/
+  JNZ/JC/JN/CMP/OUT/HLT). Datapath animation depth (user pick): **micro-step / bus-transfer
+  T-states**. **ch.7 The CPU** (story: Manchester **Baby**, 21 Jun 1948 — Kilburn's
+  17-instruction program found the highest proper factor of 2¹⁸ by *repeated subtraction*,
+  web-verified; the same no-multiply trick the chapter's Multiply preset uses): stored-program
+  idea, fetch–decode–execute, the control unit + clock (micro-steps), the ISA + full
+  instruction-set table, loops=backward JMP / if=conditional-jump-on-flags, building multiply
+  from adds, **Von Neumann vs Harvard** compare, formal-corner RTL (`MAR←PC; IR←RAM[MAR];
+  PC←PC+1; …`), 4 pitfalls, 9 keyPoints, **5 sources** (Baby, von Neumann/EDVAC 1945, Crash
+  Course CS #7, nand2tetris P5, Ben Eater 8-bit — all web-verified). **cpu-8bit HERO**
+  (`sims/cpu-8bit/`): assembler editor → assembles **into** the 16-byte RAM panel; register
+  file + OUT log; **micro-stepped datapath** (`DatapathView`) whose buses/registers/ALU/RAM
+  glow per T-state; transport = step (one micro-step) · step-instruction · run-to-end ·
+  play/speed; **4 presets** (add · countdown · multiply-by-adding · Fibonacci); **boss mode**
+  validates the OUT stream's Fibonacci prefix → `markChallengeDone("boss-p2")`, badge
+  *Machine Whisperer*. **datapath [fig]** (`figures/Datapath.tsx`, FigureStepper, 6 frames =
+  one ADD micro-op by micro-op) + **register-predict quiz** (3 Qs) + **5 interview Qs**
+  (iv-ch7-1..5). **New engine `sims/machine/cpu.ts`** (ISA + two-pass symbolic assembler +
+  micro-step fetch/decode/execute; reuses `arith.ts` `alu()` for the ALU + flags) and
+  `cpu-8bit/presets.ts` (single source of truth for preset asm, locked by tests) +
+  **`scripts/test-cpu.ts` (72 checks: opcode round-trip, assembler labels/data/error guards +
+  code/data `kind` tagging, micro-step mechanics, flags via the ch.5 ALU, every preset's exact
+  OUT stream incl. Fibonacci 1,1,…,233 → then 121 from the 144+233=377 8-bit overflow, boss
+  validation)**, wired into `npm test`. registryKeys/registry → **15 sims, 7 figs**; new
+  **P2-CPU CSS block** in `global.css` (semantic palette, reduced-motion inherited).
+  **Adversarial review** (subagent ran the engine independently + web-searched every fact):
+  **zero bugs, zero factual errors**. Two items actioned from it: (1) **latent bug** — the RAM
+  panel's code-vs-data colouring used a fragile regex that mis-read a *labelled* data line
+  (`total: 0`) as code; fixed by tagging each assembled byte `kind:"code"|"data"` in the
+  assembler, locked with a test; (2) **prose honesty** — the 144+233 overflow also raises **V**
+  (both operands' top bits set), not only C; the boss prose now says so (a C-vs-V teaching
+  beat) and the `JC` summary/table wording tightened "carry/overflow out" → "carry out of the
+  top bit". **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (7 live chapters;
+  15 sims · 7 figs · 7 quizzes · 34 interview Qs) · test ✓ (229 green checks across 5 suites;
+  test-cpu 72) · build ✓** (fresh `dist-s4v`: CpuEmulator 24.3 KB/8.2 gzip · Datapath 3.9 KB ·
+  CSS 53.7 KB · react-vendor 190 KB). Sandbox `unlink` still blocked → temp `dist-s4*` can't be
+  deleted (gitignored `dist-*`, harmless); the review's throwaway trace scripts were `mv`'d into
+  `_test_ops/` (gitignored + eslint-ignored) since `rm` is blocked; the `.git/index.lock`
+  warning on `git status` is the known sandbox stale-lock (Mac/CI unaffected). NOT
+  sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (load a
+  preset → see it assemble into the RAM grid; single-step and watch the datapath bus + register
+  glow one T-state at a time; step-instruction / run-to-end; flags update on ALU ops; edit +
+  assemble&load; boss mode: write Fibonacci → the 1…55 checklist lights → *Machine Whisperer*
+  badge). **S4 CLOSED pending user commit. Next: S5 — P2 fast hardware: ch.8 (pipeline, cache,
+  branch prediction) + ch.9 (GPUs, rasterizer) — closes Part 2.**

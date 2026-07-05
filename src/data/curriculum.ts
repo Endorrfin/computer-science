@@ -1047,6 +1047,199 @@ const ch6: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.7 — The CPU  (P2 HERO chapter, built in S4)
+// ---------------------------------------------------------------
+const ch7: Chapter = {
+  id: "ch7",
+  part: "p2",
+  order: 9,
+  title: "The CPU",
+  tagline: "Wire the ALU and the registers to a clock-driven control loop, and the pile of circuits becomes a machine that runs your programs",
+  readMins: { foundations: 25, senior: 40 },
+  storyHook: {
+    md:
+      "21 June 1948, a laboratory at the University of Manchester. A refrigerator-sized machine nicknamed **“Baby”** grinds through 3.5 million operations over 52 minutes and prints an answer: 131,072, the largest proper factor of 262,144. Trivial arithmetic — but Baby had just done something no machine ever had: it ran a **program stored in its own memory**, the very same electronic memory that held its data. Tom Kilburn's 17-instruction program could be *changed by loading different numbers*, not by rewiring the machine. That is the whole idea of a computer, and it is barely 75 years old. (Baby had no divide instruction, so Kilburn's program divided by **repeated subtraction** — the exact trick you'll use to *multiply* on the CPU in this chapter.) Every processor since, from that room to the phone in your pocket, runs the same loop Baby ran: fetch an instruction, decode it, execute it, repeat.",
+  },
+  assumes: [
+    {
+      chapterId: "ch5",
+      oneLiner: "You have an ALU — a circuit that computes ADD/SUB/AND/OR and sets Z/N/C/V flags — built from ch.4's gates.",
+    },
+    {
+      chapterId: "ch6",
+      oneLiner: "You have memory — registers (fast, one word, next to the ALU) and RAM (an address decoder over an array of registers), all clocked so they change only on the tick.",
+    },
+  ],
+  mentalModel:
+    "A CPU is the ALU (compute) and the registers/RAM (remember) joined by a third thing — control: a clock-driven loop that fetches the byte the Program Counter points at, decodes its opcode, and drives the datapath to execute it, then repeats. Instructions live in the same RAM as data (stored-program), so a program is just bytes. Loops are backward jumps; ifs are conditional jumps that read the flags. Redraw the loop — PC → fetch into IR → decode → execute → PC++ — and you've drawn every computer.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Gates (ch.4) → adders & the ALU (ch.5) → registers & RAM (ch.6) → **you are here: the CPU**. You already hold both halves of a computer: a circuit that *computes* (the ALU) and circuits that *remember* (registers and RAM). What's missing is the piece that makes them *do* something on their own: **control** — a clock-driven loop that reads instructions out of memory and drives the ALU and registers to carry them out. Add that loop and the heap of circuits becomes a **processor** that runs programs. This is the chapter where everything so far clicks into one running machine — and then you program it yourself.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## A program is just bytes\n" +
+        "Here is the leap. The ALU and registers can perform *one* operation if you set the right control lines by hand. A CPU makes those control lines come from **memory**: you store a numbered list of instructions in RAM, keep a **Program Counter (PC)** pointing at the next one, and let the machine fetch and obey them in order. Crucially, those instructions sit in the *same* RAM as the data — an instruction is only a byte, and a program is only a sequence of bytes you can load, change, or even generate. That is the **stored-program** (von Neumann) idea, sketched in 1945, and it's why one machine can run a spreadsheet now and a game later: you don't rebuild it, you load different bytes. The diagram below is the hardware those bytes flow through — step through it once before you meet the full emulator.",
+    },
+    { kind: "figure", fig: "datapath", caption: "One instruction (ADD) as a sequence of register transfers. Fetch is identical for every instruction; the execute steps are chosen by the opcode. The glowing bus shows where the byte is moving this micro-step." },
+    {
+      kind: "prose",
+      md:
+        "## The loop that never stops\n" +
+        "Every CPU runs one loop, forever. **Fetch:** copy the address in the PC onto the address bus, read the instruction byte it points at into the **Instruction Register (IR)**, and bump the PC to the next byte. **Decode:** the control unit reads the instruction's opcode and works out what it means. **Execute:** it carries the instruction out — load a value, drive the ALU, store a result, or, for a jump, load a new address into the PC. Then it fetches again. There is no cleverness anywhere in this loop: the processor cannot see your program, only the one byte it is fetching right now. The appearance of intelligence is built entirely from doing something utterly mechanical a few billion times a second.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The control unit and the clock — where the loop actually lives",
+      lens: "senior",
+      md:
+        "That loop is *sequenced* by the **control unit** against the ch.6 **clock**. Each instruction is a fixed series of **micro-steps** (T-states); on every clock edge the control unit asserts a specific set of control lines — *output PC to the bus*, *load the IR*, *ALU add*, *load A* — that gate exactly one register transfer. The fetch micro-steps are identical for every instruction; the execute micro-steps are selected by the decoded opcode. In a simple CPU this sequencing is **hardwired** combinational logic; in a big ISA like x86 it's stored as **microcode** — tiny programs inside the processor that expand each instruction into micro-ops. Either way the clock period must clear the slowest transfer (ch.6's critical path), which is what a clock speed *is*. Single-step the emulator and each click advances exactly one T-state.",
+    },
+    { kind: "sim", sim: "cpu-8bit" },
+    {
+      kind: "prose",
+      md:
+        "## Speaking the machine's language\n" +
+        "What can you actually say to this CPU? Exactly the instructions its hardware was built to decode — its **instruction set architecture (ISA)**. Ours is deliberately tiny: **one byte per instruction**, split into a 4-bit **opcode** (which of 16 operations) and a 4-bit **operand** (a RAM address, or a small immediate number). There are two working registers: **A**, the *accumulator*, where results accumulate, and **B**, the ALU's second input — plus the PC, the IR, and the flags. `LDA 14` means “load A from RAM cell 14”; the assembler turns that human-readable line into the byte `0x1E` that actually sits in memory. Assembly *is* the ISA — the same bytes, written for people instead of for the decoder.",
+    },
+    {
+      kind: "table",
+      caption: "The full instruction set. Opcode = the high nibble, operand = the low nibble. Only the ALU ops (and CMP) touch the flags.",
+      head: ["Opcode", "Instruction", "Operand", "What it does"],
+      rows: [
+        ["0x0", "NOP", "—", "do nothing for one cycle"],
+        ["0x1", "LDA a", "address", "A ← RAM[a]"],
+        ["0x2", "LDI n", "0–15", "A ← n (the operand itself)"],
+        ["0x3", "STA a", "address", "RAM[a] ← A"],
+        ["0x4", "ADD a", "address", "A ← A + RAM[a] · sets Z/N/C/V"],
+        ["0x5", "SUB a", "address", "A ← A − RAM[a] · sets Z/N/C/V"],
+        ["0x6", "AND a", "address", "A ← A AND RAM[a] · sets Z/N"],
+        ["0x7", "OR a", "address", "A ← A OR RAM[a] · sets Z/N"],
+        ["0x8", "JMP a", "address", "PC ← a (always)"],
+        ["0x9", "JZ a", "address", "PC ← a if Z (last result was 0)"],
+        ["0xA", "JNZ a", "address", "PC ← a if not Z"],
+        ["0xB", "JC a", "address", "PC ← a if C (carry out of the top bit)"],
+        ["0xC", "JN a", "address", "PC ← a if N (result negative)"],
+        ["0xD", "CMP a", "address", "flags ← A − RAM[a] (A unchanged)"],
+        ["0xE", "OUT", "—", "print A to the output log"],
+        ["0xF", "HLT", "—", "stop the clock"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## From instructions to programs\n" +
+        "A straight run of instructions is a calculator. Two more ideas make it a computer. First, **loops**: a `JMP` can point *backward*, so the CPU re-runs earlier instructions — that is every loop you have ever written. Second, **decisions**: the ALU and compare instructions leave **flags** behind (Z if the result was zero, N if negative, C on carry, V on signed overflow), and *conditional* jumps like `JZ`/`JNZ`/`JC` read those flags to decide whether to jump. An `if` is a compare followed by a conditional jump; a `while` is that plus a backward `JMP`. All of control flow — every branch and loop in every language — compiles down to *conditionally changing what the PC points at next*. Predict where the registers land:",
+    },
+    { kind: "quiz", quiz: "register-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Building what the hardware lacks\n" +
+        "Notice what is *not* in that instruction set: no multiply, no divide. That's fine — you build them. To compute 3 × 4, add 3 to a running total four times; a loop and a counter do it. This isn't a toy limitation: the Manchester **Baby** from this chapter's story had no divide instruction either, so its very first program divided by repeated subtraction — exactly this move. It is the deepest pattern in computing: a small set of primitive operations, composed by control flow, reaches everything computable (a claim ch.20 will make precise). Load the **Multiply** preset and watch a multiplication happen out of nothing but adds and a loop.",
+    },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Drive it yourself",
+      md:
+        "In the emulator, load **Add two numbers** and single-step it: watch B *latch* the operand before the ALU fires, while A holds the running value. Then try **Count down** (a backward `JNZ` loop that stops when SUB makes Z), **Multiply 3 × 4** (a multiply with no multiply instruction), and finally **Fibonacci** — the boss. Use *step* to crawl one micro-step at a time, *step instruction* to move a whole fetch-decode-execute at once, or *play* to watch the datapath animate.",
+    },
+    {
+      kind: "compare",
+      a: "Von Neumann (our CPU)",
+      b: "Harvard",
+      rows: [
+        ["Memory", "One RAM holds code and data together", "Separate instruction and data memories"],
+        ["Buses", "Shared — one path (the von Neumann bottleneck)", "Independent — fetch an instruction and a datum at once"],
+        ["Consequence", "Code is data: load or generate programs at runtime", "Program memory is often fixed / read-only"],
+        ["Where you meet it", "The programmer's model of almost every CPU", "Microcontrollers — and inside chips as split L1 caches"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## The boss: make it compute Fibonacci\n" +
+        "Time to earn the badge. Fibonacci — 1, 1, 2, 3, 5, 8, … — needs everything you now have: two variables in RAM, an `ADD`, a shuffle, and a backward `JMP`. Keep the two most recent terms, print one each pass, compute their sum, shift them along, repeat. Watch it climb… and then watch 8 bits betray it: after 233, the next term is 144 + 233 = **377**, which does not fit in a byte — it wraps to **121** and raises the carry flag **C**, the unsigned “it didn't fit” signal (and, since 144 and 233 both have their top bit set, the signed-overflow flag **V** lights up too — ch.5's two flags, disagreeing in real time). The largest Fibonacci number that fits in 8 bits is 233, and your CPU discovers that the hard way. That overflow is not a bug in the emulator; it's the exact ch.1 lesson, now unfolding inside a register you built from gates. Open **boss mode**, write it, and claim *Machine Whisperer*.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the machine as a state transition",
+      md:
+        "**Machine state** `S = (RAM[0..15], PC, IR, A, B, flags{Z,N,C,V}, OUT)`.\n" +
+        "**Encoding**: a byte is `opcode·16 + operand`; the decoder reads `opcode = byte ≫ 4`, `operand = byte ∧ 0xF`.\n" +
+        "**The instruction cycle as register transfers (RTL):**\n" +
+        "- Fetch:  `MAR ← PC ; IR ← RAM[MAR] ; PC ← (PC + 1) mod 16`\n" +
+        "- Decode: `control ← opcode(IR)`\n" +
+        "- Execute `ADD a`:  `MAR ← operand(IR) ; B ← RAM[MAR] ; A ← (A + B) mod 256 ; flags ← f(A, carry)`\n" +
+        "- Execute `JZ a`:  `if Z then PC ← operand(IR)` (else PC already points at the next byte)\n" +
+        "One CPU step is a **total function** `next : S → S`; running the machine is iterating `next` until `HLT`. That's a finite-state description of computation — ch.20 replaces the fixed 16-byte RAM with an unbounded tape (a Turing machine) and asks what a machine can compute *in principle*.",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where this model simplifies",
+      md:
+        "The ISA is honest but small. It has **no subroutines or stack** — ch.10 adds `CALL`/`RET` and the call stack that makes functions and recursion possible; **no interrupts** — ch.22 adds the mechanism that lets I/O and the OS seize the CPU; and its **4-bit operands** cap RAM at 16 bytes and immediates at 15 (real ISAs use multi-byte instructions). It also runs **one instruction fully before the next**, whereas real CPUs **pipeline** and **cache** for speed (ch.8). What *is* real and carries all the way up: the fetch–decode–execute loop, the register/ALU/flags datapath, stored-program memory, and the fact that every piece of software you will ever run bottoms out in exactly this.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You've closed the loop: gates became an ALU (ch.5), the ALU and registers became a datapath (ch.6), and a clock-driven control loop just turned that datapath into a **computer** that runs stored programs. Two directions open from here. **Faster:** ch.8 asks why real CPUs don't run one instruction at a time — pipelines, caches, branch prediction — and ch.9 turns to GPUs. **Higher:** you just wrote raw machine code by hand; ch.10 rides the abstraction elevator from assembly up to real languages (with functions, a call stack, and recursion), and ch.11 builds the compiler that gets you there. The machine is finished. Now we learn to talk to it.",
+    },
+  ],
+  keyPoints: [
+    "A CPU is the third piece — the ALU computes (ch.5) and registers/RAM remember (ch.6); the CPU adds control, a clock-driven fetch–decode–execute loop that turns them into a machine that runs programs.",
+    "Stored-program (von Neumann) — instructions and data share the same RAM, so a program is just bytes; that's why one machine runs any program by loading different bytes.",
+    "Fetch–decode–execute — the CPU repeats forever: fetch the byte at PC into IR (and PC++), decode the opcode, execute it on the datapath — each step dumb and mechanical, billions of times a second.",
+    "Registers are the CPU's own storage — PC (which instruction is next), IR (the current one), A/B (the ALU's operands), flags (Z/N/C/V): flip-flops right next to the ALU, far faster than RAM.",
+    "The ISA is the contract — the fixed set of opcode+operand encodings the hardware decodes; assembly is its human-readable form, and every higher-level language ultimately compiles down to it.",
+    "A loop is a backward jump; an if is a conditional jump — control flow is just conditionally changing what the PC points at next, decided by the flags an ALU op left behind.",
+    "You build what the hardware lacks — with only add and subtract you make multiply (repeated adding) and more; the Manchester Baby did division by repeated subtraction the same way.",
+    "Each instruction is several micro-steps — T-states, single register transfers sequenced by the control unit against the clock; fetch is the same for every instruction, execute varies by opcode.",
+    "Overflow doesn't vanish in a CPU — 8-bit Fibonacci climbs to 233, then 144+233 = 377 wraps to 121 and sets the carry flag: the ch.1 lesson, now happening inside a register.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking the CPU 'understands' the program",
+      body: "It doesn't. It blindly fetches the next numbered byte and performs the one tiny operation that byte encodes. All meaning lives in the programmer's head and the ISA definition — never in the silicon, which is just gates switching.",
+      lens: "both",
+    },
+    {
+      title: "Forgetting the PC already moved on",
+      body: "Fetch increments the PC before execute runs, so by the time a jump executes the PC has already advanced. Mis-modeling when the PC increments is the source of 'why did it skip / repeat an instruction?' confusion. A jump overwrites the already-bumped PC.",
+      lens: "both",
+    },
+    {
+      title: "Assuming code and data are different kinds of thing",
+      body: "In a von Neumann machine they're the same bytes in the same RAM. Point the PC at data and the CPU will happily 'execute' it as instructions — usually garbage, sometimes a security exploit (this is the root of whole classes of attacks in ch.32).",
+      lens: "senior",
+    },
+    {
+      title: "Expecting a plain load to set flags",
+      body: "Only the ALU ops (ADD/SUB/AND/OR) and CMP update Z/N/C/V; LDA/LDI/STA leave the flags untouched. So a JZ tests the result of the last ALU op, not the last value you loaded — a classic assembly bug.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch7-1", "iv-ch7-2", "iv-ch7-3", "iv-ch7-4", "iv-ch7-5"],
+  kataIds: [],
+  seeAlso: ["ch5", "ch6", "ch8", "ch10", "ch11"],
+  sources: [
+    { title: "Manchester Baby (Small-Scale Experimental Machine) — first stored-program computer, 21 June 1948 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Manchester_Baby" },
+    { title: "Von Neumann architecture — the stored-program idea (Wikipedia)", url: "https://en.wikipedia.org/wiki/Von_Neumann_architecture" },
+    { title: "Crash Course Computer Science #7 — The Central Processing Unit (CPU)", url: "https://www.youtube.com/watch?v=FZGugFqdr60" },
+    { title: "Nand2Tetris — Project 5: Computer Architecture (build a CPU from an ALU + memory)", url: "https://www.nand2tetris.org/project05" },
+    { title: "Ben Eater — Building an 8-bit breadboard computer (the SAP-1 lineage this CPU follows)", url: "https://eater.net/8bit" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -1059,7 +1252,7 @@ export const CHAPTERS: Chapter[] = [
   ch4,
   ch5,
   ch6,
-  stub("ch7", "p2", 9, "The CPU", "Fetch–decode–execute — program a real 8-bit machine", 4, { foundations: 25, senior: 40 }),
+  ch7,
   stub("ch8", "p2", 10, "Fast CPUs", "Pipelines, caches, branch prediction, multicore", 5, { foundations: 22, senior: 38 }),
   stub("ch9", "p2", 11, "GPUs & parallel hardware", "Why GPUs exist — and why AI loves them", 5, { foundations: 15, senior: 25 }),
   // P3 · Code
