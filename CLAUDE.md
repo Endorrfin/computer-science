@@ -703,3 +703,70 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   dependency-blast: change `db`, toggle the seam, radius shrinks; figures auto-play incl. jit-tiers'
   6 frames). **PART 3 COMPLETE — pending user commit. Next: S7 — P4 · Algorithms & Data Structures I:
   ch.13–14 (growth-racer HERO, hash-collision-lab) + kata runner v1.**
+- **2026-07-05 · S7 (P4 · Algorithms & Data Structures I)** — ch.13–14 built to the golden bar +
+  the **kata runner v1** (the learning engine's in-browser exercise system). **Kickoff decisions
+  (user asked for the best-practice recommendation on both):** (1) **kata execution model = plain
+  JS in a sandboxed, time-boxed Web Worker** (Blob-URL worker; `importScripts` overridden to throw;
+  no DOM; hard 2 s timeout terminates infinite loops — §10), with the kata's **TS signature shown for
+  teaching** and a **JS starter** run for real. Rationale: zero new deps, no multi-MB wasm transpiler
+  (respects the tracked bundle budget), fully offline, and forward-compatible — each kata's
+  prompt/tests/starter is authored once and the exec layer can swap to real-TS transpilation later
+  (S18) without touching content. One source of truth for the assert helpers + case-eval semantics,
+  shared between the worker (inlined) and Node (`runOneCaseSync`, used by `test-katas.ts`). (2) **v1
+  batch = 10 katas focused on P4-so-far** (Big-O + linear structures), growing one part at a time (§6).
+  **ch.13 Big-O & algorithmic thinking** (story: Bachmann coins *O* for *Ordnung*, 1894 → Landau's
+  little-*o*, 1909 → Knuth reclaims it for CS + Ω/Θ + the “omicron” gag, 1976 — all web-verified):
+  count work not seconds, drop constants + keep the dominant term, the growth ladder O(1)→O(n!),
+  best/worst/average, **amortized** (Tarjan 1985, web-verified) via the doubling array; formal corner
+  (O/Ω/Θ definitions + why O-where-you-mean-Θ misleads), doubling-vs-fixed-chunk compare, 4 pitfalls,
+  7 keyPoints, 4 sources. **ch.14 Linear structures** (story: **Hans Peter Luhn's Jan 1953 IBM memo**
+  — hashing-with-chaining *and* among the earliest linked-list references, web-verified): arrays
+  (contiguous, O(1) index, cache-friendly), linked lists (O(1) splice / O(n) find / cache-miss
+  pointer-chase), stacks/queues (LIFO/FIFO, O(1) ends), hash tables (hash→bucket, collisions,
+  chaining vs open addressing, load factor, resize/rehash); formal corner (expected chain length α,
+  open-addressing probes ≈ 1/(1−α)), array-vs-list compare, a senior callout on the good hash as a
+  **security boundary** (hash-flooding → SipHash, ch.32), 4 pitfalls, 7 keyPoints, 4 sources.
+  **1 HERO + 4 micro sims** — `growth-racer` (instruments **real** TS snippets with op-counters:
+  run(n)===formula(n) for O(1)…O(n!), guarded so 2ⁿ/n! never hang; log-scale toggle; curves race as
+  n advances), `amortized-doubling` (per-op spikes at each doubling, running average flattens;
+  totalCost(1000)=2023 < 3N), `array-vs-list-memory` (**reuses ch.8's `runCache` engine** — array
+  hitRate 1−1/lineSize vs list ~0.19, pointer-chase thrash visible on the RAM grid), `hash-collision-lab`
+  (bad vs good hash — **FNV-1a**, verified against 0xE40C292C — × chaining vs linear probing, load-factor
+  slider, rehash), `stack-queue-stepper` (LIFO vs FIFO on one stream). **2 figs** — `complexity-ladder`
+  (the ranked ladder with concrete costs at n=1,000) + `hash-anatomy` (one lookup stepped: key→hash→
+  mod→bucket→chain/probe; the “cat”/“bee” collision is genuinely real). **2 quizzes** (`match-the-O`
+  6 Qs, `where-it-lands` 4 Qs) + **10 interview Qs** (iv-ch13/14, mid→staff). **Kata runner:**
+  `lib/kataSandbox.ts` + `data/katas.ts` (10 katas: binary-search, dynamic-array, dedup-sorted [ch13];
+  stack-impl, queue-ring, is-balanced, hashmap-chaining, two-sum, reverse-list, lru-cache [ch14]) +
+  `study/KataRunner.tsx` + `pages/KatasPage.tsx` (new `#/katas` route + top-nav entry; editor persisted +
+  solved-set in localStorage). **New engines** — `growth-racer/growth.ts`, `amortized-doubling/model.ts`,
+  `array-vs-list-memory/model.ts` (reuses `fast-cpu/cache.ts`), `hash-collision-lab/model.ts`,
+  `stack-queue-stepper/model.ts` — plus **`scripts/test-ch13.ts` (97 checks), `test-ch14.ts`, and
+  `test-katas.ts` (every reference solution passes; every starter fails ≥1 test — 67 cases / 10 katas)**,
+  all wired into `npm test`. registryKeys/registry → **28 sims, 14 figs**; the **qa gate now enforces
+  kata referential integrity** (unique ids, chapter match, exportName+tests present). New **P4 CSS block**
+  in `global.css` (~940 lines, semantic palette, focus ring on the kata editor, reduced-motion inherited)
+  — delegated to a subagent then reviewed. **Adversarial review** (subagent ran every engine
+  independently with hand-computed values + web-verified all history/technical facts + recomputed every
+  quiz index + stress-tested katas with wrong implementations): **zero blocking, zero factual errors,
+  every quiz answer correct, all figure numbers correct**. Three items actioned: (1) **weak test** — the
+  `lru-cache` kata's suite could be fooled by a `put` that updates value but not recency (an intervening
+  `get` masked it); added a discriminating test (update-then-evict, no read between) → now 67 cases; (2)
+  **prose precision** — an interview answer's “1+2+…+n/2 < n” geometric-sum bound is only exact for
+  powers of two (n=1000→1023 copies), softened to “≈ n (< 2n)”; (3) **figure nit** — the O(n!) rung
+  showed 1000!'s digit-count as an exponent (10²⁵⁶⁸), corrected to the magnitude 10²⁵⁶⁷ + “2,568-digit
+  number”. Also added ch32 to ch.14's seeAlso (the hash-flooding paragraph references it). **verify =
+  typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (14 live chapters; 28 sims · 14 figs · 14 quizzes ·
+  68 interview Qs · 10 katas; mandate holds) · test ✓ (11 suites: +test-ch13 97, +test-ch14, +test-katas
+  67) · build ✓** (fresh `dist-s7v`: GrowthRacer 9.1 KB · HashCollisionLab 7.8 · ArrayVsListMemory 6.8 ·
+  HashAnatomy 5.9 · StackQueueStepper 5.8 · AmortizedDoubling 5.2 · ComplexityLadder 4.8 · react-vendor
+  190 KB; `dist-s7*` gitignored, removed cleanly). **INTERACTIVES.md** updated inventory-first (added the
+  two figs + a Katas v1 section; census → 36 figs + kata runner). Note for a future polish pass (S18/S19):
+  the kata data + KatasPage sit in the main index bundle (like the other pages/data modules); if initial
+  load matters, lazy-load the `#/katas` route. NOT sandbox-testable: real-browser interaction pass —
+  **5-min manual QA after deploy** (growth-racer curves race + log toggle + real op-counts; amortized
+  spikes flatten; array-vs-list cache hits vs misses on the grid; hash-collision-lab bad↔good hash and
+  chaining↔probing + rehash; stack-queue LIFO/FIFO; `#/katas`: edit a starter, Run in the worker, watch
+  per-test pass/fail, timeout on an infinite loop, solved ✓ persists; complexity-ladder + hash-anatomy
+  auto-play). **S7 CLOSED pending user commit. Next: S8 — P4 · A&DS II: ch.15 (Trees & heaps — bst-builder,
+  heap-ops, trie-autocomplete) + ch.16 (Sorting & searching — sorting-race HERO) + grow the kata batch.**

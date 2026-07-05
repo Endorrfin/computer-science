@@ -111,12 +111,15 @@
 ### ch.13 — Big-O & algorithmic thinking
 - [HERO] `growth-racer` — O(1)…O(n!) curves race on shared axes for your chosen n; attach to *real running code* (op counters instrument actual TS snippets); log-scale toggle
 - [micro] `amortized-doubling` — dynamic array grows; per-op cost spikes at doublings; running-average line flattens
+- [fig] `complexity-ladder` — the ranked ladder O(1)→O(n!), each rung revealed with a concrete cost at n (the picture to redraw from memory)
 - [quiz] `match-the-O` — match 6 code snippets to their complexity
 
 ### ch.14 — Linear structures
 - [micro] `array-vs-list-memory` — traverse both on the RAM grid from ch.6/8; contiguous strides vs pointer-chasing; cache-hit overlay (cross-link to `cache-sim`)
 - [micro] `hash-collision-lab` — insert keys; hash-fn selector (bad vs good); chaining vs open addressing side-by-side; load-factor slider → watch clustering, trigger rehash
 - [micro] `stack-queue-stepper` — push/pop/enqueue/dequeue with pointer arrows
+- [fig] `hash-anatomy` — one lookup stepped: key → hash → index → bucket (chain walk vs linear probe)
+- [fig] `memory-hierarchy` *(reused from ch.6)* — array locality vs pointer-chasing framed as travel time
 - [quiz] `where-it-lands` — predict the bucket / the probe sequence
 
 ### ch.15 — Trees & heaps
@@ -261,6 +264,27 @@
 
 ---
 
+## Learning engine — Katas (kata runner v1, S7)
+
+In-browser coding exercises with instant tests, run in a **sandboxed, time-boxed Web
+Worker** (Blob-URL worker; no DOM; `importScripts` blocked; hard timeout kills infinite
+loops — CLAUDE.md §10). Each kata carries a prompt, a **TS signature** (shown for teaching),
+a **JS starter**, hidden **tests**, and a **reference solution** locked by
+`scripts/test-katas.ts`. v1 batch (~10) is focused on **P4-so-far** — Big-O reasoning +
+linear structures — and grows one part at a time (§6). Route `#/katas`; per-chapter
+`kataIds` deep-link the relevant ones.
+
+- `binary-search` — index-or-−1, no off-by-one *(ch.13)*
+- `dynamic-array` — growable array with amortized-O(1) push (doubling) *(ch.13/14)*
+- `dedup-sorted` — remove duplicates from a sorted array in place, O(n) two-pointer *(ch.13)*
+- `stack-impl` — a Stack: push/pop/peek/size *(ch.14)*
+- `queue-ring` — a fixed-capacity ring-buffer Queue *(ch.14)*
+- `is-balanced` — balanced brackets via a stack *(ch.14)*
+- `hashmap-chaining` — a hash map with separate chaining: set/get/delete *(ch.14)*
+- `two-sum` — indices that sum to target, one pass with a map *(ch.14)*
+- `reverse-list` — reverse a singly linked list in place *(ch.14)*
+- `lru-cache` — O(1) LRU cache (map + recency order) *(ch.14)*
+
 ## Shared framework (built once at S1, reused ~90 times)
 
 - **`SimShell`** — chrome for every `[HERO]`/`[micro]`: play/pause/step/reset, speed slider,
@@ -278,6 +302,7 @@
 ## Inventory census (S0 baseline)
 
 **17 HERO** (incl. stack-map + grand-traversal; P4 carries 3, P1/P2/P6 carry 2 each) ·
-**65 micro** · **34 fig** · **10 boss** (each with a badge) · quizzes in every chapter
+**65 micro** · **36 fig** (+complexity-ladder, +hash-anatomy at S7) · **10 boss** (each with
+a badge) · **kata runner** (10 katas at v1, S7) · quizzes in every chapter
 ≈ **126+ touchables**. Census re-run on every change; `npm run qa` enforces per-chapter
 minimums (see CLAUDE.md §6 mandate).

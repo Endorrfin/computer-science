@@ -544,6 +544,97 @@ export const INTERVIEW: InterviewQ[] = [
       "**MAJOR.MINOR.PATCH**: patch = backward-compatible bug fixes, minor = backward-compatible new features, major = **breaking** changes. It's a contract that lets consumers auto-upgrade patches/minors safely and brace for majors — the basis for lockfiles and version ranges.\n" +
       "Where it breaks: compatibility is about **behavior**, not just the type signature, so a 'patch' can still break you (a changed default, a tightened validation, a perf regression). Transitive dependencies can pull incompatible versions; and plenty of projects practice 'semver in name only'. So treat it as a strong hint, not a guarantee — pin versions, keep a lockfile, and let tests be the real safety net.",
   },
+  {
+    id: "iv-ch13-1",
+    chapterId: "ch13",
+    level: "mid",
+    q: "What does it mean, precisely, to say an algorithm is O(n)?",
+    a:
+      "There exist constants c > 0 and n₀ such that for every input of size n ≥ n₀, the number of basic operations is ≤ c·n — an **upper bound** on growth. Informally: the work grows *at most* linearly, so doubling the input at most doubles the work.\n" +
+      "Two things interviewers listen for: it discards **constant factors** (2n and 100n are both O(n)) and **lower-order terms** (n + log n is O(n)), and it's a statement about **large** n — it promises nothing about tiny inputs, where the dropped terms may dominate.",
+  },
+  {
+    id: "iv-ch13-2",
+    chapterId: "ch13",
+    level: "mid",
+    q: "Best, worst, and average case — explain the difference with one example.",
+    a:
+      "Same algorithm, three inputs. **Linear search** over n elements: **best** O(1) (target is first), **worst** O(n) (last or absent), **average** ≈ n/2 = O(n). Worst-case is the guarantee you can promise a caller; average-case needs an assumption about how inputs are distributed.\n" +
+      "The classic trap is **quicksort**: O(n log n) average but O(n²) worst — so 'quicksort is n log n' is an *average*-case claim, and a bad pivot rule or adversarial input triggers the quadratic case.",
+  },
+  {
+    id: "iv-ch13-3",
+    chapterId: "ch13",
+    level: "senior",
+    q: "Explain amortized analysis using a dynamic array's push. Why O(1) amortized when one push can be O(n)?",
+    a:
+      "A growable array appends in O(1) until it fills, then must allocate a bigger block and **copy everything** — O(n). If capacity **doubles** on each resize, resizes happen at sizes 1, 2, 4, …, so over n pushes the total copying is 1 + 2 + 4 + … ≈ n (a geometric sum that stays below 2n). Total work for n pushes is O(n) → **O(1) per push amortized**.\n" +
+      "The distinction that earns the point: amortized is a **worst-case guarantee over the whole sequence**, not a probabilistic average — it assumes nothing about the inputs. Growing by a fixed +k instead gives ~n/k resizes and Θ(n²) total copying (O(n) amortized) — which is exactly why real vectors multiply rather than add.",
+  },
+  {
+    id: "iv-ch13-4",
+    chapterId: "ch13",
+    level: "senior",
+    q: "O, Ω, Θ — when does using O where you mean Θ actually cause a problem?",
+    a:
+      "O is an upper bound, Ω a lower bound, Θ both (tight). Because O is only an upper bound, calling a linear scan O(n²) is *true* — and useless; the listener can't tell whether you know it's actually Θ(n).\n" +
+      "It bites in **guarantees and comparisons**: 'this sort is O(n²)' doesn't tell a caller if it's usable at scale, while 'Θ(n log n)' does, and 'comparison sorting is Ω(n log n)' states an unavoidable *lower* bound no algorithm beats. Use O for a claimed upper bound, Ω for an inherent floor, Θ when you can pin the growth exactly.",
+  },
+  {
+    id: "iv-ch13-5",
+    chapterId: "ch13",
+    level: "staff",
+    q: "In production an O(n log n) implementation is consistently slower than an O(n²) one. Give three legitimate reasons.",
+    a:
+      "(1) **Small n**: asymptotics describe large inputs; below the crossover the O(n²) algorithm's smaller constant wins — why libraries drop to insertion sort under ~16 elements. (2) **Constants and cache**: the O(n log n) code may allocate and pointer-chase, wrecking its constant factor and cache behavior (ch.8), while the O(n²) one scans contiguous memory. (3) **Input distribution**: if real inputs are nearly-sorted or tiny-range, the 'O(n²)' algorithm may hit its *best* case (insertion sort is O(n) on nearly-sorted data) while the O(n log n) one pays full cost regardless.\n" +
+      "The lesson: Big-O predicts the *eventual* winner; profiling decides the present one.",
+  },
+  {
+    id: "iv-ch14-1",
+    chapterId: "ch14",
+    level: "mid",
+    q: "Array vs linked list — when would you actually choose each?",
+    a:
+      "**Array** by default: O(1) indexing, no per-element overhead, and cache-friendly scans make it faster for almost all traversal, search, and random-access work — even where a list's insert complexity looks better on paper.\n" +
+      "**Linked list** only when you're **constantly splicing at positions you already hold** — an LRU's recency list, a free list, editing the middle of a huge sequence — and you rarely need to index. Naming the **cache** cost of pointer-chasing, not just the Big-O, is what marks a senior answer.",
+  },
+  {
+    id: "iv-ch14-2",
+    chapterId: "ch14",
+    level: "mid",
+    q: "How does a hash table get O(1) lookup, and what makes it degrade to O(n)?",
+    a:
+      "A **hash function** maps the key to a bucket index, so a lookup goes *straight* to the bucket instead of searching — O(1) **average** under good hashing with a bounded load factor.\n" +
+      "It slides toward **O(n)** when the **hash is bad** (ignores most of the key, collapsing keys into a few buckets), the **load factor** climbs (long chains / clustered probes), or an **adversary** crafts colliding keys. The defenses: a good (ideally randomized) hash and **resizing** to keep the load factor low.",
+  },
+  {
+    id: "iv-ch14-3",
+    chapterId: "ch14",
+    level: "senior",
+    q: "Chaining vs open addressing — the trade-offs.",
+    a:
+      "**Chaining** (a list per bucket): simple, tolerates load factor > 1, trivial deletion, degrades gracefully — but each node is a separate allocation, so it pointer-chases with poor locality and per-node overhead.\n" +
+      "**Open addressing** (probing; all entries in the table array): cache-friendly, no per-node pointers — but very sensitive to load factor (expected probes ≈ 1/(1−α), exploding as α→1), suffers **clustering**, needs tombstones for deletion, and must resize earlier (α ≈ 0.7). Rule of thumb: open addressing for speed and locality at low α; chaining for simplicity and robustness under high or unpredictable load.",
+  },
+  {
+    id: "iv-ch14-4",
+    chapterId: "ch14",
+    level: "senior",
+    q: "What is load factor, why resize, and what does resizing cost?",
+    a:
+      "Load factor **α = n/m** (entries over buckets) measures fullness; as it rises, chains lengthen and probes cluster, so operations drift from O(1) toward O(n). To hold O(1), the table **resizes** — allocate a bigger bucket array (usually ×2) and **rehash every entry** — when α crosses a threshold (~0.75 chained, ~0.7 open).\n" +
+      "A single resize is **O(n)**, but because capacity doubles, resizes are rare enough to be **O(1) amortized** across insertions (the dynamic-array argument, ch.13). Worth flagging: that amortization hides a **latency spike** on the resize itself — a problem for real-time paths, where you pre-size or use an incremental-rehash table.",
+  },
+  {
+    id: "iv-ch14-5",
+    chapterId: "ch14",
+    level: "staff",
+    q: "Design an LRU cache with O(1) get and put. What structures, and why each?",
+    a:
+      "A **hash map** plus a **doubly linked list**. The map gives O(1) key → node lookup; the list keeps nodes in **recency order**, most-recent at the head.\n" +
+      "**get(k)**: map-lookup the node, splice it to the head, return its value — all O(1). **put(k,v)**: insert/refresh at the head; if size exceeds capacity, evict the **tail** (least-recently-used) and delete its key from the map — O(1). It must be *doubly* linked because moving or evicting an arbitrary node in O(1) needs its predecessor pointer.\n" +
+      "This is the whole chapter in one design: the array/list/hash trade-offs composed so every operation is O(1). (It's also a kata — build it.)",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

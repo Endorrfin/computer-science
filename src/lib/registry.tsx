@@ -35,6 +35,12 @@ const sims: Record<SimKey, LazyComp> = {
   "call-stack-viz": lazy(() => import("../components/sims/call-stack-viz/CallStackViz.tsx")),
   "compiler-pipeline": lazy(() => import("../components/sims/compiler/CompilerPipeline.tsx")),
   "dependency-blast": lazy(() => import("../components/sims/dependency-blast/DependencyBlast.tsx")),
+  // P4 · Algorithms & Data Structures
+  "growth-racer": lazy(() => import("../components/sims/growth-racer/GrowthRacer.tsx")),
+  "amortized-doubling": lazy(() => import("../components/sims/amortized-doubling/AmortizedDoubling.tsx")),
+  "array-vs-list-memory": lazy(() => import("../components/sims/array-vs-list-memory/ArrayVsListMemory.tsx")),
+  "hash-collision-lab": lazy(() => import("../components/sims/hash-collision-lab/HashCollisionLab.tsx")),
+  "stack-queue-stepper": lazy(() => import("../components/sims/stack-queue-stepper/StackQueueStepper.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -53,6 +59,9 @@ const figs: Record<FigKey, LazyComp> = {
   "paradigm-lens": lazy(() => import("../components/figures/ParadigmLens.tsx")),
   "jit-tiers": lazy(() => import("../components/figures/JitTiers.tsx")),
   "test-pyramid": lazy(() => import("../components/figures/TestPyramid.tsx")),
+  // P4 · Algorithms & Data Structures
+  "complexity-ladder": lazy(() => import("../components/figures/ComplexityLadder.tsx")),
+  "hash-anatomy": lazy(() => import("../components/figures/HashAnatomy.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

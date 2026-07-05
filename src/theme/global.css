@@ -4478,3 +4478,931 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============ P4 · Algorithms & Data Structures (S7) ============ */
+/* Accent var(--accent) = #34D399 (--p4), set on each sim root by SimShell
+   (GrowthRacer / AmortizedDoubling / ArrayVsListMemory / HashCollisionLab /
+   StackQueueStepper); the kata UI uses --p4 directly. Semantic palette per
+   §7: data/keys/values = cyan (--sem-data), control/current/probe = orange
+   (--sem-control), memory cells & slots & pointer chase = violet
+   (--sem-state), cache HIT / solved / done = green (--sem-ok), MISS / error /
+   underflow = red (--sem-err). Mono for every op/probe/index/count readout.
+   Mirrors the P2/P3 card look (surface panels, 1px --line borders, ~8-10px
+   radius, color-mix accent tints, 6-8px chips). Reduced-motion handled
+   globally (see the @media block above). All shared state modifiers
+   (.on/.active/.home/.collide/.cur/.probe/.landed/.full/.hot/.enter/.done/
+   .uf/.top/.front/.back/.data/.arrow/.filled/.newest/.copied/.off/.ok/.err/
+   .selected) are scoped under a P4 parent so earlier parts are untouched. */
+
+/* ---------- GrowthRacer HERO (six complexity classes racing) ---------- */
+.gr-ctl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.gr-chart {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.gr-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.gr-code {
+  flex: 1 1 300px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.gr-code-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--tx2);
+  margin-bottom: 8px;
+}
+.gr-code-head b {
+  color: var(--tx);
+}
+.gr-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+.gr-bigo {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--sem-data);
+  background: none;
+  border: none;
+  padding: 0;
+}
+.gr-measure {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+.gr-measure b {
+  color: var(--accent, var(--p4));
+}
+.gr-snippet {
+  margin: 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.gr-snippet code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--tx2);
+  background: none;
+  border: none;
+  padding: 0;
+}
+.gr-legend {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gr-legrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  color: var(--tx2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.gr-legrow:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 45%, var(--line));
+}
+.gr-legrow.on {
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p4)) 12%, var(--s2));
+}
+.gr-legname {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gr-legops {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx);
+}
+.gr-legops.off {
+  color: var(--sem-err);
+}
+
+/* ---------- AmortizedDoubling (dynamic array, cost bars) ---------- */
+.ad-blurb {
+  font-size: 13.5px;
+  margin: 0 0 14px;
+}
+.ad-array {
+  margin: 4px 0 16px;
+}
+.ad-arr-lbl {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  margin-bottom: 6px;
+}
+.ad-arr-lbl b {
+  color: var(--tx2);
+}
+.ad-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.ad-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 32px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+/* filled slot holds a value → violet (memory/state) */
+.ad-cell.filled {
+  color: var(--sem-state);
+  border-color: color-mix(in srgb, var(--sem-state) 45%, var(--line));
+  background: color-mix(in srgb, var(--sem-state) 12%, var(--s2));
+}
+/* the just-written newest element → orange (active) */
+.ad-cell.newest {
+  color: var(--sem-control);
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 18%, var(--s2));
+}
+/* prefix copied during a resize → cyan (data moving) flash */
+.ad-cell.copied {
+  border-color: color-mix(in srgb, var(--sem-data) 60%, var(--line));
+  background: color-mix(in srgb, var(--sem-data) 20%, var(--s2));
+  animation: ad-copy-flash 0.5s ease;
+}
+@keyframes ad-copy-flash {
+  0%, 100% { box-shadow: none; }
+  45% { box-shadow: 0 0 0 3px var(--sem-data); }
+}
+.ad-chart {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.ad-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+}
+.ad-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ad-mv {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+/* running average → violet (state line), amortized bound → the part accent */
+.ad-mv.ad-avg {
+  color: var(--sem-state);
+}
+.ad-mv.ad-bound {
+  color: var(--accent, var(--p4));
+}
+.ad-ml {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tx3);
+}
+
+/* ---------- ArrayVsListMemory (cache HIT/MISS over RAM grid) ---------- */
+.avl-ctl {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.avl-blurb {
+  font-size: 13.5px;
+  margin: 0 0 14px;
+}
+.avl-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.avl-lbl {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+.avl-lbl b {
+  color: var(--tx2);
+}
+.avl-hit-t {
+  color: var(--sem-ok);
+}
+.avl-miss-t {
+  color: var(--sem-err);
+}
+.avl-grid {
+  display: block;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px;
+}
+.avl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  font-size: 12px;
+}
+.avl-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.avl-sw {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  flex: none;
+}
+/* legend swatches: in-structure = cyan, hit = green, miss = red, next = violet */
+.avl-sw.data {
+  border-color: color-mix(in srgb, var(--sem-data) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-data) 22%, var(--surface));
+}
+.avl-sw.ok {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 26%, var(--surface));
+}
+.avl-sw.err {
+  border-color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 26%, var(--surface));
+}
+.avl-sw.arrow {
+  border-color: var(--sem-state);
+  background: color-mix(in srgb, var(--sem-state) 30%, var(--surface));
+}
+.avl-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+}
+.avl-verdict {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--tx3);
+}
+.avl-verdict.hit {
+  color: var(--sem-ok);
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 12%, var(--surface));
+}
+.avl-verdict.miss {
+  color: var(--sem-err);
+  border-color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 10%, var(--surface));
+}
+.avl-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.avl-mv {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+/* per-metric accents: hits = green, misses = red */
+.avl-mv.ok {
+  color: var(--sem-ok);
+}
+.avl-mv.err {
+  color: var(--sem-err);
+}
+.avl-ml {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tx3);
+}
+.avl-compare {
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+.avl-compare .avl-ml {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---------- HashCollisionLab (chaining vs linear probing) ---------- */
+.hcl-ctl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.hcl-blurb {
+  font-size: 13.5px;
+  margin: 0 0 14px;
+}
+.hcl-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.hcl-panel {
+  flex: 1 1 300px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.hcl-lbl {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  margin-bottom: 10px;
+}
+.hcl-lbl b {
+  color: var(--tx2);
+}
+/* a rehash just fired → the part accent flag */
+.hcl-rehash {
+  color: var(--accent, var(--p4));
+  font-weight: 700;
+}
+/* --- chaining: a column of buckets, each growing a list --- */
+.hcl-buckets {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hcl-bucket {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  transition: border-color 0.15s, background 0.15s;
+}
+/* the bucket the current key hashed to → orange (active/home) */
+.hcl-bucket.home {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 12%, var(--s2));
+}
+/* a bucket holding more than one key → collision (red) */
+.hcl-bucket.collide {
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+}
+.hcl-bidx {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  width: 20px;
+  text-align: right;
+  flex: none;
+}
+.hcl-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  min-height: 22px;
+}
+.hcl-nil {
+  color: var(--tx3);
+  font-family: var(--font-mono);
+}
+/* a stored key/value → cyan (data) chip */
+.hcl-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-data) 40%, var(--line));
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+/* the key inserted this step → orange (current) */
+.hcl-node.cur {
+  color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 16%, var(--surface));
+  border-color: var(--sem-control);
+}
+.hcl-link {
+  color: var(--tx3);
+  font-style: normal;
+  margin-left: 2px;
+}
+/* --- linear probing: one flat slot array; runs are visible clusters --- */
+.hcl-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.hcl-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  width: 40px;
+  min-height: 40px;
+  padding: 3px 2px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--s2);
+  transition: border-color 0.15s, background 0.15s;
+}
+/* an occupied memory slot → violet (state) */
+.hcl-slot.full {
+  border-color: color-mix(in srgb, var(--sem-state) 45%, var(--line));
+  background: color-mix(in srgb, var(--sem-state) 12%, var(--s2));
+}
+/* the slot the key hashed to (its home) → orange */
+.hcl-slot.home {
+  border-color: var(--sem-control);
+}
+/* a slot walked during the probe sequence → orange dashed ring */
+.hcl-slot.probe {
+  border-color: var(--sem-control);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sem-control) 55%, transparent);
+}
+/* where the key finally landed → green (done/placed) */
+.hcl-slot.landed {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 16%, var(--s2));
+}
+.hcl-sidx {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--tx3);
+}
+.hcl-sval {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sem-data);
+  min-height: 1em;
+}
+.hcl-slot.full .hcl-sval {
+  color: var(--sem-state);
+}
+.hcl-slot.landed .hcl-sval {
+  color: var(--sem-ok);
+}
+.hcl-probehint {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  margin: 10px 0 0;
+  color: var(--tx2);
+  border-left: 3px solid var(--sem-control);
+  padding: 2px 12px;
+}
+/* --- clustering metrics footer --- */
+.hcl-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.hcl-mcol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hcl-mhead {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx3);
+}
+.hcl-mrow {
+  font-size: 13px;
+  color: var(--tx2);
+}
+.hcl-mrow b {
+  font-family: var(--font-mono);
+  color: var(--tx);
+}
+/* healthy stat = green, danger (long chain/run) = red */
+.hcl-mrow b.ok {
+  color: var(--sem-ok);
+}
+.hcl-mrow b.err {
+  color: var(--sem-err);
+}
+.hcl-rehash-note {
+  font-size: 13px;
+  color: var(--tx2);
+  border: 1px solid color-mix(in srgb, var(--accent, var(--p4)) 40%, var(--line));
+  border-left: 3px solid var(--accent, var(--p4));
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--accent, var(--p4)) 6%, var(--surface));
+  padding: 10px 14px;
+  margin: 16px 0 0;
+}
+
+/* ---------- StackQueueStepper (LIFO vs FIFO) ---------- */
+.sq-blurb {
+  font-size: 13.5px;
+  margin: 0 0 14px;
+}
+.sq-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.sq-panel {
+  flex: 1 1 240px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 14px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+/* the structure this op touched → the part accent highlight */
+.sq-panel.active {
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 50%, var(--line));
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent, var(--p4)) 12%, transparent);
+}
+.sq-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.sq-name {
+  font-family: var(--font-head);
+  font-weight: 600;
+  color: var(--tx);
+}
+.sq-rule {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+/* --- stack: grows upward at the TOP --- */
+.sq-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sq-ptr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  min-height: 1.2em;
+}
+.sq-ptr.top {
+  color: var(--sem-control);
+}
+.sq-cells {
+  display: flex;
+  gap: 4px;
+}
+.sq-cells.stackcells {
+  flex-direction: column;
+}
+.sq-cells.queuecells {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.sq-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  padding: 8px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-s);
+  text-align: center;
+}
+/* a cell holds a value → cyan (data) */
+.sq-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  height: 34px;
+  padding: 0 10px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-data) 40%, var(--line));
+  border-radius: 6px;
+  transition: border-color 0.15s, background 0.15s;
+}
+/* the live end (stack top / queue front & back) → orange (active) */
+.sq-cell.top,
+.sq-cell.front,
+.sq-cell.back {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 14%, var(--surface));
+  color: var(--sem-control);
+}
+/* a cell that just entered this step → brief accent pop */
+.sq-cell.enter {
+  animation: sq-enter 0.32s ease;
+}
+@keyframes sq-enter {
+  from { box-shadow: 0 0 0 3px color-mix(in srgb, var(--sem-control) 55%, transparent); }
+  to { box-shadow: none; }
+}
+.sq-base {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+  margin-top: 2px;
+}
+/* --- queue: grows rightward; in at back, out at front --- */
+.sq-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sq-qends {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.sq-end {
+  transition: color 0.15s;
+}
+/* the end that just moved → orange (active) */
+.sq-end.hot {
+  color: var(--sem-control);
+  font-weight: 700;
+}
+/* --- op tape (the shared operation stream) --- */
+.sq-tape {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.sq-op {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  opacity: 0.7;
+  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+}
+.sq-op b {
+  color: var(--tx);
+}
+/* op targets the stack (violet-leaning) vs the queue (cyan-leaning) */
+.sq-op.stackop {
+  border-left: 3px solid color-mix(in srgb, var(--sem-state) 65%, var(--line));
+}
+.sq-op.queueop {
+  border-left: 3px solid color-mix(in srgb, var(--sem-data) 65%, var(--line));
+}
+/* an op already applied → full opacity */
+.sq-op.done {
+  opacity: 1;
+  color: var(--tx2);
+}
+/* the current op → the part accent */
+.sq-op.cur {
+  opacity: 1;
+  color: var(--accent, var(--p4));
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p4)) 12%, var(--s2));
+}
+.sq-op.cur b {
+  color: var(--accent, var(--p4));
+}
+/* an underflow (no-op on empty) → red flag */
+.sq-op.uf {
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  color: var(--sem-err);
+}
+.sq-op.uf em {
+  font-style: normal;
+  color: var(--sem-err);
+}
+.sq-underflow {
+  font-size: 13px;
+  color: var(--tx2);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 40%, var(--line));
+  border-left: 3px solid var(--sem-err);
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--sem-err) 6%, var(--surface));
+  padding: 10px 14px;
+  margin: 16px 0 0;
+}
+
+/* ---------- Kata UI (runner + hub) ---------- */
+/* KataRunner/KatasPage set many inline styles keyed to the theme vars; these
+   rules provide the layout skeleton and the pieces inline styles do NOT cover
+   (notably the editor's focus ring and hover affordances). Where an inline
+   style exists it wins on specificity — intentional; we don't fight it. */
+.kata-runner {
+  max-width: 860px;
+}
+.kata-solved-badge {
+  color: var(--sem-ok);
+}
+.kata-prompt {
+  color: color-mix(in srgb, var(--tx) 92%, var(--tx2));
+}
+/* the code editor: monospace, dark, readable, with a visible focus ring */
+.kata-editor {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--tx);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  resize: vertical;
+  tab-size: 2;
+  transition: border-color 0.15s;
+}
+.kata-editor:hover {
+  border-color: color-mix(in srgb, var(--p4) 40%, var(--line));
+}
+.kata-editor:focus,
+.kata-editor:focus-visible {
+  outline: 2px solid var(--p4);
+  outline-offset: 2px;
+  border-color: var(--p4);
+}
+.kata-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.kata-results {
+  margin-top: 16px;
+}
+/* verdict banner: all-pass = green, otherwise red (inline styles set fills) */
+.kata-verdict {
+  font-weight: 600;
+}
+.kata-error {
+  font-family: var(--font-mono);
+  color: var(--sem-err);
+}
+.kata-caselist {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.kata-case {
+  border-left: 3px solid var(--line);
+}
+/* a passing case = green rail, a failing case = red rail */
+.kata-case.ok {
+  border-left-color: var(--sem-ok);
+}
+.kata-case.fail {
+  border-left-color: var(--sem-err);
+}
+.kata-solution {
+  margin-top: 16px;
+}
+/* --- hub layout (master list + detail) --- */
+.kata-layout {
+  align-items: start;
+}
+.kata-list {
+  min-width: 0;
+}
+.kata-group h2 {
+  color: var(--tx2);
+}
+.kata-listitem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--tx);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  transition: border-color 0.15s, background 0.15s;
+}
+.kata-listitem:hover {
+  border-color: color-mix(in srgb, var(--p4) 45%, var(--line));
+}
+/* the selected kata → the part accent */
+.kata-listitem.selected {
+  border-color: var(--p4);
+  background: color-mix(in srgb, var(--p4) 12%, var(--surface));
+}
+.kata-diff {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tx3);
+}
+.kata-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0 6px;
+}
+.kata-detail {
+  min-width: 0;
+}
+
+/* P4 responsive: collapse the side-by-side sim panels on narrow screens */
+@media (max-width: 640px) {
+  .hcl-panels,
+  .sq-panels {
+    flex-direction: column;
+  }
+}
+@media (max-width: 620px) {
+  .kata-layout {
+    grid-template-columns: 1fr;
+  }
+}

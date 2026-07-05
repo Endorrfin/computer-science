@@ -2060,6 +2060,283 @@ const ch12: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.13 — Big-O & algorithmic thinking  (built in S7)
+// ---------------------------------------------------------------
+const ch13: Chapter = {
+  id: "ch13",
+  part: "p4",
+  order: 15,
+  title: "Big-O & algorithmic thinking",
+  tagline: "Two programs can both be correct and yet one finishes before lunch while the other outlives the sun — Big-O is how you tell them apart before you ever run them",
+  readMins: { foundations: 20, senior: 32 },
+  storyHook: {
+    md:
+      "1894. The number theorist **Paul Bachmann**, writing about how error terms *grow*, needs a compact way to say “no bigger than, up to a constant.” He writes a capital **O** — for *Ordnung*, German for “order” — and a notation is born. **Edmund Landau** adopts it in 1909 and adds a little-*o*; together they become the “Landau symbols.” For seventy years it lives in pure mathematics. Then, in 1976, **Donald Knuth** — building the science of algorithm analysis — reclaims it for computer science, pins down the companion **Ω** and **Θ**, and half-jokingly rechristens the letter a capital *omicron*. A tool for bounding error terms became the way every programmer talks about speed. This chapter is that tool, made touchable.",
+  },
+  assumes: [
+    {
+      chapterId: "ch10",
+      oneLiner: "You can read code with loops and function calls. Here the question isn't what a program computes, but how the amount of work it does grows as the input gets bigger.",
+    },
+  ],
+  mentalModel:
+    "Ignore the hardware, the language, and the constant factors. Count how the number of basic operations grows as the input size n grows, and keep only the fastest-growing term. That growth class — O(1), O(log n), O(n), O(n log n), O(n²), O(2ⁿ), O(n!) — is the algorithm's fingerprint. On a big enough input the class always dominates the constant factor, so a better class beats a faster machine.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Parts 1–3 gave you a computer and the means to program it. But knowing *how* to express a computation says nothing about whether it will finish in time. Two programs can both be correct and differ by a factor of a billion on the same input. This part is about that other axis — **efficiency** — and it opens with the single most useful idea in it: a way to predict how an algorithm scales **without running it**, without a stopwatch, and without caring what machine you're on.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Count work, not seconds\n" +
+        "Why not just time it? Because a stopwatch measures your laptop, your language, the JIT (ch.11), and today's input — not the algorithm. Change any of those and the number moves. So instead we **count basic operations** as a function of the input size **n**, then do two ruthless simplifications: **drop constant factors** (2n and 100n both scale like n) and **keep only the fastest-growing term** (n² + n is just n² once n is large). What's left is the *growth class* — and it's a property of the algorithm itself. Pick an algorithm and a size, and race the classes on real, instrumented op-counts:",
+    },
+    { kind: "sim", sim: "growth-racer" },
+    {
+      kind: "prose",
+      md:
+        "## The ladder of growth\n" +
+        "A handful of classes cover almost everything you'll meet. **O(1)** constant — a hash lookup or array index, the same cost no matter how big the data. **O(log n)** logarithmic — binary search, halving the problem each step; a million items in ~20 probes. **O(n)** linear — one scan. **O(n log n)** — the good sorts (ch.16), a scan done log-n times. **O(n²)** quadratic — nested loops, every pair. **O(2ⁿ)** exponential — trying every subset. **O(n!)** factorial — every ordering. The last two are walls: they're fine at n = 10 and hopeless at n = 100.",
+    },
+    { kind: "figure", fig: "complexity-ladder", caption: "The ladder to redraw from memory: each rung with a concrete cost at n = 1,000. The jump from n² to 2ⁿ is the cliff between “slow” and “impossible.”" },
+    {
+      kind: "prose",
+      md:
+        "## Best, worst, and average\n" +
+        "One algorithm can have three different costs depending on the input. **Best case** is the lucky input (linear search finds it first — O(1)). **Worst case** is the adversarial one (it's last, or absent — O(n)); this is the **guarantee** you can promise a caller. **Average case** needs an assumption about the distribution of inputs, and can differ sharply: **quicksort** is O(n log n) on average but O(n²) on its worst input. When someone says “quicksort is n log n,” they mean *average*; the honest full answer names all three.",
+    },
+    { kind: "quiz", quiz: "match-the-O" },
+    {
+      kind: "prose",
+      md:
+        "## Amortized: paying for the occasional expensive op\n" +
+        "Sometimes *most* operations are cheap and a *rare* one is expensive — and averaging them over the whole sequence gives a guarantee that neither best- nor worst-case captures. The canonical example is the **growable array** (ch.14). Appending is normally O(1), but when it fills it must **allocate a bigger block and copy everything** — O(n). If you double the capacity each time, those expensive copies get so rare that the cost *per push, averaged over any sequence*, is **O(1) amortized**. Watch the per-op spikes at each doubling, and the running average flatten:",
+    },
+    { kind: "sim", sim: "amortized-doubling" },
+    {
+      kind: "compare",
+      a: "Double the capacity (×2)",
+      b: "Grow by a fixed chunk (+k)",
+      rows: [
+        ["Resizes over n pushes", "~log₂ n (rare)", "~n/k (frequent)"],
+        ["Total elements copied", "~n (a geometric sum)", "~n²/2k (an arithmetic sum)"],
+        ["Amortized cost per push", "O(1)", "O(n)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — O, Ω, Θ, and why the difference matters",
+      md:
+        "**f(n) = O(g(n))** means there exist constants c > 0 and n₀ such that f(n) ≤ c·g(n) for all n ≥ n₀ — an **upper bound** (g grows *at least* as fast as f). **Ω(g)** is the mirror **lower bound**; **Θ(g)** is both at once — a **tight** bound. Little-**o** is a strict upper bound (f becomes negligible against g).\n" +
+        "The trap: O is *only* an upper bound, so a linear scan is O(n), O(n²), and O(2ⁿ) — all technically true, only the first useful. Say **Θ(n)** when you mean “grows exactly like n.” **Amortized** analysis (Robert Tarjan, 1985) is a separate axis: it bounds the *worst-case average over a sequence* of operations — not a probabilistic average, but a guarantee that any n operations together cost O(n), so each is O(1) amortized.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Constants and cache still decide real races",
+      lens: "senior",
+      md:
+        "Big-O throws away exactly the constant factor and the memory-access reality that ch.8 spent a whole chapter on. For small n, a Θ(n²) algorithm with a tiny constant and perfect cache locality routinely beats a Θ(n log n) one that pointer-chases — which is why production sorts (ch.16) drop to insertion sort below ~16 elements, and why an array can outrun a “better” linked list (ch.14). Big-O tells you who wins *eventually*; the constant tells you *where* eventually starts.",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Asymptotic means eventually",
+      md:
+        "Every Big-O statement is about behavior as n → ∞. For the n in front of you today, the lower-order terms and constants you dropped may dominate. This is not a licence to ignore Big-O — a worse class *will* catch up and bury you as data grows — but it is a reminder to know your actual n, and to measure when the classes are close.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now rank algorithms by how they scale, and spot the difference between a program that works and one that works *at scale*. But algorithms don't run in a vacuum — they run over **data structures**, and each structure makes some operations cheap and others expensive for concrete, physical reasons. ch.14 starts with the linear ones — arrays, lists, stacks, queues, and the near-magical hash table — and shows where each of these Big-O costs actually comes from.",
+    },
+  ],
+  keyPoints: [
+    "Big-O measures growth, not time — count basic operations as a function of input size n, drop constant factors, and keep only the fastest-growing term; the result is a property of the algorithm, not the machine.",
+    "On a big enough input the growth class always wins — an O(log n) algorithm on a slow machine eventually beats an O(n²) one on a fast machine; choosing a better class beats buying better hardware.",
+    "Know the ladder, best to worst — O(1) < O(log n) < O(n) < O(n log n) < O(n²) < O(2ⁿ) < O(n!), and a real example of each; the step from n² to 2ⁿ is the cliff from slow to impossible.",
+    "Best, worst, and average are different questions — worst-case is the guarantee you can promise; average-case needs an assumption about input distribution (quicksort is O(n log n) average but O(n²) worst).",
+    "Amortized is not average-case — it spreads a few expensive operations over a whole sequence with a worst-case guarantee, which is why a growable array's push is O(1) amortized even though the doubling copy is O(n).",
+    "Big-O is an upper bound; Θ is tight — calling a linear scan O(n²) is true but useless; use Θ(n) when you mean it grows exactly like n, and Ω for a lower bound.",
+    "Asymptotics hide constants and cache — for small n the dropped constant factor and memory locality (ch.8) can dominate, so real libraries switch to a simpler algorithm below a size threshold.",
+  ],
+  pitfalls: [
+    {
+      title: "Optimizing the constant instead of the class",
+      body: "Shaving instructions off a loop body speeds up a constant factor; if the algorithm is O(n²), a better class dwarfs any such win the moment the data grows. Find the dominant term first, then optimize inside it.",
+      lens: "both",
+    },
+    {
+      title: "Confusing amortized with average-case",
+      body: "Amortized analysis is a worst-case guarantee spread over a sequence of operations — it assumes nothing about the distribution of inputs. Average-case does, and can be wrong if your inputs are adversarial. They answer different questions; don't swap them.",
+      lens: "senior",
+    },
+    {
+      title: "Reading Big-O as a promise of speed",
+      body: "O() describes growth as n → ∞, not the wall-clock time for your actual n. For small inputs the terms and constants you dropped may dominate, and two algorithms in the same class can differ 100×. When it matters and the classes are close, measure.",
+      lens: "both",
+    },
+    {
+      title: "Adding when you should multiply (and vice-versa)",
+      body: "Two loops one after another are O(n) + O(n) = O(n); one loop nested inside another is O(n) × O(n) = O(n²). Mis-reading sequential as nested (or the reverse) is the most common complexity error in code review.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch13-1", "iv-ch13-2", "iv-ch13-3", "iv-ch13-4", "iv-ch13-5"],
+  kataIds: ["binary-search", "dynamic-array", "dedup-sorted"],
+  seeAlso: ["ch8", "ch14", "ch16", "ch21"],
+  sources: [
+    { title: "Big O notation — Bachmann (1894), Landau, and Knuth's reintroduction to CS (Wikipedia)", url: "https://en.wikipedia.org/wiki/Big_O_notation" },
+    { title: "Donald Knuth, “Big Omicron and big Omega and big Theta,” ACM SIGACT News (1976)", url: "https://dl.acm.org/doi/10.1145/1008328.1008329" },
+    { title: "Robert Tarjan, “Amortized Computational Complexity,” SIAM J. Alg. Disc. Meth. (1985)", url: "https://epubs.siam.org/doi/10.1137/0606031" },
+    { title: "Big-O Cheat Sheet — time/space complexity of common data structures and algorithms", url: "https://www.bigocheatsheet.com/" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.14 — Linear structures  (built in S7)
+// ---------------------------------------------------------------
+const ch14: Chapter = {
+  id: "ch14",
+  part: "p4",
+  order: 16,
+  title: "Linear structures",
+  tagline: "Arrays, linked lists, stacks, queues and hash tables — the containers you reach for a hundred times a day, and the memory-layout reasons each is fast at some things and slow at others",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "January 1953. At IBM, **Hans Peter Luhn** writes an internal memo on a problem that sounds mundane and turns out to be foundational: how do you find a record *fast* when the keys are scattered? His idea is to run the key through a function that spits out a **bucket** number, and store the record there — so a lookup goes *straight* to the bucket instead of searching. When two keys land in the same bucket, he strings them together in a little chain. In a handful of pages Luhn sketched two of this chapter's stars at once: the **hash table** (with chaining) and the **linked list**. Seventy years later they're in every program you write. This chapter is that memo, made touchable.",
+  },
+  assumes: [
+    {
+      chapterId: "ch6",
+      oneLiner: "Memory is a huge array of numbered cells, and reading or writing a cell by its address takes the same small constant time no matter which cell it is.",
+    },
+  ],
+  mentalModel:
+    "A data structure is a deal: you pick a memory layout that makes the operations you care about fast, and pay for it on the ones you don't. An array is one contiguous block — instant indexing and cache-friendly scans, but costly middle inserts. A linked list scatters nodes joined by pointers — cheap splicing, but pointer-chasing that thrashes the cache and no way to jump to the i-th item. Stacks (LIFO) and queues (FIFO) deliberately restrict access to make intent clear and both ends O(1). A hash table trades a little space and a hash function for near-O(1) lookup by key.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "ch.13 gave you the language of cost; this chapter gives you the things that cost. Every operation on these structures has one of the Big-O prices you just learned — and, crucially, that price is not arbitrary. It falls straight out of **how the structure sits in memory** (ch.6) and **how the cache treats that layout** (ch.8). Get the layout in your head and the complexities stop being facts to memorize and become things you can *derive*.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Arrays: contiguous, and instant to index\n" +
+        "An **array** is n elements laid **back-to-back** from a base address. Because they're contiguous and equal-sized, element *i* lives at exactly `base + i × size` — one multiply-add, so **indexing is O(1)** for any i. Scanning is even better than that arithmetic suggests: a single cache line drags in several neighbours at once (ch.8), so a linear walk is about as fast as memory gets. The bill comes due on **structural change** — inserting or deleting in the middle must **shift every following element** (O(n)), and growing past the block means allocating a bigger one and copying (the amortized doubling of ch.13).",
+    },
+    { kind: "sim", sim: "array-vs-list-memory" },
+    {
+      kind: "prose",
+      md:
+        "## Linked lists: cheap to splice, costly to find\n" +
+        "A **linked list** gives up contiguity. Each element is a **node** holding its value plus a **pointer** to the next node, and the nodes can live anywhere in memory. That makes **insertion and deletion O(1)** *if you already hold the node* — just rewire two pointers, no shifting. But you pay twice: there's **no indexing** (to reach the i-th node you walk from the head — O(n)), and because nodes are scattered, **each hop is a likely cache miss**. That second cost is invisible in Big-O and brutal in practice — the reason arrays usually win real benchmarks even where a list has the better complexity on paper.",
+    },
+    {
+      kind: "compare",
+      a: "Array (contiguous)",
+      b: "Linked list (pointers)",
+      rows: [
+        ["Index the i-th element", "O(1) — base + i×size", "O(n) — walk from the head"],
+        ["Insert/delete at a held position", "O(n) — shift the tail", "O(1) — rewire two pointers"],
+        ["Cache behavior on a scan", "Excellent — neighbours share a line", "Poor — every hop may miss"],
+        ["Memory overhead per element", "None", "A pointer (or two) per node"],
+      ],
+    },
+    { kind: "figure", fig: "memory-hierarchy", caption: "Why pointer-chasing hurts: a cache miss is a trip to a far-away city. The array keeps its data on one street; the linked list sends you across town for every node." },
+    {
+      kind: "prose",
+      md:
+        "## Stacks & queues: access with intent\n" +
+        "Sometimes the power move is to *restrict* access. A **stack** allows adds and removes at **one end only** — **LIFO**, last-in-first-out. You've already met it: the **call stack** (ch.10) is exactly this, and so is undo, and the depth-first search of ch.17. A **queue** adds at the back and removes from the front — **FIFO**, first-in-first-out — the shape of buffers, fair scheduling (ch.22), and breadth-first search (ch.17). Both give **O(1)** at their working ends. Watch the same value stream drain in opposite orders:",
+    },
+    { kind: "sim", sim: "stack-queue-stepper" },
+    {
+      kind: "prose",
+      md:
+        "## Hash tables: near-O(1) lookup by key\n" +
+        "The structures so far find things by *position*. A **hash table** finds them by **key** — and in **O(1) average time**. The trick is Luhn's: run the key through a **hash function** to get a **bucket index**, and store the value there; a lookup hashes the key and goes *straight* to the bucket. The catch is **collisions** — different keys hashing to the same bucket, which the pigeonhole principle makes inevitable. Step through one lookup end to end, then experiment with what makes it fast or slow:",
+    },
+    { kind: "figure", fig: "hash-anatomy", caption: "One lookup, stepped: key → hash → mod table size → home bucket → resolve any collision by walking a chain or probing to the next slot." },
+    { kind: "sim", sim: "hash-collision-lab" },
+    {
+      kind: "prose",
+      md:
+        "## Collisions, load factor, and resizing\n" +
+        "Two classic fixes for collisions. **Chaining**: each bucket holds a little list (Luhn's chain); a collision just appends. **Open addressing**: keep one entry per slot and, on a collision, **probe** to the next free slot (linear probing). Either way, the enemy is the **load factor** α = n / m (entries over buckets): as it climbs, chains lengthen and probe runs **cluster**, and lookup drifts from O(1) toward O(n). So real tables **resize** — double m and rehash everything — once α crosses a threshold (~0.75). That rehash is O(n), but rare, so it's **O(1) amortized** (ch.13 again).",
+    },
+    { kind: "quiz", quiz: "where-it-lands" },
+    {
+      kind: "formal",
+      title: "Formal corner — why hashing is O(1) on average",
+      md:
+        "Under the **simple uniform hashing** assumption (each key equally likely to land in any bucket, independently), a table of m buckets holding n keys has expected chain length **α = n / m** per bucket. An unsuccessful search scans one chain: **expected O(1 + α)** — constant if you keep α bounded. For **open addressing**, the expected probes for an unsuccessful search are about **1 / (1 − α)** — 2 probes at α = 0.5, but **10** at α = 0.9 and → ∞ as α → 1, which is why open-addressed tables resize earlier than chained ones. Keep α constant by resizing and both stay O(1) amortized; the whole edifice rests on the hash spreading keys evenly.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The good hash is doing real work — and it's a security boundary",
+      lens: "senior",
+      md:
+        "Everything above assumed keys spread evenly. A **bad hash** that ignores most of the key (say, only its first character) collapses everything into a few buckets, and your O(1) table becomes an O(n) linked list wearing a costume — flip the hash selector in the lab to watch it happen. Worse, if an attacker can *predict* your hash, they can craft thousands of keys that all collide on purpose — a **hash-flooding** denial-of-service that turns every request O(n) (ch.32). Production hash maps defend with **randomized, keyed hashes** (e.g. SipHash) so collisions can't be engineered. Open addressing is more cache-friendly than chaining (entries are contiguous), but it's more sensitive to a high load factor — the trade-off never fully disappears.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Linear structures get you astonishingly far. But some jobs need **hierarchy**: keeping data sorted for fast range queries, always pulling out the smallest thing, or matching by prefix. For those you bend the line into a **tree** — and ch.15 shows how a good tree keeps the O(log n) promise that a sorted array can't when it has to change.",
+    },
+  ],
+  keyPoints: [
+    "A data structure is a trade — you choose a memory layout that makes the operations you care about fast, and accept the cost it imposes on the ones you don't.",
+    "Arrays index in O(1) and scan cache-friendly — element i sits at base + i×size, and contiguous layout lets a cache line pull in neighbours (ch.8); the price is O(n) middle inserts and an amortized copy to grow (ch.13).",
+    "Linked lists splice in O(1) but find in O(n) — rewiring pointers is cheap, but there's no indexing and every hop is a likely cache miss, so arrays often win in practice despite the list's better insert complexity.",
+    "Stacks and queues restrict access on purpose — a stack is LIFO (the call stack, undo, DFS), a queue is FIFO (buffers, scheduling, BFS); both are O(1) at their working ends.",
+    "A hash table trades space and a hash function for O(1) average lookup by key — hash the key to a bucket and go straight there, instead of searching by position.",
+    "Collisions are inevitable and have two classic fixes — chaining (a list per bucket) and open addressing (probe to the next slot); a bad hash or a high load factor drags lookup back toward O(n).",
+    "Load factor α = n/m drives resizing — past ~0.75 chains lengthen and probes cluster, so the table doubles and rehashes: an O(n) step that is O(1) amortized (ch.13).",
+  ],
+  pitfalls: [
+    {
+      title: "“Linked lists are faster than arrays”",
+      body: "For an insert when you already hold the node, yes. But a list has no O(1) indexing and terrible cache locality, so for traversal, search, and most real workloads the array wins — often by an order of magnitude. Reach for a list only when you're constantly splicing at held positions.",
+      lens: "both",
+    },
+    {
+      title: "Treating hash lookup as unconditionally O(1)",
+      body: "It's O(1) *average*, and only with a good hash and a bounded load factor. The worst case — a bad hash, adversarial keys, or α near 1 — is O(n). Never rely on hash-table timing in a security- or latency-critical path without accounting for that tail.",
+      lens: "senior",
+    },
+    {
+      title: "Using an array's front as a queue",
+      body: "Dequeuing from the front of a plain array (JavaScript's Array.shift) moves every remaining element down — O(n) per dequeue, O(n²) to drain. Use a ring buffer or a real deque for O(1) at both ends.",
+      lens: "both",
+    },
+    {
+      title: "Budgeting the resize as a per-operation cost",
+      body: "One push that triggers a doubling copy is O(n), and one insert that triggers a rehash is O(n) — but averaged over the sequence each is O(1) amortized (ch.13). Sizing your worst-case latency as if every op pays the resize is a costly over-estimate; sizing it as if none ever does is a latency-spike bug.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch14-1", "iv-ch14-2", "iv-ch14-3", "iv-ch14-4", "iv-ch14-5"],
+  kataIds: ["stack-impl", "queue-ring", "is-balanced", "hashmap-chaining", "two-sum", "reverse-list", "lru-cache"],
+  seeAlso: ["ch6", "ch8", "ch13", "ch15", "ch29", "ch32"],
+  sources: [
+    { title: "Hans Peter Luhn and the birth of the hashing algorithm (IEEE Spectrum)", url: "https://spectrum.ieee.org/hans-peter-luhn-and-the-birth-of-the-hashing-algorithm" },
+    { title: "Hash table — chaining, open addressing, load factor, and resizing (Wikipedia)", url: "https://en.wikipedia.org/wiki/Hash_table" },
+    { title: "Linked list — nodes, pointers, and the O(1)-splice / O(n)-index trade (Wikipedia)", url: "https://en.wikipedia.org/wiki/Linked_list" },
+    { title: "Dynamic array — amortized O(1) append via geometric growth (Wikipedia)", url: "https://en.wikipedia.org/wiki/Dynamic_array" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -2079,9 +2356,9 @@ export const CHAPTERS: Chapter[] = [
   ch10,
   ch11,
   ch12,
-  // P4 · Algorithms & Data Structures
-  stub("ch13", "p4", 15, "Big-O & algorithmic thinking", "Growth, best/avg/worst, amortized cost", 7, { foundations: 20, senior: 32 }),
-  stub("ch14", "p4", 16, "Linear structures", "Arrays, lists, stacks, queues, hash tables", 7, { foundations: 22, senior: 35 }),
+  // P4 · Algorithms & Data Structures (ch.13–14 built in S7)
+  ch13,
+  ch14,
   stub("ch15", "p4", 17, "Trees & heaps", "BSTs, balancing, heaps, tries", 8, { foundations: 22, senior: 35 }),
   stub("ch16", "p4", 18, "Sorting & searching", "Binary search and the sorting-race classics", 8, { foundations: 22, senior: 35 }),
   stub("ch17", "p4", 19, "Graphs", "BFS/DFS, Dijkstra, A*, MST, topological sort", 9, { foundations: 25, senior: 40 }),

@@ -32,6 +32,12 @@ export const SIM_KEYS = [
   "call-stack-viz", // ch.10 micro — recursive fib frames push/pop; stack-overflow demo
   "compiler-pipeline", // ch.11 HERO — source → tokens → AST → bytecode → stack VM, live + boss
   "dependency-blast", // ch.12 micro — change a module, watch the blast radius; interface seam shrinks it
+  // P4 · Algorithms & Data Structures (S7)
+  "growth-racer", // ch.13 HERO — O(1)…O(n!) curves race on real instrumented op-counts; log-scale toggle
+  "amortized-doubling", // ch.13 micro — dynamic array grows; per-op cost spikes at doublings, running average flattens
+  "array-vs-list-memory", // ch.14 micro — contiguous strides vs pointer-chasing on the RAM grid (reuses ch.6/8 visual)
+  "hash-collision-lab", // ch.14 micro — chaining vs open addressing; bad/good hash; load-factor slider → clustering → rehash
+  "stack-queue-stepper", // ch.14 micro — push/pop/enqueue/dequeue with pointer arrows
 ] as const;
 
 export const FIG_KEYS = [
@@ -53,6 +59,9 @@ export const FIG_KEYS = [
   "paradigm-lens", // ch.10 — one problem in imperative / OOP / functional shape
   "jit-tiers", // ch.11 — interpret → optimize on assumptions → deoptimize
   "test-pyramid", // ch.12 — many fast unit tests, few slow end-to-end
+  // P4 · Algorithms & Data Structures (S7)
+  "complexity-ladder", // ch.13 — the ranked ladder O(1)→O(n!), each rung revealed with a concrete cost at n
+  "hash-anatomy", // ch.14 — one lookup stepped: key → hash → index → bucket (chain walk / probe)
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

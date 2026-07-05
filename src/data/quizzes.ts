@@ -332,6 +332,88 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "match-the-O",
+    chapterId: "ch13",
+    questions: [
+      {
+        prompt: "Time complexity of this loop?\n`let s = 0;\nfor (let i = 0; i < n; i++) s += a[i];`",
+        options: ["O(1)", "O(log n)", "O(n)", "O(n²)"],
+        answer: 2,
+        explain:
+          "One pass over n elements, constant work each → **O(n)**. Double n and you double the work. Race it against the others in growth-racer.",
+      },
+      {
+        prompt: "And this?\n`for (let i = 0; i < n; i++)\n  for (let j = 0; j < n; j++)\n    if (a[i] === a[j]) dup++;`",
+        options: ["O(n)", "O(n log n)", "O(n²)", "O(2ⁿ)"],
+        answer: 2,
+        explain:
+          "A loop **nested** inside a loop compares every pair: n × n = **O(n²)**. Nesting multiplies — this is the quadratic trap that hides in innocent-looking double loops.",
+      },
+      {
+        prompt: "The loop keeps halving n:\n`while (n > 1) n = Math.floor(n / 2);`",
+        options: ["O(log n)", "O(n)", "O(√n)", "O(1)"],
+        answer: 0,
+        explain:
+          "Halving each step reaches 1 in ~log₂ n steps → **O(log n)**. Exactly why binary search finds one item among a million in ~20 probes.",
+      },
+      {
+        prompt: "Two separate (not nested) loops over the same array:\n`for (const x of a) sum += x;\nfor (const x of a) max = Math.max(max, x);`",
+        options: ["O(n²)", "O(2n) — its own class", "O(n)", "O(n log n)"],
+        answer: 2,
+        explain:
+          "Sequential loops **add**: O(n) + O(n) = O(2n) = **O(n)** once constants drop. Only *nested* loops multiply. Reading two passes as quadratic is a classic review mistake.",
+      },
+      {
+        prompt: "A single loop that does a hash-set lookup each time:\n`for (const x of a) { if (seen.has(x)) return true; seen.add(x); }`",
+        options: ["O(n) average", "O(n²)", "O(n log n)", "O(log n)"],
+        answer: 0,
+        explain:
+          "The loop is O(n); each `has`/`add` is **O(1) average** for a hash set (ch.14), so the whole scan is **O(n)** on average. (Pathological collisions can degrade it — see ch.14's worst case.)",
+      },
+      {
+        prompt: "Naive recursive Fibonacci, `fib(n) = fib(n-1) + fib(n-2)`. How does the number of calls grow?",
+        options: ["O(n)", "O(n²)", "O(2ⁿ) — exponential", "O(log n)"],
+        answer: 2,
+        explain:
+          "Each call spawns two more and re-computes the same subproblems, so the call tree roughly doubles per level → **exponential** (~O(φⁿ), φ ≈ 1.618). ch.18's dynamic programming is the fix.",
+      },
+    ],
+  },
+  {
+    id: "where-it-lands",
+    chapterId: "ch14",
+    questions: [
+      {
+        prompt: "A hash table has **8** buckets and a key hashes to the raw value **20**. Which bucket?",
+        options: ["bucket 2", "bucket 4", "bucket 8", "bucket 20"],
+        answer: 1,
+        explain:
+          "The index is the hash **mod the table size**: 20 mod 8 = **4**. The mod folds an unbounded hash down into a valid slot. Try it in hash-collision-lab.",
+      },
+      {
+        prompt: "**Linear probing**, size 8. Slots 3 and 4 are occupied; a new key hashes to home bucket **3**. Where does it land?",
+        options: ["slot 3 (overwrites)", "slot 4", "slot 5", "it's rejected"],
+        answer: 2,
+        explain:
+          "Open addressing **probes forward** to the first free slot: 3 (taken) → 4 (taken) → **5** (free). That run of occupied slots is *clustering* — what slows probing as the table fills.",
+      },
+      {
+        prompt: "**Chaining**, and two different keys both hash to bucket **6**. What happens?",
+        options: ["The second key is dropped", "Both live in bucket 6's chain", "The table resizes immediately", "The first key is overwritten"],
+        answer: 1,
+        explain:
+          "With chaining each bucket holds a **list**, so both keys sit in bucket 6's chain and a lookup walks it. Collisions cost chain length, not data — Luhn's original fix from 1953.",
+      },
+      {
+        prompt: "A table with **10** buckets now holds **8** entries. Load factor, and the usual consequence?",
+        options: ["α = 0.8; do nothing", "α = 0.8; over ~0.75, so resize & rehash", "α = 1.25; already full", "α = 8; overflow"],
+        answer: 1,
+        explain:
+          "α = n/m = 8/10 = **0.8**. Past the ~0.75 threshold, chains lengthen and probes cluster, so the table **doubles and rehashes** — O(n), but O(1) amortized (ch.13).",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
