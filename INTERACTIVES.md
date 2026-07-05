@@ -86,6 +86,7 @@
 - [micro] `rasterizer-toy` — drag triangle vertices; scanline fill animates pixel-by-pixel; wireframe/filled/depth toggle
 - [micro] `cpu-vs-gpu-race` — sum 1M numbers: 1 fast lane vs 1000 slow lanes; total-time bars
 - [fig] `gfx-pipeline` — vertices→raster→fragments→pixels, stepped
+- [quiz] `gpu-predict` — CPU vs GPU on a given workload: which wins, and why (overhead, divergence, matmul)
 
 ## P3 · Code
 

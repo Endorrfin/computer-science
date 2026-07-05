@@ -4,7 +4,7 @@ The whole of computer science told as **one bottom-up journey** — electron →
 
 **Live:** https://endorrfin.github.io/computer-science/ &nbsp;·&nbsp; **Stack:** Vite 8 + React 19 + TypeScript (strict) · static, no backend · deployed to GitHub Pages.
 
-> 🏗 **Building in the open.** The full skeleton (11 parts · 37 units · ~126 planned interactives) is live on the map; chapters ship session by session. Live now: **all of Part 1 · Information** (ch.1–3 — bits & numbers, encoding, compression) with the **bit-inspector** and **huffman-lab** heroes and the *Bitreader* boss, plus **ch.4 “From electricity to gates”** and its logic-sandbox hero. Next up: Part 2 · The Machine (adders, memory, an 8-bit CPU).
+> 🏗 **Building in the open.** The full skeleton (11 parts · 37 units · ~126 planned interactives) is live on the map; chapters ship session by session. Live now: **all of Part 1 · Information and all of Part 2 · The Machine** (ch.1–9) — the whole climb from bits → logic gates → adders & the ALU → memory → a full **8-bit CPU emulator** → pipelines, caches & branch prediction → **GPUs & parallel hardware**. Heroes include **bit-inspector**, **huffman-lab**, **logic-sandbox** and the **cpu-8bit** emulator, with the *Bitreader* and *Machine Whisperer* bosses. Next up: **Part 3 · Code** — the abstraction elevator and the compiler pipeline.
 
 **Language / Мова:** [English](https://github.com/Endorrfin/computer-science#-english) · [Українська](https://github.com/Endorrfin/computer-science#-%D1%83%D0%BA%D1%80%D0%B0%D1%97%D0%BD%D1%81%D1%8C%D0%BA%D0%B0)
 

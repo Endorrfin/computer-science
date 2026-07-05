@@ -579,3 +579,59 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   assemble&load; boss mode: write Fibonacci → the 1…55 checklist lights → *Machine Whisperer*
   badge). **S4 CLOSED pending user commit. Next: S5 — P2 fast hardware: ch.8 (pipeline, cache,
   branch prediction) + ch.9 (GPUs, rasterizer) — closes Part 2.**
+- **2026-07-05 · S5 (P2 · fast hardware — PART 2 COMPLETE)** — ch.8–9 built to the golden
+  bar; the machine is now finished end to end: electron → gate → ALU → CPU → fast CPU →
+  GPU. **Two modeling decisions** (user asked for the best-practice recommendation):
+  (1) `pipeline-visualizer` runs the **canonical 5-stage RISC** (IF/ID/EX/MEM/WB) with
+  hazards shown as stall bubbles and **forwarding as a Senior-lens toggle** — *not* the ch.7
+  accumulator ISA, whose funnel-through-A hazards are atypical; (2) `cache-sim` is
+  **direct-mapped + a line-size slider** (associativity/replacement live in a Senior
+  callout) for the cleanest spatial-locality/conflict lesson. **ch.8 Fast CPUs** (story:
+  Intel **Tejas** cancelled **7 May 2004** — a 90 nm sample drew **150 W at 2.8 GHz** against
+  a ~10 GHz roadmap, forcing the multicore pivot; web-verified): pipelining + the three
+  hazards + forwarding, branch prediction/speculation (2-bit saturating counter), the
+  **memory wall** + caches + temporal/spatial locality, **Moore ≠ Dennard** (density kept
+  doubling, per-transistor power stopped ~2005), multicore + **Amdahl's law**; formal corner
+  (pipeline speedup CPI→1 + Amdahl), ILP-vs-TLP compare, latency-ladder table, 4 pitfalls,
+  7 keyPoints, 7 sources. **ch.9 GPUs & parallel hardware** (story: **AlexNet, 2012**, trained
+  on two GTX 580s — the graphics card becomes the engine of AI): why GPUs exist (drawing is
+  embarrassingly parallel), rasterization via **edge functions** (= barycentric weights),
+  the CPU-vs-GPU bet (latency vs throughput; **SIMT**/warps/divergence/coalescing), when a
+  GPU wins/loses (parallel + arithmetic-intensive + resident; launch/PCIe caveats), and the
+  **bridge to AI** (a neural net is matrix-multiply = the same parallel shape); formal corner
+  (arithmetic intensity / roofline — sum ≈ 0.25 FLOP/byte vs matmul ∝ n), CPU-vs-GPU compare,
+  4 pitfalls, 6 keyPoints, 6 sources. **4 sims** — `pipeline-visualizer` (stage×cycle
+  occupancy chart, 4 presets, forwarding toggle, live CPI/stall/flush), `cache-sim`
+  (direct-mapped, 3 access patterns, line-size 1/2/4, hit/miss + hit-rate; reuses the ch.6
+  RAM-grid visual language), `rasterizer-toy` (drag-to-reshape triangle, scanline fill,
+  wireframe/filled/depth), `cpu-vs-gpu-race` (1 fast lane vs 1024, animated race with
+  launch/transfer overhead + winner). **2 figs** — `branch-predictor` (4-state 2-bit FSM
+  stepped over a loop) + `gfx-pipeline` (vertices→pixels, reusing the raster engine);
+  `memory-hierarchy` fig **reused** in ch.8. **5 pure engines** — `sims/fast-cpu/{pipeline,
+  cache,branch}.ts` + `sims/gpu/{raster,parallel}.ts` — plus **`scripts/test-fast-cpu.ts`
+  (54 checks: load-use = 1 stall fwd / 2 no-fwd, RAW chain forwarding erases stalls, taken
+  branch = 2 flushes, closed-form cycles; direct-mapped seq hitRate = 1−1/line, strided/
+  random worse, conflict thrash; 2-bit < 1-bit mispredicts + saturation)** and
+  **`scripts/test-gpu.ts` (24 checks: rasterizer coverage/barycentric-sum/degenerate/
+  bresenham/wireframe; race CPU-wins-small / GPU-wins-large / transfer lowers speedup /
+  waves; Amdahl)**, both wired into `npm test`. registryKeys/registry → **19 sims, 9 figs**;
+  new **P2 fast-hardware CSS block** in `global.css`. **Adversarial review** (subagent ran
+  every engine independently + web-verified all hardware/history facts): **engines & math
+  correct, all facts confirmed, figures match their engines, quiz indices correct**. Three
+  items actioned: (1) **blocking** — `gfx-pipeline` said "hundreds of fragments" while the
+  10×7 figure shows **16**; reworded (figure + curriculum caption) to "a handful here,
+  millions in a real frame"; (2) arithmetic-intensity byte model made **consistent** (4-byte
+  floats throughout → matmul intensity n/6 FLOP/byte, story unchanged); (3) `test-gpu` depth
+  assertion tightened 0.12 → 0.15 (DEFAULT_TRI's true min z). **verify = typecheck ✓ · lint ✓
+  (0 errors, 0 warnings) · qa ✓ (9 live chapters; 19 sims · 9 figs · 9 quizzes · 44 interview
+  Qs) · test ✓ (~302 green checks across 7 suites; +test-fast-cpu 54, +test-gpu 24) · build ✓**
+  (fresh `dist-s5v`: PipelineVisualizer 7.1 KB · CacheSim 5.8 KB · BranchPredictor 6.0 KB ·
+  RasterizerToy 3.8 KB · CpuVsGpuRace 4.4 KB · GfxPipeline 3.8 KB · react-vendor 190 KB).
+  Sandbox `unlink` still blocked → temp `dist-s5*` gitignored (harmless); review probes in
+  `_test_ops/`. Note: S1 flagged a **TS 6.0 / ts-eslint peer revisit ~S6** — worth a look
+  next session. NOT sandbox-testable: real-browser pass — **5-min manual QA after deploy**
+  (pipeline presets fill diagonally; forwarding removes bubbles; taken branch flushes; cache
+  patterns + line-size swing the hit rate; drag the rasterizer triangle + depth mode; race
+  crossover + PCIe toggle; branch-predictor & gfx-pipeline auto-play). **PART 2 COMPLETE.
+  S5 CLOSED pending user commit. Next: S6 — P3 Code: ch.10–12 + compiler-pipeline HERO +
+  P3 boss (Language Smith).**

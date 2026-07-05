@@ -196,6 +196,60 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "pattern-race",
+    chapterId: "ch8",
+    questions: [
+      {
+        prompt: "Two loops read the **same** 2-D array — one **row-major** (walking memory in order), one **column-major** (jumping a whole row each step). Which finishes faster?",
+        options: ["Row-major — sequential access rides the cache line", "Column-major", "Identical — same number of reads"],
+        answer: 0,
+        explain:
+          "**Row-major.** It walks memory sequentially, so each cache line's neighbours are used before eviction (spatial locality) — one miss drags in several useful elements. Column-major strides across lines, touching one element per line and evicting it before the next pass, so nearly every access misses. Same reads, same result, often 5–10× the time — purely from access order. Compare 'sequential' vs 'strided' in cache-sim.",
+      },
+      {
+        prompt: "In cache-sim, which pattern gets the **biggest** boost when you increase the **line size**?",
+        options: ["Sequential", "Strided (stride = one line)", "Random"],
+        answer: 0,
+        explain:
+          "**Sequential.** A wider line prefetches more neighbours you're about to use, so the hit rate climbs toward 1 − 1/lineSize. Strided-by-a-line gets *nothing* (it uses one element per line no matter how wide), and random has no spatial locality to exploit. Bigger lines help exactly to the degree your access is spatially local.",
+      },
+      {
+        prompt: "You add a cache in front of memory. Which workload benefits **least**?",
+        options: ["Randomly probing a dataset far larger than the cache", "Repeatedly summing a small array", "Scanning an array in order"],
+        answer: 0,
+        explain:
+          "**Random probes into a huge dataset.** With no temporal or spatial locality and a working set that dwarfs the cache, almost every access misses — the cache just adds a failed lookup before the inevitable DRAM trip. Caches feed on locality; pointer-chasing over huge data is the pathological case, and the reason cache-aware data structures exist (ch.14).",
+      },
+    ],
+  },
+  {
+    id: "gpu-predict",
+    chapterId: "ch9",
+    questions: [
+      {
+        prompt: "You need to sum just **100 numbers**, once. CPU or GPU?",
+        options: ["CPU — the GPU's launch/transfer overhead dwarfs 100 adds", "GPU — thousands of lanes must win", "Identical"],
+        answer: 0,
+        explain:
+          "**CPU.** 100 adds is a few dozen nanoseconds on one core. Launching a GPU kernel (and copying the data across) costs *thousands* of nanoseconds before a single lane does anything. GPUs win at scale; below the overhead threshold the CPU finishes before the GPU has warmed up. Try N = 1000 in cpu-vs-gpu-race.",
+      },
+      {
+        prompt: "A kernel runs a data-dependent `if/else` per element, and about half the threads take each side. On a GPU this is…",
+        options: ["Slow — SIMT divergence runs both paths masked", "Free — GPUs predict branches like CPUs", "Faster — the branch skips work"],
+        answer: 0,
+        explain:
+          "**Slow.** Threads run in lockstep warps sharing one instruction pointer; when they diverge the hardware executes *both* branches with the idle lanes masked, so a 50/50 split can halve throughput. GPUs have no per-lane branch predictor — uniform control flow is what keeps all the lanes busy.",
+      },
+      {
+        prompt: "Why do large neural networks train on GPUs rather than CPUs?",
+        options: ["Training is mostly matrix multiply — parallel, arithmetic-intensive, data-resident", "GPUs have far higher clock speeds", "CPUs can't do floating-point math"],
+        answer: 0,
+        explain:
+          "**It's the shape of the math.** Training is dominated by matrix multiplication: billions of independent multiply-accumulates, high arithmetic intensity, on data that stays resident on the device — exactly the three conditions a GPU needs. It isn't clock speed (GPU lanes are *slower*) and CPUs do floating-point fine; it's the parallel, compute-bound structure mapping onto thousands of lanes and tensor cores.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

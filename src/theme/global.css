@@ -3361,3 +3361,405 @@ code {
   .cpu-top { grid-template-columns: 1fr; }
   .cpu-panels { grid-template-columns: 1fr; }
 }
+
+/* ============================================================
+   P2 · The Machine — fast hardware (S5): pipeline-visualizer,
+   cache-sim (ch.8) · rasterizer-toy, cpu-vs-gpu-race (ch.9).
+   Accent var(--accent) = #FB923C. Semantic palette per §7.
+   ============================================================ */
+
+/* shared little controls */
+.pl-ctl,
+.cs-ctl,
+.gr-ctl,
+.rz-ctl {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pl-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--tx2);
+  cursor: pointer;
+}
+.pl-switch input {
+  accent-color: var(--accent);
+}
+.pl-senior {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sem-state);
+  border: 1px solid color-mix(in srgb, var(--sem-state) 45%, transparent);
+  border-radius: 5px;
+  padding: 0 4px;
+}
+.pl-blurb,
+.cs-blurb {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---- pipeline-visualizer ---- */
+.pl-gridwrap {
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.pl-grid {
+  display: grid;
+  gap: 3px;
+  min-width: 420px;
+}
+.pl-corner {
+  min-width: 48px;
+}
+.pl-cyc {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx3);
+  padding-bottom: 2px;
+}
+.pl-cyc.on {
+  color: var(--tx2);
+}
+.pl-stage {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx2);
+  display: flex;
+  align-items: center;
+  min-width: 48px;
+}
+.pl-cell {
+  aspect-ratio: 1 / 1;
+  min-height: 26px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+.pl-cell.filled {
+  border-width: 1.5px;
+  font-weight: 700;
+}
+.pl-cell.stall {
+  color: var(--sem-state);
+  border: 1px dashed color-mix(in srgb, var(--sem-state) 60%, transparent);
+  background: color-mix(in srgb, var(--sem-state) 12%, var(--surface));
+}
+.pl-cell.flush {
+  color: var(--sem-err);
+  border: 1px dashed color-mix(in srgb, var(--sem-err) 60%, transparent);
+  background: color-mix(in srgb, var(--sem-err) 12%, var(--surface));
+}
+.pl-legend {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pl-leg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.pl-leg code {
+  font-size: 12px;
+  color: var(--tx);
+}
+.pl-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bg);
+  flex: none;
+}
+.pl-tag {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 5px;
+}
+.pl-tag.data {
+  color: var(--sem-data);
+  border: 1px solid color-mix(in srgb, var(--sem-data) 45%, transparent);
+}
+.pl-tag.ctl {
+  color: var(--sem-control);
+  border: 1px solid color-mix(in srgb, var(--sem-control) 45%, transparent);
+}
+.pl-metrics,
+.cs-metrics {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.pl-metric,
+.cs-metric {
+  display: flex;
+  flex-direction: column;
+}
+.pl-mv,
+.cs-mv {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.pl-mv.warn,
+.cs-mv.err {
+  color: var(--sem-err);
+}
+.pl-mv.err {
+  color: var(--sem-err);
+}
+.cs-mv.ok {
+  color: var(--sem-ok);
+}
+.pl-ml,
+.cs-ml {
+  font-size: 10.5px;
+  color: var(--tx3);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ---- cache-sim ---- */
+.cs-panels {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+}
+.cs-lbl {
+  font-size: 12px;
+  color: var(--tx2);
+  margin-bottom: 8px;
+}
+.cs-grid {
+  display: grid;
+  gap: 3px;
+}
+.cs-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--s2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx3);
+}
+.cs-cell.cached {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--tx);
+}
+.cs-cell.cur {
+  outline: 2.5px solid var(--tx);
+  outline-offset: 1px;
+  color: var(--tx);
+  font-weight: 700;
+}
+.cs-cell.cur.hit {
+  outline-color: var(--sem-ok);
+}
+.cs-cell.cur.miss {
+  outline-color: var(--sem-err);
+}
+.cs-hint,
+.rz-hint {
+  font-size: 11px;
+  margin: 8px 0 0;
+}
+.cs-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cs-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--s2);
+  font-size: 12px;
+}
+.cs-line.valid {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.cs-line.hit {
+  background: color-mix(in srgb, var(--sem-ok) 16%, var(--surface));
+  border-color: var(--sem-ok);
+}
+.cs-line.miss {
+  background: color-mix(in srgb, var(--sem-err) 16%, var(--surface));
+  border-color: var(--sem-err);
+}
+.cs-lineno {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--tx2);
+  min-width: 22px;
+}
+.cs-lineres {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx);
+}
+.cs-verdict {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--line);
+  color: var(--tx3);
+}
+.cs-verdict.hit {
+  color: var(--sem-ok);
+  border-color: var(--sem-ok);
+  border-style: solid;
+  background: color-mix(in srgb, var(--sem-ok) 14%, var(--surface));
+}
+.cs-verdict.miss {
+  color: var(--sem-err);
+  border-color: var(--sem-err);
+  border-style: solid;
+  background: color-mix(in srgb, var(--sem-err) 14%, var(--surface));
+}
+
+/* ---- rasterizer-toy ---- */
+.rz-svg {
+  background: var(--bg);
+  border-radius: var(--r-s);
+  display: block;
+  touch-action: none;
+}
+.rz-vtx text {
+  pointer-events: none;
+  user-select: none;
+}
+.rz-foot {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ---- cpu-vs-gpu-race ---- */
+.gr-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.gr-lanehead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+}
+.gr-dev {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.gr-time {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx2);
+}
+.gr-time.done {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.gr-track {
+  position: relative;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.gr-fill {
+  height: 100%;
+  border-radius: 13px 0 0 13px;
+  transition: width 0.05s linear;
+}
+.gr-fill.cpu {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sem-data) 40%, var(--surface)), var(--sem-data));
+}
+.gr-fill.gpu {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--sem-control) 40%, var(--surface)), var(--sem-control));
+}
+.gr-runner {
+  position: absolute;
+  top: 2px;
+  font-size: 16px;
+  transition: left 0.05s linear;
+}
+.gr-flag {
+  position: absolute;
+  right: 8px;
+  top: 3px;
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.gr-spin {
+  position: absolute;
+  left: 10px;
+  top: 5px;
+  font-size: 11px;
+  color: var(--tx3);
+  font-style: italic;
+}
+.gr-note,
+.gr-verdict {
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.gr-verdict {
+  font-weight: 700;
+  color: var(--tx);
+}
+.gr-verdict.gpu {
+  color: var(--sem-control);
+}
+.gr-verdict.cpu {
+  color: var(--sem-data);
+}
+.gr-verdict .muted {
+  font-weight: 400;
+}
+
+@media (max-width: 760px) {
+  .cs-panels {
+    grid-template-columns: 1fr;
+  }
+}
