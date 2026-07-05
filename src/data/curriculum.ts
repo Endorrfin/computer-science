@@ -733,6 +733,320 @@ const ch3: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.5 — Circuits that count  (P2 · The Machine, built in S3)
+// ---------------------------------------------------------------
+const ch5: Chapter = {
+  id: "ch5",
+  part: "p2",
+  order: 7,
+  title: "Circuits that count",
+  tagline: "Wire gates so the carry flows, and the same silicon that does logic starts doing arithmetic",
+  readMins: { foundations: 18, senior: 28 },
+  storyHook: {
+    md:
+      "November 1937. A Bell Labs mathematician named **George Stibitz** carries a bag of surplus telephone relays home for the weekend. At his kitchen table, with two relays, a dry-cell battery, flashlight bulbs and strips cut from a tobacco can, he wires a circuit that adds two binary digits and lights a bulb for the answer. His wife names it the **\"Model K\"** — K for *kitchen*. That one-bit adder grew into the Complex Number Computer, which in 1940 Stibitz operated *remotely* over a telegraph line from New Hampshire while the machine sat in New York — the first remote computation. The half-adder you are about to build on the screen is, gate for gate, Stibitz's kitchen-table circuit.",
+  },
+  assumes: [
+    {
+      chapterId: "ch4",
+      oneLiner: "You have the gate zoo — AND, OR, NOT, XOR — and know any of them is a few transistors. Here we stop treating gates as logic and start wiring them into arithmetic.",
+    },
+  ],
+  mentalModel:
+    "Addition is one small gate pattern — the full adder — copied once per bit, with a single carry wire threading them together low-to-high. An ALU is a row of those adders sitting next to a row of logic gates, and a multiplexer at the end that picks which result to keep. Counting and calculating are not new physics; they are gates arranged so the carry can travel.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Gates (ch.4) → **you are here: circuits that count** → circuits that remember (ch.6) → a CPU (ch.7).\n" +
+        "Adding two single bits is almost insultingly easy: 0+0=0, 0+1=1, 1+1=… **10** — the answer needs *two* bits, a **sum** and a **carry**. That carry is the entire story of this chapter. One column of addition is trivial; making the carry hop from each column to the next, all the way up an 8- or 64-bit number, is what turns a handful of gates into a machine that counts.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The half adder — two gates you already own\n" +
+        "Look at the one-bit sum again. The **sum** bit is 1 when the inputs *differ* (0+1 or 1+0) and 0 when they match — that is exactly **XOR**. The **carry** bit is 1 only when *both* inputs are 1 — that is **AND**. So a circuit that adds two bits is nothing but an XOR and an AND sharing the same two inputs. That's a **half adder**, and it is the whole of Stibitz's kitchen table.\n" +
+        "Build it in stage ① below, then ask the obvious question: what happens when a carry arrives *from the column below*?",
+    },
+    { kind: "sim", sim: "build-an-adder" },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Why \"half\"?",
+      md:
+        "A half adder has nowhere to put an incoming carry — it takes two inputs, not three. So it can only ever be the **rightmost** column of a sum. Every other column might receive a carry from its neighbour, and for those we need a circuit with a third input. That's the **full adder** — literally two half adders chained, with an OR combining their two carry outputs. Stage ② builds it; stage ③ chains four.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Ripple-carry: chaining full adders\n" +
+        "Stack four full adders in a row, wire each one's carry-*out* into the next one's carry-*in*, and you have a **4-bit ripple-carry adder** — the same trick scales to 8, 32, 64 bits. Feed it `1111 + 0001` in stage ③ and step it: the carry is *born* at the lowest bit and has to **ripple** all the way to the top, one full adder at a time, flipping every bit from 1 to 0 as it passes. The top bit cannot know its answer until the wave reaches it.\n" +
+        "That is the adder's dirty secret: it is only as fast as its **longest carry chain**. For most inputs the carry dies quickly, but the worst case walks the entire width — and a CPU must budget for the worst case. ch.8 buys the speed back with *carry-lookahead*, which computes the carries in parallel instead of waiting for the ripple.",
+    },
+    { kind: "quiz", quiz: "adder-predict" },
+    {
+      kind: "prose",
+      md:
+        "## From an adder to an ALU\n" +
+        "An adder only adds. The **ALU** (Arithmetic Logic Unit) — the CPU's calculator — does a menu of operations, and the beautiful part is how little extra it costs. **Subtraction** needs no subtractor: from ch.1, `−B` is `(NOT B) + 1` in two's complement, so `A − B = A + (NOT B) + 1`. Feed the adder an inverted B and force its carry-in to 1, and the *same* adder subtracts. **Comparison** is just subtraction whose result you throw away, keeping only the flags. And the **logic** ops (AND, OR, XOR) run bit-by-bit alongside. Pick which unit's answer to emit with a multiplexer, and one block computes six things.",
+    },
+    { kind: "sim", sim: "alu-visualizer" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The four condition flags — and why C ≠ V",
+      lens: "senior",
+      md:
+        "Every ALU op also sets **flags** that the next instruction can branch on: **Z** (result is zero), **N** (top bit set — the two's-complement sign), **C** (carry/borrow out of the top bit — *unsigned* overflow), and **V** (*signed* overflow, defined as carry-into-MSB XOR carry-out-of-MSB). C and V answer different questions and routinely disagree. `127 + 1` in 8 bits: no unsigned carry (128 < 256) so **C = 0**, but it blew past the signed max 127 → **V = 1**. `200 + 100`: unsigned wrap → **C = 1**, yet read as signed (−56 + 100 = 44) it's correct → **V = 0**. Unsigned comparisons read C; signed comparisons read V and N. This is the hardware under `if (a < b)` — the compiler picks the flag that matches the *types*.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The multiplexer — hardware's switch statement\n" +
+        "The ALU needs to route *one* of several results to its output, chosen by the operation code. The circuit that does this is a **multiplexer** (mux): n **select** lines steer one of 2ⁿ data inputs through to a single output. It is the silicon form of `switch`/`if` — and it is everywhere a computer makes a choice: which ALU result to keep, which register to read, whether the next instruction is the next address or a branch target.",
+    },
+    { kind: "figure", fig: "mux-router", caption: "A 4-to-1 mux: two select bits choose which of four inputs reaches the output. Its mirror image — the decoder — is how RAM will find one cell in ch.6." },
+    {
+      kind: "formal",
+      title: "Formal corner — the adder and overflow in Boolean algebra",
+      md:
+        "For a single full adder with inputs A, B and carry-in Cᵢₙ:\n" +
+        "- **Sum** = A ⊕ B ⊕ Cᵢₙ\n" +
+        "- **Carry-out** = (A ∧ B) ∨ (Cᵢₙ ∧ (A ⊕ B)) — a carry is *generated* when both bits are 1, or *propagated* when exactly one is 1 and a carry came in.\n" +
+        "Those two terms, **generate** `Gᵢ = Aᵢ∧Bᵢ` and **propagate** `Pᵢ = Aᵢ⊕Bᵢ`, are the seed of carry-lookahead (ch.8): Cᵢ₊₁ = Gᵢ ∨ (Pᵢ ∧ Cᵢ).\n" +
+        "**Two's-complement subtraction**: A − B = A + B̄ + 1, so a single adder with B-input inverters and Cᵢₙ = 1 subtracts.\n" +
+        "**Signed overflow**: V = Cₙ ⊕ Cₙ₋₁ (carry out of the MSB differs from carry into it). Equivalently, adding two same-signed numbers and getting the other sign.",
+    },
+    {
+      kind: "compare",
+      a: "Half adder",
+      b: "Full adder",
+      rows: [
+        ["Inputs", "2 (A, B)", "3 (A, B, carry-in)"],
+        ["Built from", "1 XOR + 1 AND", "2 half adders + 1 OR"],
+        ["Can be chained?", "No — no carry-in", "Yes — that's the point"],
+        ["Used for", "Only the least-significant bit", "Every bit of a multi-bit adder"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where the ideal adder leaks",
+      md:
+        "Three honest caveats. **Overflow is silent** — the carry-out just falls off the end; the ALU raises a flag but never stops you, so `127 + 1 = −128` sails through unless *your code* checks (the wraparound of ch.1, now in gates). **Addition isn't O(1)** — ripple-carry delay grows with width; treating a 64-bit add as free is how timing budgets get blown. **Signed and unsigned share the same bits** — the adder doesn't know or care which you meant; only your choice of flag (C vs V) and comparison makes 1111₂ mean 15 or −1.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now count, add, subtract, compare and choose — a complete calculator made of nothing but gates. But notice what the ALU *can't* do: the instant its inputs change, its answer vanishes. It has no yesterday. To build a computer we need circuits that **hold** a value between one operation and the next — and the trick for that, in ch.6, is as strange as it is simple: wire a gate's output back into its own input.",
+    },
+  ],
+  keyPoints: [
+    "The carry is the whole problem — adding two bits is trivial (sum = XOR, carry = AND); threading the carry between columns is what makes addition a circuit.",
+    "Half adder — sum = A XOR B, carry = A AND B; with no carry-in it can only ever be the least-significant column.",
+    "Full adder — adds A, B and a carry-in (two half adders + an OR); chain N of them to add N-bit numbers.",
+    "Ripple-carry — full adders in a row, carry flowing low bit → high bit; simple, but only as fast as its longest carry chain (ch.8 fixes it).",
+    "Subtraction is free — A − B = A + (NOT B) + 1, so one adder does both add and subtract; no subtractor hardware exists.",
+    "An ALU is — an adder + logic gates + a multiplexer that selects which result to emit, driven by an operation-select code.",
+    "Condition flags — Z zero, N negative/sign, C unsigned carry/borrow, V signed overflow; they are what if-statements and branches read.",
+    "C vs V — C catches unsigned overflow, V catches signed; the same addition can set one and clear the other.",
+    "A multiplexer is hardware's switch — n select bits route 1 of 2ⁿ inputs to the output; its mirror, the decoder, addresses memory in ch.6.",
+    "An ALU never remembers — it is pure combinational logic; its output appears and vanishes with its inputs, which is why ch.6 exists.",
+  ],
+  pitfalls: [
+    {
+      title: "Forgetting the carry-in",
+      body: "A half adder looks like it 'adds', but it can't accept a carry from the column below, so it can't sit in the middle of a chain. Only bit 0 can be a half adder; every other bit needs a full adder.",
+      lens: "both",
+    },
+    {
+      title: "Reading the wrong overflow flag",
+      body: "C and V are different flags for different worlds. Checking C after a signed operation (or V after an unsigned one) is a classic bug — pick the flag that matches how you're interpreting the bits.",
+      lens: "both",
+    },
+    {
+      title: "Assuming hardware addition is instant",
+      body: "A ripple-carry adder's worst case walks the carry through every bit, so delay grows with width. It matters enough that real CPUs spend transistors on carry-lookahead — 'add' is not free (ch.8).",
+      lens: "senior",
+    },
+    {
+      title: "Thinking the ALU stores its answer",
+      body: "An ALU is combinational: feed inputs, the result appears, and it's gone the moment inputs change. Holding a value needs a register (ch.6). The ALU computes; it never remembers.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch5-1", "iv-ch5-2", "iv-ch5-3", "iv-ch5-4", "iv-ch5-5"],
+  kataIds: [],
+  seeAlso: ["ch4", "ch6", "ch7", "ch8"],
+  sources: [
+    { title: "George Stibitz & the Model K adder (Computer History Museum)", url: "https://www.computerhistory.org/tdih/november/9/" },
+    { title: "Crash Course Computer Science #5 — How Computers Calculate: the ALU", url: "https://www.youtube.com/watch?v=1I5ZMmrOfnA" },
+    { title: "Nand2Tetris — Project 2: Boolean Arithmetic (half/full adder → ALU)", url: "https://www.nand2tetris.org/project02" },
+    { title: "Ken Shirriff — Reverse-engineering the classic 74181 ALU chip", url: "https://www.righto.com/2017/03/inside-vintage-74181-alu-chip-how-it.html" },
+    { title: "Charles Petzold — Code (2nd ed.), ch. 17: Automation (the adding machine)", url: "https://www.charlespetzold.com/code/" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.6 — Circuits that remember  (P2 · The Machine, built in S3)
+// ---------------------------------------------------------------
+const ch6: Chapter = {
+  id: "ch6",
+  part: "p2",
+  order: 8,
+  title: "Circuits that remember",
+  tagline: "Feed a gate's output back into itself and the loop holds a value — the strangest trick in the machine",
+  readMins: { foundations: 18, senior: 30 },
+  storyHook: {
+    md:
+      "1918. Two British physicists, **William Eccles and Frank Jordan**, are building radio equipment when they wire up a pair of vacuum tubes so that each one's output feeds the *other's* input. The circuit refuses to sit still in the usual way — instead it snaps into one of two states and **stays there** until you deliberately flip it. They call it the *trigger relay*; we call it the **flip-flop**, and it is the first electronic circuit that could remember. Every register, every cache line, every bit of static RAM in the device you're reading this on is a direct descendant of that 1918 loop. In ch.4 you saw feedback as a *bug* — a NOT gate wired to itself, oscillating forever. Tame that same feedback and it becomes memory.",
+  },
+  assumes: [
+    {
+      chapterId: "ch5",
+      oneLiner: "You can build combinational circuits — adders, an ALU — that compute a fresh answer from their inputs. Their flaw: the answer vanishes when the inputs change. Here we build circuits that hold on.",
+    },
+  ],
+  mentalModel:
+    "Cross-couple two gates so each drives the other and the loop locks into one of two stable states — that is one stored bit. Add an enable and it becomes a controllable latch; add a clock edge and it becomes a flip-flop that only changes on the tick. Line up N of them for a register, and an array of registers behind an address decoder for RAM. All of memory is this one loop, replicated and addressed.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Gates (ch.4) → circuits that count (ch.5) → **you are here: circuits that remember** → a CPU (ch.7).\n" +
+        "The ALU you just built has no memory at all: its output is a pure function of its inputs *right now*, and it forgets everything the instant they change. A computer is useless without a yesterday — it must hold the result of one step to feed the next. So we need a circuit with **state**: something that, once set, keeps its value even after the input that set it goes away.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Feedback is memory\n" +
+        "Here is the whole idea. Take two **NOR** gates and cross-couple them: the output of each becomes an input of the other. Now the circuit has *two* self-consistent resting states — output high, or output low — and with both control inputs at rest it **holds** whichever one it's in, because each gate keeps re-asserting the other. That's an **SR latch** (Set/Reset). Pulse **S** and it locks to 1; pulse **R** and it locks to 0; let both go and it *remembers*. Step it signal-by-signal below and watch the loop settle.",
+    },
+    { kind: "sim", sim: "latch-playground" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The forbidden input — and the fix",
+      lens: "senior",
+      md:
+        "The raw SR latch has one illegal input: **S = R = 1** drives *both* outputs to 0, so Q and Q̄ are no longer complements — the abstraction breaks. Worse, if both inputs fall to 0 at the same instant, the loop **races** to a value decided by tiny, unrepeatable delay differences (a hardware coin flip). The cure is structural: derive S and R from a *single* data input D (`S = D`, `R = NOT D`) behind an **enable**, giving a **gated D latch** that has no forbidden state. This is why you rarely wire a bare SR latch in practice — you build up to D. The residual gremlin, **metastability** at the moment of capture, is tamed with synchronizer flip-flops (ch.6's real-world footnote, and a ch.22 concurrency echo).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## From latch to flip-flop: adding a clock\n" +
+        "A gated D latch is **transparent**: while its enable is high, Q simply follows D — good, but dangerous, because a value can race through several latches in a single window. The fix that built modern computing is the **edge-triggered D flip-flop**: instead of a *level*, it captures D only at the **instant the clock rises**, and holds for the entire rest of the cycle. Flip modes in the sim and watch: wiggle D all you like between edges — Q ignores it — and only on the rising edge does Q snap to D. That discipline is what makes a machine **synchronous**: every stored bit updates together, on the tick, so signals have time to settle and never race.",
+    },
+    { kind: "quiz", quiz: "latch-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Registers: holding a whole word\n" +
+        "One flip-flop holds one bit. Line up eight of them, wire them to a shared **clock** and a shared **load** line, and you have an **8-bit register** — the fastest memory a CPU has, holding one word right next to the ALU. On each clock edge where load is 1, all eight bits capture their inputs at once; otherwise they hold. A CPU's handful of registers (its *register file*) is where the actual work happens; everything else in the memory system exists to feed them.",
+    },
+    {
+      kind: "compare",
+      a: "Latch (level)",
+      b: "Flip-flop (edge)",
+      rows: [
+        ["Reacts to", "The enable's level (transparent while high)", "The clock's edge (an instant)"],
+        ["While active", "Q continuously follows D", "Q samples D once, then holds"],
+        ["Risk", "Data races through while open", "None — one capture per tick"],
+        ["Role", "Building block; time-borrowing tricks", "The default state element of every CPU"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## RAM: naming a million bytes\n" +
+        "A register holds *one* word. **RAM** holds millions — and it's built from exactly this idea plus one new part: an **address decoder**. RAM is an array of word-sized registers; to pick one, you feed an **n-bit address** to a decoder that raises exactly *one* of 2ⁿ word-lines (the mirror image of ch.5's multiplexer). That selected word is what you read or write. There is no searching — the address *is* the selection, which is why access is instant and order-independent. That's the **Random** in Random-Access Memory. Type an address in binary below and watch the decoder light one cell.",
+    },
+    { kind: "sim", sim: "ram-grid" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "SRAM vs DRAM — and the address-width law",
+      lens: "senior",
+      md:
+        "Two ways to store that bit, and the whole memory hierarchy falls out of the choice. **SRAM** is a genuine flip-flop — about **six transistors** per bit; fast and stable, but big and power-hungry, so it's used where speed rules: registers and CPU caches. **DRAM** cheats — **one transistor + one tiny capacitor** per bit; the charge *leaks*, so it must be **refreshed** thousands of times a second, but it's so much denser and cheaper that it became main memory. One capacitor per bit is why your machine has gigabytes of DRAM but only megabytes of SRAM cache. And the headline law from the sim: **capacity = 2ⁿ words** for n address wires — one more wire *doubles* your reach, which is exactly why a 32-bit address bus caps out at 4 GiB and why 64-bit had to happen.",
+    },
+    { kind: "figure", fig: "memory-hierarchy", caption: "Registers → L1 → L2 → L3 → RAM → SSD: each step out is bigger but farther, and latency grows like distance. Caches exist to keep the data you'll need next in the near, fast tiers." },
+    {
+      kind: "formal",
+      title: "Formal corner — latch and flip-flop equations",
+      md:
+        "**SR latch** (cross-coupled NOR), computed from the previous outputs:\n" +
+        "- Q = NOR(R, Q̄) ; Q̄ = NOR(S, Q)\n" +
+        "- Characteristic table: (S,R) = (0,0) → hold · (1,0) → set Q=1 · (0,1) → reset Q=0 · (1,1) → forbidden\n" +
+        "**Gated D latch**: Q⁺ = (enable ∧ D) ∨ (¬enable ∧ Q) — transparent when enable=1, holds when enable=0.\n" +
+        "**D flip-flop**: Q⁺ = D sampled at the rising clock edge, else Q. The state advances only on ↑CLK.\n" +
+        "**Register (N-bit)**: N D-flip-flops sharing CLK and load: Q⁺ = (load ∧ ↑CLK) ? D : Q, per bit.\n" +
+        "**RAM**: read(addr) = cell[decode(addr)]; write(addr, v, we): if we, cell[decode(addr)] ← v. `decode` is a 1-of-2ⁿ demultiplexer.",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where the ideal memory leaks",
+      md:
+        "The clean model hides real physics. **Setup and hold time**: D must be stable for a small window *around* the clock edge; violate it and the flip-flop can go **metastable** — hovering between 0 and 1 for an unpredictable time. **DRAM is volatile and leaky**: it forgets within milliseconds without refresh, and forgets entirely when powered off (persistence needs ch.24's storage). **The memory wall**: DRAM latency (~100 ns) has barely improved while CPUs raced ahead, so a cache miss can cost *hundreds* of wasted cycles — the reason the whole hierarchy in the figure exists, and a theme that returns in ch.8, ch.14 and ch.23.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You now have both halves of a computer: ch.5 gave you a circuit that **computes** (the ALU), and ch.6 gives you circuits that **remember** (registers and RAM). ch.7 wires them together and adds the missing third piece — **control**: a clock-driven loop that fetches an instruction from RAM, decodes it, drives the ALU, and stores the result back, over and over. That loop is a **CPU**, and once it exists you'll program it yourself to compute Fibonacci — the Part 2 boss.",
+    },
+  ],
+  keyPoints: [
+    "Memory is feedback — cross-couple two gates so each drives the other and the loop holds a value; ch.4's oscillation bug, tamed, becomes storage.",
+    "SR latch — two cross-coupled NOR gates; S sets Q=1, R resets Q=0, S=R=0 holds, S=R=1 is forbidden.",
+    "Gated D latch — one data input plus an enable; transparent when enabled (Q follows D), holds when not, and has no forbidden state.",
+    "Latch vs flip-flop — a latch is level-sensitive (transparent while open); a flip-flop is edge-triggered (captures D only at the clock edge).",
+    "The clock makes it synchronous — every flip-flop updates together on the edge, so combinational signals settle between ticks and never race.",
+    "A register is — N flip-flops sharing a clock and a load line; the CPU's fastest storage, one word wide.",
+    "RAM = registers + a decoder — an n-bit address raises 1 of 2ⁿ word-lines directly; no search, so access is O(1) and order-free (the 'Random' in RAM).",
+    "Address width sets capacity — 2ⁿ words for n address wires; one more wire doubles it, which is why 32-bit caps at 4 GiB.",
+    "SRAM vs DRAM — SRAM is a ~6-transistor flip-flop (fast, caches); DRAM is 1 transistor + capacitor (dense, leaky, must refresh, main memory).",
+    "Memory hierarchy — registers→L1→L2→L3→RAM→SSD trade speed for size; latency grows like distance, which is why caches exist.",
+  ],
+  pitfalls: [
+    {
+      title: "The forbidden SR input",
+      body: "S=R=1 doesn't mean 'both set' — it breaks the latch (both outputs 0) and races on release. Real designs derive S and R from one D input so the illegal case can't occur.",
+      lens: "both",
+    },
+    {
+      title: "Confusing a latch with a flip-flop",
+      body: "A transparent latch passes D straight through while enabled — not the same as capturing on an edge. Use a level-latch where you needed an edge-flop and data races through several stages in a single clock.",
+      lens: "senior",
+    },
+    {
+      title: "Thinking RAM 'searches' for data",
+      body: "It doesn't scan cells. The address decoder activates exactly one word-line directly, so access is O(1) and independent of address — that's what 'random access' means.",
+      lens: "both",
+    },
+    {
+      title: "Confusing capacity with address width",
+      body: "Installing more memory chips does nothing if the address bus can't name them. 32 address bits = a 4 GiB ceiling no matter how much DRAM you solder on; capacity is 2^(address width).",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch6-1", "iv-ch6-2", "iv-ch6-3", "iv-ch6-4", "iv-ch6-5"],
+  kataIds: [],
+  seeAlso: ["ch4", "ch5", "ch7", "ch8", "ch23"],
+  sources: [
+    { title: "Flip-flop (electronics) — the Eccles–Jordan trigger, 1918 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Flip-flop_(electronics)" },
+    { title: "Crash Course Computer Science #6 — Registers and RAM", url: "https://www.youtube.com/watch?v=fpnE6UAfbtU" },
+    { title: "Nand2Tetris — Project 3: Memory (sequential logic, registers, RAM)", url: "https://www.nand2tetris.org/project03" },
+    { title: "Ben Eater — SR latch / building a flip-flop from NAND gates", url: "https://www.youtube.com/watch?v=KM0DdEaY5sY" },
+    { title: "Colin Scott — Latency Numbers Every Programmer Should Know (interactive)", url: "https://colin-scott.github.io/personal_website/research/interactive_latency.html" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -741,10 +1055,10 @@ export const CHAPTERS: Chapter[] = [
   ch1,
   ch2,
   ch3,
-  // P2 · The Machine
+  // P2 · The Machine (ch.4 S1 · ch.5–6 S3)
   ch4,
-  stub("ch5", "p2", 7, "Circuits that count", "Adders, the ALU, multiplexers", 3, { foundations: 18, senior: 28 }),
-  stub("ch6", "p2", 8, "Circuits that remember", "Latches, flip-flops, registers, RAM", 3, { foundations: 18, senior: 30 }),
+  ch5,
+  ch6,
   stub("ch7", "p2", 9, "The CPU", "Fetch–decode–execute — program a real 8-bit machine", 4, { foundations: 25, senior: 40 }),
   stub("ch8", "p2", 10, "Fast CPUs", "Pipelines, caches, branch prediction, multicore", 5, { foundations: 22, senior: 38 }),
   stub("ch9", "p2", 11, "GPUs & parallel hardware", "Why GPUs exist — and why AI loves them", 5, { foundations: 15, senior: 25 }),

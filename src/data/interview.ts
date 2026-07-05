@@ -179,6 +179,100 @@ export const INTERVIEW: InterviewQ[] = [
       "JPEG's core: split into 8×8 blocks, **DCT** each into frequency coefficients, then **quantize** — divide by a table that discards high-frequency detail the eye is insensitive to (that's the lossy step; the quality slider scales the table). Convert to YCbCr first and subsample the chroma, because we see luminance detail more than color. Then the survivors are run-length + Huffman coded (lossless tail). MP3 is the same shape with a psychoacoustic model masking inaudible tones.",
   },
 
+  // ---- ch.5 · Circuits that count ----
+  {
+    id: "iv-ch5-1",
+    chapterId: "ch5",
+    level: "mid",
+    q: "You have an adder but no subtractor. How do you compute A − B?",
+    a:
+      "Two's complement: `A − B = A + (~B) + 1`. Invert every bit of B and force the adder's **carry-in to 1**. No new hardware — the same ripple adder does both.\n" +
+      "In an ALU a single *subtract* control line drives the B-input inverters and the carry-in together, so ADD and SUB share one datapath. This is also why the carry flag doubles as a *borrow*: on subtraction, carry-out = 0 means a borrow occurred (A < B unsigned).",
+  },
+  {
+    id: "iv-ch5-2",
+    chapterId: "ch5",
+    level: "senior",
+    q: "Explain the Z, N, C, V condition flags. How can C and V disagree?",
+    a:
+      "**Z** = result is zero. **N** = its top (sign) bit is 1. **C** = carry/borrow out of the MSB — the *unsigned* overflow. **V** = *signed* overflow, defined as `carry-in(MSB) XOR carry-out(MSB)`.\n" +
+      "They answer different questions, so they diverge. `127 + 1` (8-bit): no unsigned carry (128 < 256) → **C = 0**, but signed it overflowed 127→−128 → **V = 1**. `200 + 100`: unsigned wrap → **C = 1**, but as signed values (−56 + 100 = 44) it's correct → **V = 0**. Unsigned comparisons read C; signed comparisons read V (and N).",
+  },
+  {
+    id: "iv-ch5-3",
+    chapterId: "ch5",
+    level: "senior",
+    q: "Why is a ripple-carry adder slow, and what's the standard fix?",
+    a:
+      "The carry into bit *k* depends on bit *k−1*, which depends on *k−2*… so worst case the carry ripples through all N stages: delay is **O(N)** gate-delays, and the top sum bit can't settle until it arrives. For a 64-bit add that's a long critical path.\n" +
+      "**Carry-lookahead** computes each stage's *generate* (`Gᵢ = Aᵢ·Bᵢ`) and *propagate* (`Pᵢ = Aᵢ⊕Bᵢ`) signals, then derives all carries in parallel through a tree → **O(log N)** depth at the cost of more gates. Real ALUs use hybrids (carry-select, Kogge-Stone). This speed-vs-area trade is a preview of ch.8.",
+  },
+  {
+    id: "iv-ch5-4",
+    chapterId: "ch5",
+    level: "mid",
+    q: "What is a multiplexer, and where does a CPU rely on them?",
+    a:
+      "A 2ⁿ:1 **mux** is a hardware switch: n select bits choose one of 2ⁿ data inputs to pass to the output — the silicon form of `switch`/`if`. Its mirror image, the decoder/demux, sends one input to one of 2ⁿ outputs.\n" +
+      "CPUs are full of them: selecting which ALU operation's result to keep, picking read ports out of the register file, choosing the next program counter (sequential vs branch target), and forwarding/bypass paths in a pipeline. The RAM address decoder in ch.6 is the demux twin.",
+  },
+  {
+    id: "iv-ch5-5",
+    chapterId: "ch5",
+    level: "staff",
+    q: "How would you build multiplication out of an adder?",
+    a:
+      "**Shift-and-add**, exactly like long multiplication in binary: for each 1 bit in the multiplier, add the multiplicand shifted left by that bit's position; accumulate. N-bit operands → up to N add/shift steps. This is the P2 boss's 'multiply by repeated addition', made systematic.\n" +
+      "Hardware speeds it up by summing all partial products at once: array multipliers, **Wallace/Dadda trees** of carry-save adders, and Booth encoding to halve the partial-product count. Division is the harder cousin (restoring/non-restoring, SRT) — which is why early FPUs shipped bugs there.",
+  },
+
+  // ---- ch.6 · Circuits that remember ----
+  {
+    id: "iv-ch6-1",
+    chapterId: "ch6",
+    level: "mid",
+    q: "How can a circuit made only of logic gates remember a bit?",
+    a:
+      "**Feedback.** Cross-couple two NOR (or NAND) gates so each gate's output feeds the other's input. The loop has two self-consistent stable states — Q = 0 or Q = 1 — and it *holds* whichever one it's in: an SR latch.\n" +
+      "In ch.4 feedback showed up as a *bug* (a NOT wired to itself oscillates). Here the same trick, tamed, is the feature: memory is a deliberately built, controllable feedback loop. Every register, cache line and RAM bit above is this cell, replicated.",
+  },
+  {
+    id: "iv-ch6-2",
+    chapterId: "ch6",
+    level: "senior",
+    q: "What's the difference between a latch and a flip-flop?",
+    a:
+      "A **latch** is *level-sensitive*: a gated D latch is transparent while its enable is high, so Q tracks D the whole time the gate is open. A **flip-flop** is *edge-triggered*: it samples D only at the clock **edge** (rising, typically) and holds otherwise — usually built as two latches in a master-slave pair.\n" +
+      "Edge-triggering is what makes synchronous logic safe: every register captures at the same instant, so a signal can't ripple through several stages in one clock tick and cause a race. Latches are cheaper/faster and still used deliberately (e.g. time borrowing), but flip-flops are the default state element.",
+  },
+  {
+    id: "iv-ch6-3",
+    chapterId: "ch6",
+    level: "senior",
+    q: "What is the SR latch's 'forbidden' state and how do real designs avoid it?",
+    a:
+      "Driving **S = R = 1** forces *both* outputs to 0 on a NOR latch — no longer complementary, so Q and Q̄ are meaningless. Worse, if both inputs drop to 0 at once, the loop **races** to an unpredictable value (a coin flip decided by tiny delay differences).\n" +
+      "The fix is structural: a **gated D latch** derives S and R from a single D input (`S = D·en`, `R = ¬D·en`), so they can never both be asserted. You trade the raw SR primitive for one that has no illegal input. Metastability at the clock edge is the residual worry, handled with synchronizer flip-flops.",
+  },
+  {
+    id: "iv-ch6-4",
+    chapterId: "ch6",
+    level: "staff",
+    q: "Why are computers clocked (synchronous) at all — and what does that cost?",
+    a:
+      "Combinational paths have *different* delays. Without a shared clock, a downstream gate could read its inputs mid-transition and latch a glitch. A clock gives every signal a fixed window to settle, then captures all flip-flops together on the edge — turning messy analog timing into clean discrete steps.\n" +
+      "The cost: the clock period must exceed the **critical path** (slowest combinational route between registers), which sets the max frequency. Raising that frequency is what ran into a **power/heat wall** — switching power climbs with clock speed — and *that*, more than the critical path itself, is why CPUs plateaued near ~5 GHz and pivoted to more cores (ch.8). Asynchronous/clockless design removes the global clock but is hard (hazards, handshakes, hard to verify), so it stays niche.",
+  },
+  {
+    id: "iv-ch6-5",
+    chapterId: "ch6",
+    level: "senior",
+    q: "A CPU has a 32-bit address bus. How much memory can it address, and why did we move to 64-bit?",
+    a:
+      "2³² = ~4.29 billion distinct addresses; with byte addressing that's **4 GiB**. The address *width* is the hard cap — not how many RAM chips you solder on.\n" +
+      "Workloads (databases, media, big in-memory datasets) outgrew 4 GB, so 64-bit address spaces arrived: 2⁶⁴ ≈ 16 **EiB** in principle, though CPUs physically implement only part of it (e.g. 48–57 bits today). Stopgaps like x86 PAE widened *physical* addressing while each process stayed 32-bit — a patch, not a cure. The decoder in ram-grid makes the law visceral: one more address wire doubles the reach.",
+  },
+
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

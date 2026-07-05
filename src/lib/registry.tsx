@@ -21,6 +21,10 @@ const sims: Record<SimKey, LazyComp> = {
   // P2 · The Machine
   "logic-sandbox": lazy(() => import("../components/sims/logic-sandbox/LogicSandbox.tsx")),
   "demorgan-flip": lazy(() => import("../components/sims/DeMorganFlip.tsx")),
+  "build-an-adder": lazy(() => import("../components/sims/build-an-adder/BuildAnAdder.tsx")),
+  "alu-visualizer": lazy(() => import("../components/sims/alu-visualizer/AluVisualizer.tsx")),
+  "latch-playground": lazy(() => import("../components/sims/latch-playground/LatchPlayground.tsx")),
+  "ram-grid": lazy(() => import("../components/sims/ram-grid/RamGrid.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -30,6 +34,8 @@ const figs: Record<FigKey, LazyComp> = {
   "entropy-meter": lazy(() => import("../components/figures/EntropyMeter.tsx")),
   // P2 · The Machine
   "transistor-switch": lazy(() => import("../components/figures/TransistorSwitch.tsx")),
+  "mux-router": lazy(() => import("../components/figures/MuxRouter.tsx")),
+  "memory-hierarchy": lazy(() => import("../components/figures/MemoryHierarchy.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

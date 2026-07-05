@@ -5,7 +5,8 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { QuizDef } from "../../lib/types.ts";
 import { clearQuiz, useQuizAnswers } from "../../lib/progress.ts";
-import { Md, renderInline } from "../../lib/md.tsx";
+import { Md } from "../../lib/md.tsx";
+import { renderInline } from "../../lib/mdRender.tsx";
 import { cx } from "../../lib/utils.ts";
 
 export default function PredictQuiz({ quiz, accent }: { quiz: QuizDef; accent?: string }) {

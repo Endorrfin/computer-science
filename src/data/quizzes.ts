@@ -112,6 +112,60 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "adder-predict",
+    chapterId: "ch5",
+    questions: [
+      {
+        prompt: "A **4-bit** adder computes `1111 + 0001`. What's the 4-bit result and the carry-out?",
+        options: ["0000, carry-out 1", "10000, no carry", "1111, carry-out 1", "0001, carry-out 0"],
+        answer: 0,
+        explain:
+          "15 + 1 = 16, which needs **5** bits. The four bits you keep are `0000`; the missing 16 appears as **carry-out = 1**. On a machine with no 5th bit, that carry is dropped and the result *wraps to 0* — 4-bit overflow. Run it in build-an-adder and watch the carry sweep all four positions.",
+      },
+      {
+        prompt: "An 8-bit ALU computes `100 + 50`. Which flags are set? (signed two's-complement)",
+        options: ["V and N", "C only", "Z only", "none"],
+        answer: 0,
+        explain:
+          "150 = `10010110`. It fits *unsigned* (< 256) so **C = 0** — but signed 8-bit maxes at 127, so 150 is a signed **overflow → V = 1**, and the top bit is 1 → **N = 1**. Two positives adding to a 'negative' is the classic V tell. The value is fine as raw bits; it's the *interpretation* that broke.",
+      },
+      {
+        prompt: "`CMP 5, 8` (compute 5 − 8) on an 8-bit ALU. Is the carry/borrow flag C set?",
+        options: ["C = 0 — a borrow happened", "C = 1 — no borrow", "C is undefined for CMP", "C = 1 and the result is stored"],
+        answer: 0,
+        explain:
+          "Subtraction is `A + (~B) + 1`. When A < B there's **no carry out of the top bit**, so C = 0 — the convention 'C=1 means no borrow'. CMP does the subtraction only to set flags (it stores nothing); a *branch-if-lower* reads exactly this C. (x86 inverts the meaning, but the hardware is identical.)",
+      },
+    ],
+  },
+  {
+    id: "latch-predict",
+    chapterId: "ch6",
+    questions: [
+      {
+        prompt: "An SR latch is holding **Q = 1**. You set **S = 0, R = 0**. What is Q now?",
+        options: ["1 — it holds", "0 — it clears", "it oscillates", "undefined"],
+        answer: 0,
+        explain:
+          "S = R = 0 is the **hold** input. The cross-coupled feedback keeps whatever was last stored, so Q stays **1** — with no switching, no power spent. *That* is the memory: the loop remembers even though nothing is telling it to. Setting S=1 sets, R=1 resets; 0,0 holds.",
+      },
+      {
+        prompt: "A positive-edge D flip-flop has **D = 1**, Q = 0. The clock goes **1 → 0** (a falling edge). What is Q after?",
+        options: ["0 — no rising edge, it holds", "1 — it captures D", "it toggles to 1 then 0", "1 — level-sensitive"],
+        answer: 0,
+        explain:
+          "A positive-edge flip-flop samples D **only on 0 → 1**. A falling edge is ignored, so Q **holds 0**. You can wiggle D as much as you like between rising edges — it's invisible until the tick. That discipline is what makes the machine synchronous and race-free.",
+      },
+      {
+        prompt: "A memory has a **10-bit** address bus and 8-bit words. How many bytes can it address?",
+        options: ["1024 (1 KiB)", "10", "256", "65536"],
+        answer: 0,
+        explain:
+          "2¹⁰ = **1024** addressable words × 8 bits = 1024 bytes. Each extra address wire **doubles** the reach (11 bits → 2 KiB). It's the address *width*, not the chip size, that caps how much a CPU can name — which is why 32-bit tops out at 4 GiB and 64-bit exists.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
