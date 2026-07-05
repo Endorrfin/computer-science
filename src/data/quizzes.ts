@@ -166,6 +166,36 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "register-predict",
+    chapterId: "ch7",
+    questions: [
+      {
+        prompt:
+          "The 8-bit CPU runs three instructions:\n`LDI 5` · `ADD n` (RAM cell n holds 10) · `OUT`.\nWhat does OUT print?",
+        options: ["15", "5", "10", "0"],
+        answer: 0,
+        explain:
+          "`LDI 5` puts 5 in the accumulator A. `ADD n` latches RAM[n]=10 into B and the ALU computes A+B → **15**, back into A. `OUT` copies A to the output. Single-step it in the emulator and watch B latch the 10 before the ALU fires.",
+      },
+      {
+        prompt:
+          "A holds 8. The CPU executes `SUB n` where RAM cell n also holds 8. Which flag is set, and is a following `JZ` taken?",
+        options: ["Z set → JZ is taken", "C set → JZ is not taken", "N set → JZ is taken", "no flags change → JZ is not taken"],
+        answer: 0,
+        explain:
+          "8 − 8 = 0, so the **Z** (zero) flag sets. `JZ` branches exactly when Z is set, so it **is taken**. This Z-then-JZ pair is how every loop and `if` ultimately works. (Note: a plain `LDA` would *not* have touched the flags — only ALU ops do.)",
+      },
+      {
+        prompt:
+          "A holds 200. The CPU runs `ADD b` with RAM cell b = 100. A is 8 bits. What's in A afterward, and is the carry flag C set?",
+        options: ["44, and C is set", "300, no flags set", "255 (saturated), C set", "44, but C is clear"],
+        answer: 0,
+        explain:
+          "200 + 100 = 300, which doesn't fit in 8 bits (max 255). The result **wraps to 300 − 256 = 44**, and the carry out of the top bit sets **C = 1**. It doesn't saturate or throw — it silently wraps, exactly the ch.1 overflow, now happening inside a register. A program that cared would `JC` to an error handler.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
