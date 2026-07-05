@@ -318,6 +318,105 @@ export const INTERVIEW: InterviewQ[] = [
       "The teaching model is deliberately the honest *semantics* (what the result must be) without the performance tricks. Every one of those tricks must preserve exactly the single-instruction-at-a-time result our micro-stepped machine shows — that observable contract is precisely what pipelines, caches and speculation are engineered not to violate.",
   },
 
+  // ---- ch.8 · Fast CPUs ----
+  {
+    id: "iv-ch8-1",
+    chapterId: "ch8",
+    level: "mid",
+    q: "What is instruction pipelining, and what kind of speedup does it give?",
+    a:
+      "Pipelining splits the instruction cycle into stages (classically five: fetch, decode, execute, memory, write-back) and overlaps them like an assembly line — while one instruction executes, the next decodes and a third is fetched. In the steady state a k-stage pipeline retires about **one instruction per cycle**, up to a k× throughput gain, with no faster clock.\n" +
+      "The subtlety interviewers want: it improves **throughput, not latency**. A single instruction still takes k cycles end-to-end (slightly more, from pipeline-register overhead); you just *start* one every cycle. Deeper pipelines enable a higher clock but make each flush costlier, so there's an optimal depth — real CPUs run ~14–20 stages.",
+  },
+  {
+    id: "iv-ch8-2",
+    chapterId: "ch8",
+    level: "senior",
+    q: "What are the pipeline hazards, and how does hardware deal with each?",
+    a:
+      "Three kinds. **Structural** — two instructions want the same unit in one cycle; fixed by duplicating units (e.g. split instruction/data caches). **Data (RAW)** — an instruction needs a result not yet written back; handled mostly by **forwarding/bypassing** the result straight between stages, with an unavoidable one-cycle stall for the **load-use** case (a value from memory isn't ready in time). **Control** — a branch's outcome is unknown when the next fetch must happen; handled by **branch prediction + speculation**, flushing on a mispredict.\n" +
+      "Strong answers note that forwarding removes *most* data stalls (the load-use bubble is the residual), and that control hazards are why prediction matters so much — roughly one instruction in five is a branch, so stalling on each would gut the pipeline.",
+  },
+  {
+    id: "iv-ch8-3",
+    chapterId: "ch8",
+    level: "senior",
+    q: "Why did CPU clock speeds stop climbing in the mid-2000s, and what did the industry do instead?",
+    a:
+      "The end of **Dennard scaling** (~2005). Historically, shrinking transistors switched faster while power-per-area held constant, so frequency rose essentially for free. Then leakage current and a floor on threshold voltage broke that deal: pushing frequency higher made power and heat climb unsustainably — the **power wall** (Intel's ~10 GHz roadmap and the cancelled Tejas are the famous casualties). Clocks plateaued near 4–5 GHz.\n" +
+      "**Moore's law** (transistor *count*) kept going, so the extra transistors went into doing more per cycle (wider superscalar, bigger caches, better prediction) and above all **more cores**. Multicore was a forced move, not a triumph — and it shifted the burden of using the transistors onto software parallelism (ch.25) and specialised hardware like GPUs (ch.9).",
+  },
+  {
+    id: "iv-ch8-4",
+    chapterId: "ch8",
+    level: "senior",
+    q: "Explain the memory hierarchy and why caches work at all.",
+    a:
+      "There's a brutal gap: a core cycle is well under a nanosecond, but DRAM latency is ~50–100 ns — hundreds of cycles. To hide it, machines stack small-fast to large-slow: registers → L1 (~1 ns) → L2 (~4 ns) → L3 (~15 ns) → DRAM (~100 ns) → SSD/disk. A **cache** keeps recently/soon-used data close to the core.\n" +
+      "Caches work **only because programs have locality**: **temporal** (reuse the same data soon) and **spatial** (use nearby data soon — which is why caches move whole *lines*, not single bytes). Code with locality serves most accesses from L1; code without it (random access, pointer-chasing, column-major traversal) misses constantly and runs an order of magnitude slower. So real performance is often about access pattern and data layout, not just algorithmic Big-O (ch.13–14).",
+  },
+  {
+    id: "iv-ch8-5",
+    chapterId: "ch8",
+    level: "staff",
+    q: "What is speculative execution, and what is its security cost?",
+    a:
+      "To keep a deep, superscalar pipeline full across branches, the CPU **predicts** each branch and executes down the predicted path **speculatively**, discarding the results (rolling back architectural state) if it guessed wrong. With out-of-order execution this is a large performance win.\n" +
+      "The cost, exposed by **Spectre/Meltdown** (2018): speculatively executed instructions that are architecturally discarded still leave **microarchitectural** traces — above all, which lines are resident in the **cache**. An attacker can time cache accesses to recover data touched during mis-speculation, reading across privilege boundaries. The deep lesson: 'the result was rolled back' is not 'it left no observable trace.' Mitigations cost real performance, making this a standing speed-vs-security trade-off (ch.32).",
+  },
+
+  // ---- ch.9 · GPUs & parallel hardware ----
+  {
+    id: "iv-ch9-1",
+    chapterId: "ch9",
+    level: "mid",
+    q: "How does a GPU differ from a CPU, architecturally?",
+    a:
+      "A CPU is a **latency** machine: a few big cores full of machinery to finish one instruction stream fast — deep pipelines, out-of-order execution, branch prediction, large caches. A GPU is a **throughput** machine: it spends its transistors on **thousands of small, simple lanes** running the same instruction on different data (SIMD/SIMT), with modest caches and no per-lane cleverness, hiding memory latency by having so many threads that some are always ready while others wait.\n" +
+      "So the CPU minimises time-per-task; the GPU maximises tasks-per-second. Each is the right answer to a different question — and picking the wrong one is the actual mistake.",
+  },
+  {
+    id: "iv-ch9-2",
+    chapterId: "ch9",
+    level: "senior",
+    q: "What kinds of workloads run well on a GPU, and which run badly?",
+    a:
+      "**Well:** work that is (1) **data-parallel** — the same operation over many independent elements; (2) **arithmetic-intensive** — enough math per byte moved to earn the trip (high on the roofline); and (3) **data-resident** — already on the device, so you don't pay PCIe transfer each call. Graphics, dense linear algebra, and neural-net training/inference all qualify.\n" +
+      "**Badly:** serial or latency-sensitive code; heavily **branch-divergent** code (a warp splitting at an `if` runs both sides masked); irregular/pointer-chasing access (no coalescing); and small or one-shot jobs where **launch and transfer overhead** dominate. A lone `sum()` of a modest array is usually faster on the CPU for exactly these reasons.",
+  },
+  {
+    id: "iv-ch9-3",
+    chapterId: "ch9",
+    level: "senior",
+    q: "What is SIMT, and what are warp divergence and memory coalescing?",
+    a:
+      "**SIMT** (single instruction, multiple threads) is the GPU execution model: threads are grouped into **warps** (32) that share one instruction pointer and run in lockstep. **Divergence:** if threads in a warp take different branches, the hardware serialises the paths — running each with the non-participating lanes masked — so divergent control flow can cut throughput to a fraction. **Coalescing:** when a warp's lanes access **contiguous, aligned** addresses, the hardware fuses them into one wide memory transaction; scattered accesses become many transactions and stall.\n" +
+      "Together they yield the GPU mantra: keep control flow uniform across a warp and memory accesses regular and aligned. It's the ch.8 locality/regularity lesson, amplified.",
+  },
+  {
+    id: "iv-ch9-4",
+    chapterId: "ch9",
+    level: "senior",
+    q: "Why are GPUs the workhorse of deep learning?",
+    a:
+      "Because a neural network is, computationally, mostly **matrix multiplication** — huge grids of numbers combined by **multiply-accumulate** — which is massively parallel (every output element independent), highly arithmetic-intensive (a matmul's intensity grows with size, so it's compute-bound), and runs on data that stays **resident** on the device across many operations. That's exactly the three conditions a GPU needs to win.\n" +
+      "It isn't clock speed (GPU lanes are slower than CPU cores) — it's the shape of the math matching the shape of the hardware. Modern GPUs add **tensor cores** that do a small matrix-multiply as one instruction, plus huge memory bandwidth to feed them. AlexNet (2012), trained on two gaming GPUs, was the proof of concept that started the era.",
+  },
+  {
+    id: "iv-ch9-5",
+    chapterId: "ch9",
+    level: "staff",
+    q: "A GPU kernel shows high occupancy but disappointing throughput. What do you investigate?",
+    a:
+      "High occupancy only guarantees latency *hiding*, not throughput, so I'd find the real bottleneck:\n" +
+      "- **Memory-bound / coalescing:** is it bandwidth-limited? Are accesses coalesced or scattered? Compare achieved vs peak bandwidth (roofline).\n" +
+      "- **Arithmetic intensity:** too little math per byte means no occupancy helps; fix algorithmically (tiling, kernel fusion, reuse via shared memory).\n" +
+      "- **Divergence:** divergent warps serialise; measure warp execution efficiency.\n" +
+      "- **Shared-memory bank conflicts** and **host↔device transfer** (is time lost to copies, not compute?).\n" +
+      "- **Small grid / tail effects:** not enough work to saturate all SMs, or an unbalanced final wave.\n" +
+      "The frame is the **roofline**: establish compute-bound vs memory-bound first, because that decides which of the above matters.",
+  },
+
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

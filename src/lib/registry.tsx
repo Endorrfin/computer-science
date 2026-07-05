@@ -26,6 +26,10 @@ const sims: Record<SimKey, LazyComp> = {
   "latch-playground": lazy(() => import("../components/sims/latch-playground/LatchPlayground.tsx")),
   "ram-grid": lazy(() => import("../components/sims/ram-grid/RamGrid.tsx")),
   "cpu-8bit": lazy(() => import("../components/sims/cpu-8bit/CpuEmulator.tsx")),
+  "pipeline-visualizer": lazy(() => import("../components/sims/pipeline-visualizer/PipelineVisualizer.tsx")),
+  "cache-sim": lazy(() => import("../components/sims/cache-sim/CacheSim.tsx")),
+  "rasterizer-toy": lazy(() => import("../components/sims/rasterizer-toy/RasterizerToy.tsx")),
+  "cpu-vs-gpu-race": lazy(() => import("../components/sims/cpu-vs-gpu-race/CpuVsGpuRace.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -38,6 +42,8 @@ const figs: Record<FigKey, LazyComp> = {
   "mux-router": lazy(() => import("../components/figures/MuxRouter.tsx")),
   "memory-hierarchy": lazy(() => import("../components/figures/MemoryHierarchy.tsx")),
   "datapath": lazy(() => import("../components/figures/Datapath.tsx")),
+  "branch-predictor": lazy(() => import("../components/figures/BranchPredictor.tsx")),
+  "gfx-pipeline": lazy(() => import("../components/figures/GfxPipeline.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

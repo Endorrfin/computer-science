@@ -22,6 +22,11 @@ export const SIM_KEYS = [
   "ram-grid", // ch.6 micro — address decoder + read/write (reused ch.8/14/23)
   // P2 · The Machine (S4)
   "cpu-8bit", // ch.7 HERO — full 8-bit CPU: assembler + micro-stepped emulator + Fibonacci boss
+  // P2 · The Machine (S5)
+  "pipeline-visualizer", // ch.8 micro — 5-stage pipeline: flow, data-hazard stall, branch flush, CPI
+  "cache-sim", // ch.8 micro — direct-mapped cache: access patterns, line-size, hit/miss/hit-rate
+  "rasterizer-toy", // ch.9 micro — drag a triangle; scanline fill; wireframe/filled/depth
+  "cpu-vs-gpu-race", // ch.9 micro — 1 fast lane vs 1000 slow lanes; launch/transfer overhead
 ] as const;
 
 export const FIG_KEYS = [
@@ -36,6 +41,9 @@ export const FIG_KEYS = [
   "memory-hierarchy", // ch.6 — register→L1→L2→RAM→SSD as distances (reused ch.8/14/23)
   // P2 · The Machine (S4)
   "datapath", // ch.7 — the CPU block diagram, stepped micro-op by micro-op
+  // P2 · The Machine (S5)
+  "branch-predictor", // ch.8 — 2-bit saturating counter, stepped over a loop
+  "gfx-pipeline", // ch.9 — vertices → assembly → raster → fragments → pixels
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

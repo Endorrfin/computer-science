@@ -1240,6 +1240,367 @@ const ch7: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.8 — Fast CPUs  (built in S5)
+// ---------------------------------------------------------------
+const ch8: Chapter = {
+  id: "ch8",
+  part: "p2",
+  order: 10,
+  title: "Fast CPUs",
+  tagline: "The ch.7 loop can't just be clocked faster — so real CPUs overlap it, cache around it, predict past it, and finally replicate it",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "For thirty years the recipe for a faster computer was simple: wait for a faster clock. In 2000, Intel's roadmap pointed all the way to **10 GHz**, and its NetBurst design traded everything for frequency. Then physics sent the bill. The Pentium 4's successor, **Tejas**, was designed to scream past 7 GHz — but an early 90 nm sample drew a blistering **150 watts at just 2.8 GHz**, and there was no way to cool the real thing. On **7 May 2004**, Intel cancelled Tejas outright and pivoted the entire company to putting *more cores* on a chip instead of *more gigahertz* in a core. The megahertz race was over; the clock has barely moved past ~5 GHz in the two decades since. Every trick in this chapter — pipelining, caching, prediction, multicore — is what \"faster\" had to mean once you could no longer just turn up the speed.",
+  },
+  assumes: [
+    {
+      chapterId: "ch7",
+      oneLiner: "You have a working CPU: it runs the fetch–decode–execute loop, one instruction fully before the next, driven by a clock.",
+    },
+    {
+      chapterId: "ch6",
+      oneLiner: "You know registers are tiny and instant while RAM is a large, slower array — the seed of the memory hierarchy this chapter leans on.",
+    },
+  ],
+  mentalModel:
+    "A fast CPU is the ch.7 loop, three tricks deep. Pipeline it: overlap fetch/decode/execute so ~1 instruction finishes per cycle even though each still takes 5 steps (throughput, not latency). Cache around it: keep hot data in tiny fast memory because DRAM is ~100× slower than the core (the memory wall). Predict past it: guess each branch and speculate ahead to keep the pipeline full. When one core can't clock higher (the power wall), replicate it — many cores — and pay Amdahl's tax. Redraw the picture: one instruction stream flowing diagonally through 5 stages, a bubble when data isn't ready, a flush when a guess was wrong.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Gates (ch.4) → ALU (ch.5) → registers & RAM (ch.6) → a CPU (ch.7) → **you are here: making it fast**. The machine you built in ch.7 is *correct* but slow in two specific ways. First, it runs **one instruction all the way through before starting the next** — while the ALU works, the fetch and decode hardware sit idle. Second, the obvious fix — *run the clock faster* — is exactly the door 2004 slammed shut. So this chapter is about getting more work out of each tick and out of many cores at once, without a faster tick. It's the gap between your ch.7 emulator and the chip you're reading this on: same instruction set, ~1000× the performance, entirely from the tricks below.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The wall the story hit\n" +
+        "Why not just crank the gigahertz? Because of **Dennard scaling** and its end. For decades, shrinking transistors let each one switch faster *and* use proportionally less power, so clocks could rise for free. Around **2005–2006** that bargain broke: leakage current stopped shrinking, so pushing frequency up meant power (and heat) climbing roughly with the **cube** of the effort — the **power wall** Tejas smashed into. Clocks flatlined near 4–5 GHz. Note what did *not* stop: **Moore's law** — the transistor *count* — kept roughly doubling. Chips got more transistors that couldn't all run faster, only *wider* and *more numerous*. That single divergence is the reason for everything that follows.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Moore's law is not Dennard scaling — the confusion behind a decade of bad predictions",
+      lens: "senior",
+      md:
+        "Two different laws get mashed into \"Moore's law.\" **Moore's law** (1965) is about *density*: transistors per chip double roughly every ~2 years. It is still limping along. **Dennard scaling** (1974) is about *power*: as transistors shrink, power per unit area stays constant, so you can raise frequency for free. It **died around 2005**. The popular belief that \"computers double in speed every 18 months\" conflated the two — and when Dennard scaling ended, single-thread speed stalled even as transistor counts kept climbing. Those extra transistors had to go *somewhere*: bigger caches, more execution units, and above all **more cores**. Multicore isn't a triumph; it's the industry's forced move after it could no longer sell you free frequency.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Trick 1 — pipelining: an assembly line for instructions\n" +
+        "Think of doing laundry in four stages — wash, dry, fold, put away. If you run one full load start-to-finish before touching the next, four loads take forever and three machines sit idle at any moment. Obviously you *overlap*: while load 1 dries, load 2 washes. A CPU does the same with the instruction cycle, split into stages — classically five: **IF** (fetch), **ID** (decode + read registers), **EX** (ALU), **MEM** (memory access), **WB** (write back). Run them overlapped and, in the steady state, **one instruction finishes every cycle** even though each still takes five cycles end to end. That's the single biggest speed trick in the CPU, and it costs no extra clock speed — only cleverer control. Step an instruction stream through the pipeline and watch the diagonal fill:",
+    },
+    { kind: "sim", sim: "pipeline-visualizer" },
+    {
+      kind: "prose",
+      md:
+        "## Why pipelines stall: hazards\n" +
+        "Overlap only works when the instructions are independent — and real code isn't. Three **hazards** get in the way. A **data hazard**: an instruction needs a result the one just ahead hasn't produced yet (run the *dependency chain* preset with forwarding **off** and watch the bubbles). The fix is **forwarding** (a.k.a. bypassing) — wire a freshly computed result straight from one stage's output back into the ALU's input instead of waiting for it to reach the register file; flip forwarding **on** and most bubbles vanish. The one it can't remove is the **load-use** hazard: a value coming from memory simply isn't ready in time, costing exactly one bubble. A **control hazard** is a branch: until it's resolved the CPU doesn't know which instruction to fetch next, so a wrong guess **flushes** the wrongly-fetched instructions (the *taken branch* preset). A **structural hazard** is two instructions wanting the same hardware at once. Pipelining's whole engineering game is keeping these bubbles rare.",
+    },
+    {
+      kind: "table",
+      caption: "The three pipeline hazards and how real CPUs hide them. Every one of these is visible in the pipeline-visualizer.",
+      head: ["Hazard", "The problem", "Typical fix"],
+      rows: [
+        ["Data (RAW)", "An instruction needs a result still in flight", "Forwarding/bypass; stall only for the load-use case"],
+        ["Control", "A branch's direction is unknown when the next fetch must happen", "Branch prediction + speculation; flush on a mispredict"],
+        ["Structural", "Two instructions need the same unit in one cycle", "Duplicate the unit; split instruction/data caches"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Trick 1½ — predicting the future\n" +
+        "A branch is a problem because the pipeline wants to fetch the *next* instruction now, but a conditional branch's direction isn't known until it reaches EX — several cycles later. Stalling every branch would be ruinous; branches are ~1 in 5 instructions. So the CPU **guesses** and runs ahead **speculatively**, throwing the work away if it guessed wrong. Guessing at random is 50/50; real predictors do far better by learning each branch's *history*. The workhorse is the **2-bit saturating counter**: it only flips its prediction after being wrong **twice**, so the single not-taken at the end of a heavily-taken loop costs just one misprediction instead of two. Step through one:",
+    },
+    { kind: "figure", fig: "branch-predictor", caption: "A 2-bit predictor riding a loop that runs, exits once, then runs again. The lone exit only weakens the counter — the very next iteration is still predicted taken. Modern predictors reach >95% accuracy on real code." },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Superscalar, out-of-order, and the security bill for speculation",
+      lens: "senior",
+      md:
+        "Pipelining issues at most one instruction per cycle; **superscalar** CPUs have *several* pipelines and issue 4–8 per cycle. **Out-of-order execution** lets an instruction whose inputs are ready run before an earlier stalled one (results are *retired* back in order so the program's semantics hold — the ch.7 contract). Both need aggressive **branch prediction + speculation** to find enough independent work. The catch surfaced publicly in 2018: **Spectre** and **Meltdown** showed that speculatively-executed instructions, even when their results are discarded, leave footprints in the **cache** that an attacker can measure to read memory they shouldn't — a microarchitectural side channel born entirely of these performance tricks (ch.32). Speed and security are in genuine tension here, and the mitigations cost real performance.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Trick 2 — caching: beating the memory wall\n" +
+        "Here is the number that shapes modern computers: a CPU core runs at well under a nanosecond per cycle, but reading a byte from **DRAM takes ~50–100 ns** — **hundreds of cycles** of the core doing nothing. That gap is the **memory wall**, and it grew as cores sped up while DRAM barely did. The fix is a **cache**: a small, fast memory that sits between the core and DRAM and keeps recently- and soon-to-be-used data close. It works only because programs have **locality**: **temporal** (you tend to reuse the same data soon) and **spatial** (you tend to use data near what you just used). Caches are stacked in levels — a tiny, ~1 ns **L1**, a bigger ~4 ns **L2**, a large shared ~15 ns **L3** — each a compromise between speed and size.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## How a cache decides hit or miss\n" +
+        "A **direct-mapped** cache is the simplest design: memory is divided into fixed-size **lines** (a line holds several neighbouring bytes — that's how it cashes in on *spatial* locality), and each line of memory maps to exactly **one** slot in the cache, chosen by some of its address bits. Ask for an address: if the mapped slot holds that line, it's a **hit** (fast); if not, a **miss** — fetch the whole line from the next level and evict whatever was there. Walk different access patterns through the cache below and watch the hit rate swing. Crank the **line size** and see sequential access soar (each miss drags in the next few elements for free) while strided and random access stay cold:",
+    },
+    { kind: "sim", sim: "cache-sim" },
+    {
+      kind: "table",
+      caption: "The memory hierarchy, order-of-magnitude. Each level trades size for speed; the jump from L3 to DRAM is the cliff caches exist to hide. (SSD/HDD from ch.24, shown for scale.)",
+      head: ["Level", "Typical size", "~Latency (cycles)", "~Latency (time)"],
+      rows: [
+        ["Register", "~dozens of bytes", "0", "instant"],
+        ["L1 cache", "32–64 KB per core", "~4", "~1 ns"],
+        ["L2 cache", "256 KB–1 MB", "~12", "~4 ns"],
+        ["L3 cache", "8–32 MB shared", "~40", "~15 ns"],
+        ["DRAM", "8–128 GB", "~200+", "~50–100 ns"],
+        ["SSD / HDD", "TBs", "~10⁵ / 10⁷", "~100 µs / ~10 ms"],
+      ],
+    },
+    { kind: "quiz", quiz: "pattern-race" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "What cache-sim simplifies",
+      lens: "senior",
+      md:
+        "Real caches add three things our direct-mapped model skips. **Associativity:** a set-associative cache lets a line live in any of N slots in its set, cutting the *conflict* misses that make our strided pattern thrash — with a **replacement policy** (approx-LRU) to choose the victim. **Write policy:** write-back + write-allocate vs write-through, and the dirty-bit bookkeeping to know what must be flushed. **Prefetching:** hardware spots sequential/strided patterns and fetches lines *before* you ask, which is why real sequential access is even faster than compulsory misses suggest. The mental model — lines, locality, hit/miss, the eviction that punishes bad access patterns — is exactly right; production caches just play it with more finesse.",
+    },
+    { kind: "figure", fig: "memory-hierarchy", caption: "The same hierarchy as distance: if an L1 hit were one heartbeat away, DRAM would be a cross-town errand and the SSD a trip to another continent. Locality is what keeps you local." },
+    {
+      kind: "prose",
+      md:
+        "## Trick 3 — when one core isn't enough: parallelism\n" +
+        "Pipelining, superscalar issue and caches all squeeze more out of **one** instruction stream — *instruction-level parallelism* — but there's a ceiling to how much independent work a single stream contains. So the post-2005 answer, forced by the power wall, was blunt: put **many cores** on the chip and run multiple streams at once (*thread-level parallelism*). It's not free speed, for two reasons. Cores must **share memory coherently** (a whole discipline, ch.25), and — more fundamentally — **Amdahl's law**: if a fraction of your program is inherently serial, that fraction caps your speedup no matter how many cores you add. A job that's 95% parallel maxes out at **20×** even on infinite cores, because the last 5% can't be split. This is the doorway to ch.9: a GPU takes thread-level parallelism to the extreme — *thousands* of small cores — and wins big precisely on the workloads Amdahl smiles on.",
+    },
+    {
+      kind: "compare",
+      a: "Make one core faster (ILP)",
+      b: "Add more cores (TLP)",
+      rows: [
+        ["The lever", "Pipeline, superscalar, out-of-order, prediction, bigger caches", "Replicate the whole core; run many threads"],
+        ["Helps", "Every program, transparently — no code changes", "Only code that can be split into independent work"],
+        ["Ceiling", "Limited instruction-level parallelism in one stream", "Amdahl's law — the serial fraction caps it"],
+        ["The catch", "Power wall; diminishing returns; speculation's security cost", "Hard to program: races, locks, deadlock (ch.25)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the two speedup laws of this chapter",
+      lens: "senior",
+      md:
+        "**Pipeline throughput.** With a k-stage pipeline running n instructions, ideal time is (k + n − 1) cycles versus k·n unpipelined; as n → ∞ the speedup → **k**, i.e. one instruction retired per cycle (**CPI → 1**). Real CPI = 1 + stalls-per-instruction, so hazards are exactly the gap from the ideal.\n" +
+        "**Amdahl's law.** If fraction p of the work is parallelizable across s processors, overall speedup is\n" +
+        "  `S(s) = 1 / ( (1 − p) + p/s )`.\n" +
+        "As s → ∞, `S → 1/(1 − p)` — the serial part is the hard ceiling. p = 0.95 ⇒ max 20×; p = 0.99 ⇒ max 100×. (Gustafson's law offers the optimistic counterpoint: if bigger machines let you solve *bigger* problems, the parallel part grows and the serial fraction shrinks.)",
+    },
+    {
+      kind: "callout",
+      tone: "warn",
+      title: "Where this model simplifies",
+      md:
+        "Our pipeline is the classic 5 stages; real ones run **14–20+** stages (deeper = higher clock but costlier flushes). Real chips are **superscalar and out-of-order** with dozens of instructions in flight, several cache levels with prefetchers, multiple memory channels, and on big systems **NUMA** (memory that's faster for the core nearest it). And the predictors are far cleverer than one 2-bit counter (tournament, TAGE, neural). But every one of these is a *performance* trick layered on the ch.7 semantics: the observable result must still match running one instruction at a time. That invariant is the contract; speed is what you buy without breaking it.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You've made a single core fast — pipelined, cached, speculative — and then hit the ceiling of one stream and stepped sideways to many cores. **ch.9** takes that last idea to its limit: the **GPU**, a chip that throws away single-thread cleverness in exchange for *thousands* of simple lanes, and wins enormously on the embarrassingly-parallel work of drawing pixels — and, it turns out, training neural networks. That chapter closes Part 2: from a single electron through a switch, to gates, to a CPU, to a parallel supercomputer on a card. Then Part 3 finally lets us stop writing raw machine code and start talking to the machine in a language.",
+    },
+  ],
+  keyPoints: [
+    "Pipelining overlaps stages — while one instruction executes, the next decodes and a third is fetched, so a 5-stage pipeline approaches one finished instruction per cycle with no faster clock (throughput, not latency).",
+    "The clock hit a power wall — the end of Dennard scaling (~2005) made higher frequency mean unsustainable heat, so speeds plateaued near 4–5 GHz and progress shifted to more work per cycle and more cores.",
+    "Hazards are what stall a pipeline — data hazards (a needed result isn't ready), control hazards (branches), and structural hazards; forwarding and branch prediction hide most, but load-use always costs a bubble.",
+    "Branch prediction lets the CPU speculate — it guesses each branch and runs ahead; a 2-bit saturating counter tolerates the odd anomaly, and a wrong guess costs a pipeline flush.",
+    "The memory wall — DRAM is ~100× slower than the core, so caches (L1/L2/L3) keep hot data close; they pay off only because programs have temporal and spatial locality.",
+    "Moore's law ≠ Dennard scaling — transistor counts kept doubling (Moore) after per-transistor power stopped shrinking (Dennard died ~2005); that divergence is the whole reason for multicore.",
+    "More cores isn't free speed — Amdahl's law caps speedup by the serial fraction, so a 95%-parallel job maxes out at 20× no matter how many cores you add.",
+  ],
+  pitfalls: [
+    {
+      title: "Judging a CPU by gigahertz alone",
+      body: "Clock speed is one factor among many. Instructions-per-cycle (pipelining, superscalar width), cache behaviour, and memory latency often matter more — a 3 GHz chip with a better microarchitecture routinely beats a 4 GHz one. Since ~2005 the interesting gains have been everywhere *except* the clock.",
+      lens: "both",
+    },
+    {
+      title: "Confusing latency and throughput",
+      body: "Pipelining does not make a single instruction finish sooner — its latency is unchanged or slightly worse. It makes instructions finish more *often* (higher throughput). Deep pipelines even trade worse per-instruction latency (and costly flushes) for a higher clock. Know which one your problem cares about.",
+      lens: "both",
+    },
+    {
+      title: "Treating the cache as free, not just automatic",
+      body: "The cache is managed for you, but it is not free: cache-hostile access — random lookups, pointer-chasing linked lists, column-major traversal of a row-major array — can run 10–100× slower than the identical work laid out for locality. Data layout and access order are performance decisions, not just correctness ones.",
+      lens: "senior",
+    },
+    {
+      title: "Forgetting speculation is observable",
+      body: "Speculatively executed instructions whose results are discarded still change microarchitectural state — notably which lines are in the cache. Spectre/Meltdown weaponised exactly that to read protected memory. 'It was rolled back' is not the same as 'it left no trace' (ch.32).",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch8-1", "iv-ch8-2", "iv-ch8-3", "iv-ch8-4", "iv-ch8-5"],
+  kataIds: [],
+  seeAlso: ["ch6", "ch7", "ch9", "ch23", "ch25"],
+  sources: [
+    { title: "Patterson & Hennessy — Computer Organization and Design (pipelining, hazards, caches, Amdahl's law)", url: "https://www.elsevier.com/books/computer-organization-and-design-risc-v-edition/patterson/978-0-12-820331-6" },
+    { title: "Instruction pipelining (Wikipedia)", url: "https://en.wikipedia.org/wiki/Instruction_pipelining" },
+    { title: "CPU cache & the memory hierarchy (Wikipedia)", url: "https://en.wikipedia.org/wiki/CPU_cache" },
+    { title: "Branch predictor — including the 2-bit saturating counter (Wikipedia)", url: "https://en.wikipedia.org/wiki/Branch_predictor" },
+    { title: "Dennard scaling — the power wall and the end of free frequency (Wikipedia)", url: "https://en.wikipedia.org/wiki/Dennard_scaling" },
+    { title: "Ulrich Drepper — What Every Programmer Should Know About Memory (LWN)", url: "https://lwn.net/Articles/250967/" },
+    { title: "Tejas and Jayhawk — Intel's cancelled ~10 GHz successor (Wikipedia)", url: "https://en.wikipedia.org/wiki/Tejas_and_Jayhawk" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.9 — GPUs & parallel hardware  (built in S5 — closes Part 2)
+// ---------------------------------------------------------------
+const ch9: Chapter = {
+  id: "ch9",
+  part: "p2",
+  order: 11,
+  title: "GPUs & parallel hardware",
+  tagline: "The opposite bet from a CPU — throw away single-thread cleverness for thousands of simple lanes — and why that turned the graphics card into the engine of AI",
+  readMins: { foundations: 15, senior: 25 },
+  storyHook: {
+    md:
+      "September 2012, the ImageNet competition. A neural network called **AlexNet** doesn't just win — it demolishes the field, halving the error rate of every hand-engineered rival and igniting the deep-learning era. Its secret weapon wasn't a new algorithm so much as *hardware*: the authors trained it on **two ordinary NVIDIA GTX 580 gaming GPUs** in a bedroom, doing in days what would have taken a CPU cluster weeks. The chips built to draw video-game explosions turned out to be almost perfect engines for the mathematics of learning. That is the twist this chapter explains: the GPU was designed for one job — turning triangles into millions of pixels, fast — and that job happens to have the *exact same shape* as training a neural network. Both are enormous piles of the same simple arithmetic, all independent, all at once.",
+  },
+  assumes: [
+    {
+      chapterId: "ch8",
+      oneLiner: "You know a CPU spends transistors on making one instruction stream fast — pipelines, caches, prediction — and that Amdahl's law rewards parallel work.",
+    },
+    {
+      chapterId: "ch5",
+      oneLiner: "You know the ALU does one arithmetic op on one pair of numbers; a GPU is, in essence, thousands of ALUs driven together.",
+    },
+  ],
+  mentalModel:
+    "A GPU is the opposite bet from a CPU. The CPU spends its transistors making one instruction stream finish fast — big caches, out-of-order, prediction. The GPU spends them on width: thousands of tiny lanes running the same instruction on different data (SIMD/SIMT), hiding memory latency with sheer thread count instead of caches. It was built for graphics — dissolving triangles into millions of independent pixels via the rasterizer — but the same shape of math (a pile of independent multiply-adds = matrix multiply) is exactly what training a neural net needs. Redraw it: one instruction, a thousand data lanes; a triangle becoming a grid of pixels, each decided in parallel.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "This is the last stop in Part 2. In ch.8 you made a **single** instruction stream fast, then hit the ceiling of one stream and added a few cores. Now we go all-in on the other axis. A CPU is a **latency** machine: a handful of big, brilliant cores that finish any one task as fast as possible. A GPU is a **throughput** machine: thousands of small, dim lanes that finish an *enormous batch* of identical tasks per second, and don't much care how long any single one takes. Neither is 'better' — they're answers to different questions. The reason the GPU exists at all is a job that is *embarrassingly parallel*: drawing a screen.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Why the GPU exists: drawing is embarrassingly parallel\n" +
+        "A 4K screen is ~8 million pixels, and every frame the machine must decide a colour for each — 60+ times a second. Crucially, **each pixel's colour is (mostly) independent of its neighbours'**: the same little computation, run 8 million times on different inputs. That is the dream workload for parallel hardware — no waiting, no coordination, just width. 3D graphics reduces to a fixed **pipeline**: describe the world as **triangles**, figure out which pixels each triangle covers, and shade them. Step through it once, then we'll build the heart of it by hand.",
+    },
+    { kind: "figure", fig: "gfx-pipeline", caption: "Vertices → primitive assembly → rasterization → fragment shading → pixels. The wide step is fragment shading: each covered fragment is an independent little program, and a real GPU runs millions of them at once — the parallelism it's built to feed." },
+    {
+      kind: "prose",
+      md:
+        "## The heart of it: rasterization\n" +
+        "How does the hardware know which pixels a triangle covers? With a beautifully simple test. For each of the triangle's three edges, an **edge function** — a 2-D cross product — tells you which side of that edge a point is on. A pixel is **inside** the triangle exactly when it's on the inside of all three edges. Better still, those same three edge values *are* the **barycentric weights**, so the identical math that decides coverage also **interpolates** depth and colour smoothly across the face. It's a per-pixel test with no dependence on any other pixel — so you can run it for every pixel simultaneously. Drag the triangle and watch it become pixels; flip to **depth** mode to see z interpolated across the surface:",
+    },
+    { kind: "sim", sim: "rasterizer-toy" },
+    {
+      kind: "prose",
+      md:
+        "## The bet: many thin lanes, not a few fat cores\n" +
+        "Given a job that's millions of identical independent computations, what silicon do you build? Not a few genius cores — you spend every transistor on **arithmetic units** and run them in lockstep: one instruction, **many data lanes** (**SIMD** — single instruction, multiple data; NVIDIA's flavour is **SIMT**, single instruction, multiple *threads*). A modern GPU has **thousands to tens of thousands** of these lanes (an NVIDIA H100 has ~14,600; an RTX 5090 ~21,760). Each lane is slow and simple — no big out-of-order machinery, modest caches — and the chip hides memory latency not with clever caching but by having *so many* threads ready that whenever some are waiting on memory, others run. Width instead of wits.",
+    },
+    {
+      kind: "compare",
+      a: "CPU — latency machine",
+      b: "GPU — throughput machine",
+      rows: [
+        ["Cores", "A few big, complex cores", "Thousands of small, simple lanes"],
+        ["Optimized for", "Finishing one task as fast as possible", "Finishing a huge batch of identical tasks per second"],
+        ["Hides memory latency with", "Big caches + out-of-order execution", "Massive thread count (something's always ready)"],
+        ["Loves", "Branchy, serial, latency-sensitive code", "Data-parallel, arithmetic-heavy, regular code"],
+        ["Hates", "Waiting on memory", "Divergent branches; small or serial jobs"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## When the GPU actually wins\n" +
+        "Thousands of lanes sound unbeatable, but they come with fixed costs: it takes real time to **launch** work on the GPU, and often to **copy data** across the PCIe bus to it and back. So a GPU wins only when three things hold: the work is **parallel**, it is **arithmetic-intensive** (enough math per byte moved to earn the trip), and the **data is resident** (already on the device). Race the two processors on summing N numbers and watch the crossover: for small N the CPU wins outright — the GPU is still spinning up — and for a trivial per-element job, counting the PCIe transfer can erase most of the win even at huge N. Grow N with resident data and the GPU's width becomes overwhelming:",
+    },
+    { kind: "sim", sim: "cpu-vs-gpu-race" },
+    { kind: "quiz", quiz: "gpu-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "SIMT up close: warps, divergence, and coalescing",
+      lens: "senior",
+      md:
+        "NVIDIA GPUs run threads in lockstep groups called **warps** (32 threads) that share one instruction pointer. Two consequences dominate real GPU performance. **Branch divergence:** if threads in a warp take different sides of an `if`, the hardware runs *both* paths with the non-participating lanes masked off — so divergent code can drop to a fraction of peak throughput (the opposite of the CPU's branch prediction, which this can't use). **Memory coalescing:** when the 32 lanes read *contiguous* addresses, the hardware fuses them into one wide transaction; scattered addresses become many transactions and stall. So the GPU rewards *regular, aligned, uniform* code and punishes the branchy, pointer-chasing style a CPU shrugs off — the same locality lesson as ch.8's cache, turned up to eleven.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The bridge to AI\n" +
+        "Now the payoff. Strip a neural network down and it is mostly one operation: **matrix multiplication** — huge grids of numbers combined by **multiply-accumulate**, the same `a·b + c` your ch.5 ALU does, just billions of times, all independent. That is *precisely* the GPU's sweet spot: massively parallel, arithmetic-intensive, and (once the model is loaded) data-resident. Shading a pixel and updating a weight are the same *shape* of computation, which is why AlexNet's two gaming cards in 2012 lit the fuse, and why every large model since trains on racks of GPUs — now with **tensor cores**, units that do a small matrix-multiply as a single instruction. The hardware you've followed from a single transistor ends up, at scale, as the engine of machine learning. Part 10 picks up exactly here.",
+    },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "Part 2 complete — from an electron to a supercomputer on a card",
+      md:
+        "Look how far the machine has come. A voltage controlling a voltage became a **gate** (ch.4); gates that count and remember became an **ALU** and **RAM** (ch.5–6); wired to a clock-driven control loop they became a **CPU** that runs stored programs (ch.7); made fast they became a pipelined, cached, speculating, multicore processor (ch.8); and specialised for width they became a **GPU** with tens of thousands of lanes. That is the whole of Part 2 — pure hardware, electron to parallel supercomputer. Everything above this line is about *talking* to it.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — arithmetic intensity, and why matrix multiply is the perfect GPU job",
+      lens: "senior",
+      md:
+        "**Arithmetic intensity** = FLOPs performed per byte moved from memory. The **roofline model** says a machine is **memory-bound** below a threshold (peak-FLOPs ÷ memory-bandwidth) and **compute-bound** above it — more lanes only help once you're compute-bound.\n" +
+        "- A vector **sum** of n numbers (4-byte floats) does ~n adds over ~4n bytes → intensity ≈ **0.25 FLOP/byte** → firmly **memory/transfer-bound** (exactly why the race's summed job goes transfer-bound when you count PCIe).\n" +
+        "- A **matrix multiply** of two n×n matrices does ~2n³ FLOPs over ~3n² numbers ≈ 12n² bytes → intensity ≈ **n/6 FLOP/byte**, which grows without bound as n rises → deeply **compute-bound**, mapping perfectly onto the GPU's arithmetic throughput.\n" +
+        "That ratio — not raw core count — is what decides whether width pays off, and it's why deep learning (matrix multiplies all the way down) is the ideal GPU workload while a lone `sum()` often isn't.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Part 2 is done: you've built the machine from the electron up. But everything so far you've had to program in raw machine code, by hand — the ch.7 emulator's assembly, the ch.8 instruction stream. No human writes real software that way. **Part 3 — Code** rides the abstraction elevator: from assembly up to high-level languages with variables, functions, a call stack and recursion (ch.10), then the **compiler** that translates them back down to the instructions this hardware runs (ch.11). The machine is finished. Now we learn to speak to it.",
+    },
+  ],
+  keyPoints: [
+    "GPUs exist because graphics is embarrassingly parallel — millions of independent pixels per frame, so the chip bets its transistors on width (many simple lanes) instead of single-thread cleverness.",
+    "CPU vs GPU is latency vs throughput — a few big out-of-order cores with large caches, versus thousands of thin SIMD lanes that hide memory stalls with sheer thread count.",
+    "Rasterization turns triangles into pixels — three edge-function tests decide coverage and double as barycentric weights that interpolate depth and colour, each pixel independent of the rest.",
+    "SIMD/SIMT drives many data lanes with one instruction — and branch divergence (lanes taking different paths) serializes them, so regular, uniform code is essential.",
+    "A GPU wins only when work is data-parallel, arithmetic-intensive, and data-resident — kernel-launch and PCIe-transfer overhead mean small or serial jobs lose to the CPU.",
+    "The bridge to AI — a neural network is mostly matrix multiplication (independent multiply-accumulates), the same shape as shading pixels, which is why deep learning runs on GPUs.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking a GPU is just a faster CPU",
+      body: "It's a throughput machine, not a faster latency machine. On serial, branchy, or latency-sensitive code — i.e. most everyday programs — a GPU is dreadful. It only shines on large, regular, data-parallel work. Using the wrong one is the mistake, not the hardware.",
+      lens: "both",
+    },
+    {
+      title: "Assuming more lanes means proportional speedup",
+      body: "Amdahl's law and fixed overheads apply. A job that isn't parallel, or is too small to amortise the launch/transfer cost, runs slower on the GPU than the CPU. Thousands of lanes are wasted if the work can't fill them or can't reach them in time.",
+      lens: "both",
+    },
+    {
+      title: "Ignoring branch and thread divergence",
+      body: "In SIMT, a warp of lanes shares one instruction pointer. If lanes diverge at an if/else, the hardware runs both paths with lanes masked, so heavily divergent code can drop to a fraction of peak. Data-dependent branching is cheap on a CPU and expensive on a GPU.",
+      lens: "senior",
+    },
+    {
+      title: "Forgetting the data has to get there",
+      body: "Host↔device transfer over PCIe is a real, per-byte cost. A trivial one-shot kernel can be entirely transfer-bound, wiping out the compute win. This is why ML frameworks work hard to keep tensors resident on the GPU and batch work — the win assumes the data is already there.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch9-1", "iv-ch9-2", "iv-ch9-3", "iv-ch9-4", "iv-ch9-5"],
+  kataIds: [],
+  seeAlso: ["ch5", "ch7", "ch8", "ch33", "ch34"],
+  sources: [
+    { title: "Graphics pipeline — vertices to pixels (Wikipedia)", url: "https://en.wikipedia.org/wiki/Graphics_pipeline" },
+    { title: "Rasterisation — the triangle-to-pixel step (Wikipedia)", url: "https://en.wikipedia.org/wiki/Rasterisation" },
+    { title: "Graphics processing unit & GPGPU (Wikipedia)", url: "https://en.wikipedia.org/wiki/Graphics_processing_unit" },
+    { title: "Single instruction, multiple threads (SIMT) — warps & divergence (Wikipedia)", url: "https://en.wikipedia.org/wiki/Single_instruction,_multiple_threads" },
+    { title: "Fabian Giesen — A trip through the Graphics Pipeline 2011", url: "https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/" },
+    { title: "Krizhevsky, Sutskever & Hinton — ImageNet Classification with Deep CNNs (AlexNet, trained on 2 GPUs)", url: "https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -1253,8 +1614,8 @@ export const CHAPTERS: Chapter[] = [
   ch5,
   ch6,
   ch7,
-  stub("ch8", "p2", 10, "Fast CPUs", "Pipelines, caches, branch prediction, multicore", 5, { foundations: 22, senior: 38 }),
-  stub("ch9", "p2", 11, "GPUs & parallel hardware", "Why GPUs exist — and why AI loves them", 5, { foundations: 15, senior: 25 }),
+  ch8,
+  ch9,
   // P3 · Code
   stub("ch10", "p3", 12, "From machine code to languages", "The abstraction elevator; functions, call stack, recursion", 6, { foundations: 22, senior: 35 }),
   stub("ch11", "p3", 13, "Compilers & interpreters", "Lexer → parser → AST → bytecode → JIT", 6, { foundations: 22, senior: 38 }),
