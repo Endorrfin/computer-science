@@ -5,7 +5,7 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { cx, splitKeyPoint } from "../../lib/utils.ts";
-import { renderInline } from "../../lib/md.tsx";
+import { renderInline } from "../../lib/mdRender.tsx";
 
 export default function Flashcards({ keyPoints, accent }: { keyPoints: string[]; accent?: string }) {
   const cards = keyPoints.map(splitKeyPoint).filter((c) => c.back !== "");

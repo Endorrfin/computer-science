@@ -3,14 +3,7 @@
 // later chapter). Local coordinate space: 64 × 40, output at (64, 20).
 import type { ReactNode } from "react";
 import type { LogicGateKind } from "./model.ts";
-
-export const GATE_W = 64;
-export const GATE_H = 40;
-
-/** Input port y-offsets within the 64×40 box. */
-export function inputOffsets(kind: LogicGateKind): number[] {
-  return kind === "NOT" ? [20] : [12, 28];
-}
+import { GATE_W, inputOffsets } from "./gateGeometry.ts";
 
 const BODY: Record<LogicGateKind, ReactNode> = {
   AND: <path d="M10 6 H38 A14 14 0 0 1 38 34 H10 Z" />,

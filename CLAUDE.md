@@ -486,3 +486,46 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   typecheck ✓ · lint ✓ · qa ✓ · test ✓ (16 logic + 66 info + 12 md) · build ✓ (68 modules).**
   Lesson for §8/§10: Node gates can't catch render-time infinite loops — **a real-browser
   smoke test of at least one chapter is now mandatory before closing any session.**
+- **2026-07-05 · S3 (P2 · machine core)** — ch.5–6 built to the ch.4 golden bar; Part 2's
+  compute + memory foundation now stands on ch.4's gates. **ch.5 Circuits that count**
+  (story: Stibitz's 1937 kitchen-table "Model K" adder): half → full → 4-bit ripple-carry,
+  two's-complement subtraction (`A + ~B + 1`, one adder does both), the ALU
+  (ADD/SUB/AND/OR/XOR/CMP) and its Z/N/C/V flags with the C-vs-V distinction, the
+  multiplexer; formal corner (generate/propagate → carry-lookahead seed, `V = Cₙ ⊕ Cₙ₋₁`),
+  half-vs-full compare, 4 pitfalls, 10 keyPoints, 5 sources (web-verified). **ch.6 Circuits
+  that remember** (story: the 1918 Eccles–Jordan flip-flop): feedback = memory, SR latch
+  (cross-coupled NOR + the forbidden state), gated D latch, edge-triggered D flip-flop + the
+  clock (why machines are synchronous), registers, RAM = registers + address decoder, SRAM
+  (6T) vs DRAM (1T1C + refresh), the memory hierarchy; formal corner, latch-vs-flip-flop
+  compare, 4 pitfalls, 10 keyPoints, 5 sources. **4 micro sims** — `build-an-adder` (guided
+  half→full→ripple; animated carry sweep via `useSimClock`; try 1111+0001), `alu-visualizer`
+  (op select, live Z/N/C/V, signed/unsigned readouts, reactive), `latch-playground` (SR
+  latch stepped signal-by-signal to show the loop settle + hold; D-flip-flop CLK/D/Q
+  waveform with rising-edge capture), `ram-grid` (binary address → one-hot decoder → cell;
+  read/write bytes; 3/4/5-wire bus shows the doubling law — **reused ch.8/14/23**). **2 figs**
+  — `mux-router` (4:1 select→path), `memory-hierarchy` (register→L1→L2→L3→RAM→SSD as distance;
+  "if a register were 1 s…" scaling — reused ch.8/14/23); both delegated to a subagent, then
+  reviewed. **2 predict-quizzes** (`adder-predict`, `latch-predict`). **10 interview Qs**
+  (iv-ch5/6-*). **2 pure engines** — `sims/machine/arith.ts` (halfAdder/fullAdder/rippleAdd
+  with carry trace, `alu` + flags) and `sims/machine/memory.ts` (SR/D latch, D flip-flop,
+  register, RAM) — plus **`scripts/test-machine.ts` (61 truth-tests: adder columns, ripple
+  carry-sweep + wrap, ALU flag corners incl. 127+1 V-overflow / 200+100 C-carry / signed
+  SUB borrow, SR set/reset/hold/forbidden, edge-only DFF capture, RAM round-trip + one-hot +
+  the 32-bit capacity law)**, wired into `npm test`. registryKeys/registry → **14 sims, 6
+  figs**; new P2-machine CSS block in `global.css` (semantic palette, reduced-motion
+  inherited). **Adversarial review** (subagent + web search): engines, figures and prose all
+  confirmed correct; historical facts verified (Stibitz Nov 1937 · Eccles–Jordan 1918 ·
+  74181 1970 first single-chip ALU · latency ladder). Two fixes from it: (1) **latent bug** —
+  `ramCapacityBytes` used `1 << addrBits`, and JS masks the shift mod 32 so `1<<32 === 1`
+  (returned **1** for the chapter's own "32-bit → 4 GiB" headline); now `2 ** addrBits`,
+  locked with a test. (2) softened `iv-ch6-4` to credit the **power/heat wall** (not just the
+  critical path) for the ~5 GHz plateau — consistent with ch.4. **verify = typecheck ✓ ·
+  lint ✓ (same 2 benign fast-refresh warns in md.tsx/gateShapes.tsx) · qa ✓ (6 live chapters,
+  mandate holds; 14 sims · 6 figs · 6 quizzes · 29 interview Qs) · test ✓ (16 logic + 66 info
+  + 12 md + 61 machine) · build ✓** (fresh `dist-s3`: 76 modules, CSS 45.2 KB, new per-sim
+  chunks 3.6–7.7 KB, react-vendor 190 KB). Sandbox `rm`/unlink still blocked → temp
+  `dist-s3/` can't be deleted here but is gitignored (`dist-*`); harmless. NOT sandbox-
+  testable: real-browser interaction pass — **5-min manual QA after deploy** (carry ripple
+  play/step; ALU presets flip the right flags; SR latch step-settle + DFF waveform; RAM
+  read/write + decoder one-hot; both figures auto-play). **S3 CLOSED pending user commit.
+  Next: S4 — P2 CPU: ch.7 `cpu-8bit` HERO (mini-assembler + emulator) + P2 boss (Fibonacci).**

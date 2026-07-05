@@ -1,37 +1,9 @@
 // Mini-markdown → React. Deliberately tiny and dependency-free: content is
 // authored in src/data/* and only needs headings, paragraphs, lists, quotes,
 // bold/italic/inline-code and links. React escapes everything by default.
-import type { ReactNode } from "react";
-import { isExternal, tokenizeInline } from "./mdInline.ts";
-import type { InlineTok } from "./mdInline.ts";
-
-// CHANGED (S2 hotfix): render pre-tokenized inline nodes. The tokenizer lives
-// in mdInline.ts with a fresh regex per call — the old shared /g regex + this
-// recursion infinite-looped on any **bold** text and crashed the renderer.
-function renderTok(tok: InlineTok, key: number): ReactNode {
-  switch (tok.t) {
-    case "text":
-      return tok.v;
-    case "code":
-      return <code key={key}>{tok.v}</code>;
-    case "strong":
-      return <strong key={key}>{tok.children.map((c, i) => renderTok(c, i))}</strong>;
-    case "em":
-      return <em key={key}>{tok.v}</em>;
-    case "link": {
-      const ext = isExternal(tok.href);
-      return (
-        <a key={key} href={tok.href} target={ext ? "_blank" : undefined} rel={ext ? "noreferrer" : undefined}>
-          {tok.text}
-        </a>
-      );
-    }
-  }
-}
-
-export function renderInline(text: string): ReactNode[] {
-  return tokenizeInline(text).map((tok, i) => renderTok(tok, i));
-}
+// CHANGED (S3 lint): inline rendering moved to mdRender.tsx so this file
+// exports only the <Md> component (react-refresh/only-export-components).
+import { renderInline } from "./mdRender.tsx";
 
 type Block =
   | { t: "h2" | "h3" | "p" | "quote"; text: string }

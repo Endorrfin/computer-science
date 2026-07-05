@@ -8,7 +8,8 @@ import SimShell from "../SimShell.tsx";
 import { useSimClock } from "../../../lib/simClock.ts";
 import { markChallengeDone, useChallengesDone } from "../../../lib/progress.ts";
 import { cx } from "../../../lib/utils.ts";
-import { GateGlyph, inputOffsets } from "./gateShapes.tsx";
+import { GateGlyph } from "./gateShapes.tsx";
+import { inputOffsets } from "./gateGeometry.ts";
 import { CHALLENGES, challengeById, checkChallenge } from "./challenges.ts";
 import type { Challenge, CheckResult } from "./challenges.ts";
 import {
