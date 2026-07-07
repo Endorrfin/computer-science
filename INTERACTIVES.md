@@ -137,17 +137,18 @@
 - [fig] `sort-stability` — what "stable" means (equal keys keep input order) — the one thing the number-only race can't show
 - [quiz] `sort-predict` — quicksort's O(n²) worst case, counting's zero comparisons, stability for multi-key sorts
 
-### ch.17 — Graphs
-- [HERO] `pathfinder` — grid world: paint walls & weight terrain; run BFS/DFS/Dijkstra/A\* — frontier flood animated, visited count vs path cost; A\* heuristic-weight slider (greedy↔Dijkstra morph)
+### ch.17 — Graphs *(built S9)*
+- [HERO] `pathfinder` — grid world: paint walls & weight terrain; run BFS/DFS/Dijkstra/A\* — frontier flood animated, visited count vs path cost; A\* heuristic-weight slider (greedy↔Dijkstra morph); hosts the P4 boss
 - [micro] `repr-switcher` — same graph as adjacency matrix ↔ list; "is u→v an edge?" vs "list neighbors" cost counters
 - [micro] `topo-stepper` — dependency graph; peel zero-in-degree nodes; introduce a cycle → stuck (teachable fail)
 - [fig] `mst-grow` — Kruskal vs Prim growing side by side
+- [quiz] `graph-predict` — BFS-vs-weighted, the A\* heuristic dial, Dijkstra + negative edges, Kahn cycle detection
 - [boss] `P4: beat the blind race` — on a revealed maze, pick algorithm + heuristic to hit the target visited-node budget — badge: *Pathmaster*
 
-### ch.18 — Design paradigms
-- [micro] `dp-table-filler` — LCS (or knapsack): recursion *tree* (exploding, duplicated subtrees highlighted) vs memo *table* filling cell-by-cell — side by side
-- [micro] `nqueens-backtracker` — watch place→conflict→backtrack; tries counter; speed slider
-- [micro] `greedy-fails` — coin systems where greedy wins vs loses; counterexample generator
+### ch.18 — Design paradigms *(built S9)*
+- [micro] `dp-table-filler` — LCS: recursion *tree* (exploding, duplicated subtrees highlighted) vs memo *table* filling cell-by-cell — side by side
+- [micro] `nqueens-backtracker` — watch place→conflict→backtrack; tries counter; N + first/all toggle
+- [micro] `greedy-fails` — coin systems where greedy wins vs loses; counterexample hunter
 - [quiz] `pick-the-paradigm` — 5 problems → which technique fits
 
 ## P5 · Theory
@@ -298,6 +299,10 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 - `merge-two-sorted` — the merge step, two-pointer O(n+m) *(ch.16)*
 - `quickselect` — k-th smallest in expected O(n), partition-based *(ch.16)*
 - `counting-sort` — non-comparison sort of small non-negative ints *(ch.16)*
+- `bfs-shortest-path` — fewest hops on an unweighted graph via BFS, −1 if unreachable *(ch.17)*
+- `topo-order` — a valid topological order via Kahn, [] on a cycle *(ch.17)*
+- `lcs-length` — longest common subsequence length via the DP table *(ch.18)*
+- `coin-change-min` — fewest coins for an amount (DP, where greedy fails) *(ch.18)*
 
 ## Shared framework (built once at S1, reused ~90 times)
 

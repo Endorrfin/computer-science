@@ -44,6 +44,13 @@ export const SIM_KEYS = [
   "trie-autocomplete", // ch.15 micro — type to walk/insert; shared prefixes; autocomplete = collect the subtree
   "sorting-race", // ch.16 HERO — seven sorts race on a fair access clock; counting/radix show zero comparisons
   "binary-search", // ch.16 micro — lo/mid/hi window halves each probe; exact search + lower-bound
+  // P4 · Algorithms & Data Structures (S9)
+  "pathfinder", // ch.17 HERO — BFS/DFS/Dijkstra/A* on a grid; paint walls & terrain; A* heuristic morph; P4 boss
+  "repr-switcher", // ch.17 micro — adjacency matrix ↔ list; edge-test vs list-neighbours read counts
+  "topo-stepper", // ch.17 micro — Kahn's algorithm peels in-degree-0 nodes; add a cycle → stuck
+  "dp-table-filler", // ch.18 micro — LCS: exploding recursion vs the memo table filled cell by cell
+  "nqueens-backtracker", // ch.18 micro — place/conflict/back-track with a tries counter vs Nⁿ brute force
+  "greedy-fails", // ch.18 micro — coin change: greedy vs optimal; hunt the smallest counterexample
 ] as const;
 
 export const FIG_KEYS = [
@@ -73,6 +80,8 @@ export const FIG_KEYS = [
   "rb-intuition", // ch.15 — red-black rules as intuition: no red-red, equal black-heights → O(log n)
   "merge-recursion", // ch.16 — merge sort's divide-and-merge tree, split to singletons then merge up sorted
   "sort-stability", // ch.16 — what "stable" means: equal keys keep their input order (the race can't show this)
+  // P4 · Algorithms & Data Structures (S9)
+  "mst-grow", // ch.17 — Kruskal (edge-first, global) vs Prim (vertex-first, local) grow the same MST
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

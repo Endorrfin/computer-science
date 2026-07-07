@@ -1531,6 +1531,186 @@ assertDeepEqual(countingSort(big), [...big].sort((a,b)=>a-b));`,
       },
     ],
   },
+  {
+    id: "bfs-shortest-path",
+    chapterId: "ch17",
+    title: "Shortest path by hops (BFS)",
+    difficulty: "core",
+    tags: ["graphs", "bfs", "shortest-path"],
+    prompt: `
+On an **undirected** graph with \`n\` nodes (0…n−1) and an edge list, return the **fewest edges** on any path from \`start\` to \`goal\`, or **−1** if the goal is unreachable.
+
+This is BFS: flood outward in rings of increasing hop-distance so the first time you reach a node is via a shortest path. A direct-edge check or a DFS won't do — only breadth-first order guarantees minimality.
+
+### Example
+- \`shortestHops(4, [[0,1],[1,2],[2,3]], 0, 3)\` → \`3\`
+- \`shortestHops(4, [[0,1],[1,2],[2,3],[0,3]], 0, 3)\` → \`1\` (the shortcut)
+`,
+    signature: `function shortestHops(n: number, edges: number[][], start: number, goal: number): number`,
+    exportName: "shortestHops",
+    starter: `function shortestHops(n, edges, start, goal) {
+  // TODO: BFS from start; return the hop distance to goal, or -1.
+  if (start === goal) return 0;
+  // wrong: this only finds goals that are a SINGLE edge away
+  for (const [u, v] of edges) {
+    if ((u === start && v === goal) || (v === start && u === goal)) return 1;
+  }
+  return -1;
+}`,
+    solution: `function shortestHops(n, edges, start, goal) {
+  const adj = Array.from({ length: n }, () => []);
+  for (const [u, v] of edges) { adj[u].push(v); adj[v].push(u); }
+  const dist = Array.from({ length: n }, () => -1);
+  dist[start] = 0;
+  const q = [start];
+  for (let i = 0; i < q.length; i++) {
+    const u = q[i];
+    if (u === goal) return dist[u];
+    for (const w of adj[u]) if (dist[w] === -1) { dist[w] = dist[u] + 1; q.push(w); }
+  }
+  return dist[goal];
+}`,
+    tests: [
+      { name: "start equals goal is 0 hops", body: `assertEqual(shortestHops(3, [[0,1],[1,2]], 1, 1), 0);` },
+      { name: "a straight line of edges", body: `assertEqual(shortestHops(4, [[0,1],[1,2],[2,3]], 0, 3), 3);` },
+      { name: "takes the shortcut, not the long way", body: `assertEqual(shortestHops(4, [[0,1],[1,2],[2,3],[0,3]], 0, 3), 1);` },
+      { name: "two equal-length paths give 2", body: `assertEqual(shortestHops(4, [[0,1],[1,2],[0,3],[3,2]], 0, 2), 2);` },
+      { name: "unreachable goal is -1", body: `assertEqual(shortestHops(3, [[0,1]], 0, 2), -1);` },
+    ],
+  },
+  {
+    id: "topo-order",
+    chapterId: "ch17",
+    title: "Topological order (Kahn)",
+    difficulty: "core",
+    tags: ["graphs", "topological-sort", "dag"],
+    prompt: `
+Given a directed graph with \`n\` nodes and edges \`[u, v]\` meaning **u must come before v**, return **any valid topological order** (every edge points forward), or the **empty array** if the graph has a cycle.
+
+Use Kahn's algorithm: start from the in-degree-0 nodes, peel one, decrement its successors, repeat. If you can't peel all \`n\` nodes, a cycle blocked you.
+
+### Example
+- \`topoOrder(4, [[0,1],[0,2],[1,3],[2,3]])\` → e.g. \`[0,1,2,3]\`
+- \`topoOrder(2, [[0,1],[1,0]])\` → \`[]\` (cycle)
+`,
+    signature: `function topoOrder(n: number, edges: number[][]): number[]`,
+    exportName: "topoOrder",
+    starter: `function topoOrder(n, edges) {
+  // TODO: peel in-degree-0 nodes (Kahn). This identity order ignores the edges.
+  return Array.from({ length: n }, (_, i) => i);
+}`,
+    solution: `function topoOrder(n, edges) {
+  const adj = Array.from({ length: n }, () => []);
+  const indeg = Array.from({ length: n }, () => 0);
+  for (const [u, v] of edges) { adj[u].push(v); indeg[v]++; }
+  const q = [];
+  for (let i = 0; i < n; i++) if (indeg[i] === 0) q.push(i);
+  const order = [];
+  for (let i = 0; i < q.length; i++) {
+    const u = q[i];
+    order.push(u);
+    for (const w of adj[u]) if (--indeg[w] === 0) q.push(w);
+  }
+  return order.length === n ? order : [];
+}`,
+    tests: [
+      {
+        name: "diamond DAG: all nodes present, edges point forward",
+        body: `const o = topoOrder(4, [[0,1],[0,2],[1,3],[2,3]]);
+const p = {}; o.forEach((x,i)=>p[x]=i);
+assertEqual(o.length, 4, "all nodes present");
+assert([[0,1],[0,2],[1,3],[2,3]].every(([u,v]) => p[u] < p[v]), "every edge points forward");`,
+      },
+      {
+        name: "respects a forced order (not identity)",
+        body: `const o = topoOrder(3, [[2,0],[0,1]]);
+const p = {}; o.forEach((x,i)=>p[x]=i);
+assert(p[2] < p[0] && p[0] < p[1], "must place 2 before 0 before 1");`,
+      },
+      { name: "a cycle returns []", body: `assertDeepEqual(topoOrder(2, [[0,1],[1,0]]), []);` },
+      { name: "single node, no edges", body: `assertDeepEqual(topoOrder(1, []), [0]);` },
+    ],
+  },
+  {
+    id: "lcs-length",
+    chapterId: "ch18",
+    title: "Longest common subsequence (DP)",
+    difficulty: "core",
+    tags: ["dynamic-programming", "strings"],
+    prompt: `
+Return the length of the **longest common subsequence** of two strings — the longest sequence of characters appearing left-to-right (not necessarily contiguously) in **both**.
+
+Fill a DP table: \`dp[i][j]\` is the LCS of the first \`i\` of \`a\` and first \`j\` of \`b\`. On a match, \`dp[i][j] = dp[i−1][j−1] + 1\`; otherwise \`max(dp[i−1][j], dp[i][j−1])\`. Counting shared letters ignores **order** and overcounts.
+
+### Example
+- \`lcsLength("AGCAT", "GAC")\` → \`2\`
+- \`lcsLength("AB", "BA")\` → \`1\` (not 2)
+`,
+    signature: `function lcsLength(a: string, b: string): number`,
+    exportName: "lcsLength",
+    starter: `function lcsLength(a, b) {
+  // TODO: DP over prefixes. This counts shared letters ignoring ORDER — wrong.
+  let c = 0; const bb = b.split("");
+  for (const ch of a) { const k = bb.indexOf(ch); if (k >= 0) { bb.splice(k, 1); c++; } }
+  return c;
+}`,
+    solution: `function lcsLength(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++)
+    for (let j = 1; j <= n; j++)
+      dp[i][j] = a[i-1] === b[j-1] ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+  return dp[m][n];
+}`,
+    tests: [
+      { name: "classic AGCAT / GAC", body: `assertEqual(lcsLength("AGCAT", "GAC"), 2);` },
+      { name: "ABCBDAB / BDCAB is 4", body: `assertEqual(lcsLength("ABCBDAB", "BDCAB"), 4);` },
+      { name: "order matters: AB / BA is 1, not 2", body: `assertEqual(lcsLength("AB", "BA"), 1);` },
+      { name: "empty string is 0", body: `assertEqual(lcsLength("", "ABC"), 0);` },
+      { name: "identical strings", body: `assertEqual(lcsLength("ABC", "ABC"), 3);` },
+    ],
+  },
+  {
+    id: "coin-change-min",
+    chapterId: "ch18",
+    title: "Fewest coins (DP, where greedy fails)",
+    difficulty: "core",
+    tags: ["dynamic-programming", "greedy"],
+    prompt: `
+Return the **minimum number of coins** (each denomination usable unlimited times) that sum to \`amount\`, or **−1** if it can't be made.
+
+Greedy — take the biggest coin that fits — is optimal only on canonical systems; on \`{1,3,4}\` making 6 it gives 4+1+1 = 3 when 3+3 = 2 is better. Do DP over every amount from 0 to \`amount\`.
+
+### Example
+- \`minCoins([1,3,4], 6)\` → \`2\` (greedy would say 3)
+- \`minCoins([2], 3)\` → \`-1\`
+`,
+    signature: `function minCoins(coins: number[], amount: number): number`,
+    exportName: "minCoins",
+    starter: `function minCoins(coins, amount) {
+  // TODO: DP. This greedy takes the biggest coin first — wrong on {1,3,4}, 6.
+  const desc = [...coins].sort((x, y) => y - x);
+  let rem = amount, count = 0;
+  for (const c of desc) { while (rem >= c) { rem -= c; count++; } }
+  return rem === 0 ? count : -1;
+}`,
+    solution: `function minCoins(coins, amount) {
+  const INF = Infinity;
+  const best = new Array(amount + 1).fill(INF);
+  best[0] = 0;
+  for (let a = 1; a <= amount; a++)
+    for (const c of coins)
+      if (c <= a && best[a - c] + 1 < best[a]) best[a] = best[a - c] + 1;
+  return best[amount] === INF ? -1 : best[amount];
+}`,
+    tests: [
+      { name: "US cents 63 → 6", body: `assertEqual(minCoins([1,5,10,25], 63), 6);` },
+      { name: "greedy trap {1,3,4} at 6 → 2", body: `assertEqual(minCoins([1,3,4], 6), 2);` },
+      { name: "impossible amount → -1", body: `assertEqual(minCoins([2], 3), -1);` },
+      { name: "11 from {1,2,5} → 3", body: `assertEqual(minCoins([1,2,5], 11), 3);` },
+      { name: "zero amount → 0", body: `assertEqual(minCoins([5], 0), 0);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {
