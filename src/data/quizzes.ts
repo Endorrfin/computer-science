@@ -734,6 +734,86 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "files-predict",
+    chapterId: "ch24",
+    questions: [
+      {
+        prompt:
+          "A file system uses **4 KiB blocks** and **4-byte** block pointers. How many pointers fit in a single indirect block?",
+        options: ["1024", "4096", "512", "256"],
+        answer: 0,
+        explain:
+          "Pointers per block = block size ÷ pointer size = 4096 ÷ 4 = **1024**. That fan-out is why the scheme scales so fast: the double-indirect block reaches 1024² blocks and the triple-indirect 1024³, so a fixed-size inode with just 12 direct pointers still addresses over **4 TiB**.",
+      },
+      {
+        prompt:
+          "A disk is **30% free**, but the largest run of adjacent free blocks is **3**. Under **contiguous** allocation, can you create a **5-block** file?",
+        options: [
+          "No — contiguous allocation needs one hole of ≥ 5 blocks",
+          "Yes — 30% free is more than enough",
+          "Only after defragmenting RAM",
+          "Yes, the OS automatically splits the file",
+        ],
+        answer: 0,
+        explain:
+          "This is **external fragmentation**: total free space is plenty, but it's shattered into gaps too small to hold the file in one run, so contiguous allocation fails. **Linked** or **indexed** allocation would place the file fine — they don't need adjacency, at the cost of chain-walking (linked) or an index block (indexed).",
+      },
+      {
+        prompt:
+          "A journaling file system crashes **after** writing the log blocks but **before** the commit record. What happens on reboot?",
+        options: [
+          "The transaction is discarded — the file system is exactly as before",
+          "The half-written change is applied anyway",
+          "It must fsck-scan the whole disk to repair",
+          "The affected file is silently corrupted",
+        ],
+        answer: 0,
+        explain:
+          "No commit record means the transaction never became official, so recovery **discards** it and the file system is untouched — no corruption. That's the point of write-ahead logging: the single atomic commit turns recovery into a decision (no commit ⇒ discard, commit ⇒ replay) instead of an O(disk) scan.",
+      },
+    ],
+  },
+  {
+    id: "concurrency-predict",
+    chapterId: "ch25",
+    questions: [
+      {
+        prompt:
+          "Two threads each run `count++` **once** with no lock; `count` starts at **0**. What is the **smallest** final value it can have?",
+        options: ["1", "0", "2", "-1"],
+        answer: 0,
+        explain:
+          "`count++` is load-increment-store. Both threads can load **0**, both increment their register to **1**, and both store **1** — two increments, but `count` ends at **1**. One update was lost. The correct value is 2; a mutex around the section guarantees it.",
+      },
+      {
+        prompt:
+          "To make **deadlock impossible**, how many of the four Coffman conditions must you remove?",
+        options: [
+          "Just one — all four are necessary, so breaking any single one prevents it",
+          "All four",
+          "Only mutual exclusion, specifically",
+          "None — deadlock is unavoidable once you use locks",
+        ],
+        answer: 0,
+        explain:
+          "The four conditions (mutual exclusion, hold-and-wait, no-preemption, circular wait) are **jointly necessary** — all must hold at once. Negating **any one** prevents deadlock, which is exactly why the dining-philosophers fixes each target a different condition.",
+      },
+      {
+        prompt:
+          "Thread A locks (m1, then m2); thread B locks (m2, then m1). They sometimes deadlock. The simplest structural fix is:",
+        options: [
+          "Make every thread acquire m1 before m2 — a global lock ordering",
+          "Add a third lock around both",
+          "Raise thread A's priority",
+          "Use a larger scheduling quantum",
+        ],
+        answer: 0,
+        explain:
+          "A consistent global **lock order** removes the **circular wait**: if everyone takes the lower-numbered lock first, no cycle in the wait-for graph can ever close. Priorities and quanta don't address the cycle; an extra enclosing lock just serializes everything (and can create new deadlocks).",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

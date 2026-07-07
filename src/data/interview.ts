@@ -1095,6 +1095,120 @@ export const INTERVIEW: InterviewQ[] = [
       "That's **thrashing**: the combined **working sets** of the running processes exceed physical RAM, so nearly every access faults, evicting a page that's needed again immediately. The disk (or swap) is the bottleneck; the CPU stalls waiting on I/O, so it looks idle while throughput craters.\n" +
       "The cure is **not** a smarter replacement policy — it's reducing memory pressure: lower the multiprogramming level (admit fewer processes / cap concurrency), add RAM, or size each process's frames to its working set (Denning's model, or a page-fault-frequency controller that grants more frames when a process faults too often and reclaims them when it faults rarely). Killing or suspending the biggest offender is the emergency stop.",
   },
+
+  // ch24 · Files & storage
+  {
+    id: "iv-ch24-1",
+    chapterId: "ch24",
+    level: "mid",
+    q: "What is an inode, and what does it NOT contain?",
+    a:
+      "An **inode** (index node) is the per-file on-disk record holding everything *about* a file: its type, size, owner, permissions, timestamps, a link count, and the **map from logical file blocks to physical disk blocks**.\n" +
+      "What it deliberately does **not** hold is the file's **name**. Names live in **directories**, which map names to inode numbers. That separation is what lets one file have several names (**hard links**, counted by the link count so the data is freed only when the count hits zero) and makes a directory just another file.",
+  },
+  {
+    id: "iv-ch24-2",
+    chapterId: "ch24",
+    level: "mid",
+    q: "How does a fixed-size inode address both a 10-byte file and a multi-terabyte one?",
+    a:
+      "Through **multi-level indirection**. The inode has a handful of **direct** pointers (classically 12) that name a small file's blocks directly — one read each. Beyond that it has a **single-indirect** pointer to a block *of* pointers, a **double-indirect** pointer to a block of single-indirect blocks, and a **triple-indirect** for one more level.\n" +
+      "The fan-out per level is `blockSize / pointerSize` (1024 for 4 KiB blocks and 4-byte pointers), so three levels reach past 4 TiB. Small files pay nothing extra; huge files pay at most a few extra reads to walk the indirection — and those indirect blocks are cached, so it's rarely felt.",
+  },
+  {
+    id: "iv-ch24-3",
+    chapterId: "ch24",
+    level: "mid",
+    q: "Compare contiguous, linked, and indexed allocation.",
+    a:
+      "**Contiguous** stores a file in one adjacent run: excellent sequential *and* random access (block *i* = start + *i*), but it needs a hole big enough and causes **external fragmentation**, so a large file can fail to fit even with plenty free.\n" +
+      "**Linked** threads the file through any free blocks, each pointing to the next (FAT): no external fragmentation and easy growth, but random access must **walk the chain**, and one bad pointer truncates the file.\n" +
+      "**Indexed** keeps one **index block** listing all data blocks: cheap random access and easy growth, at the cost of a block of overhead per file (and a bound on file size per index block). That's the inode approach — with indirection added to lift the size bound.",
+  },
+  {
+    id: "iv-ch24-4",
+    chapterId: "ch24",
+    level: "senior",
+    q: "What problem does journaling solve, and what does 'ordered mode' guarantee?",
+    a:
+      "A single logical update touches several blocks (data, free-space bitmap, inode); a crash **between** those writes leaves the file system inconsistent (leaked or double-allocated blocks). **Journaling** writes the intended change to a log and makes it durable with a single atomic **commit** record *before* touching the real locations. Recovery is then decidable: no commit ⇒ discard; commit present ⇒ replay (writes are idempotent). It replaces the O(disk) **fsck** scan.\n" +
+      "Most systems journal **metadata only** for speed. ext3/4's default **ordered** mode adds one guarantee: file **data** is forced to disk *before* the metadata that points to it commits — so after a crash you never see an inode pointing at stale/garbage blocks, even though the data itself isn't journaled. (Full **journal** mode logs data too but ~halves write throughput; **writeback** drops the ordering and can expose garbage.)",
+  },
+  {
+    id: "iv-ch24-5",
+    chapterId: "ch24",
+    level: "senior",
+    q: "Why can't you treat an SSD like a faster hard disk?",
+    a:
+      "Flash can't overwrite a page in place — you must **erase an entire block** (many pages) before rewriting — and each cell tolerates a limited number of erase cycles. So an SSD hides a **Flash Translation Layer (FTL)** that writes updates to fresh pages, remaps logical→physical addresses, does **wear leveling**, and garbage-collects blocks full of stale pages. That GC causes **write amplification** (one logical write triggers several physical ones).\n" +
+      "Consequences: **defragmenting** an SSD is pointless wear; small random writes are disproportionately costly; **TRIM** matters (it tells the drive which blocks are truly free); and 'securely wiping' a file is unreliable because the FTL may have relocated copies. Same interface as an HDD, very different rules — and no seek penalty, so random reads are nearly as fast as sequential.",
+  },
+  {
+    id: "iv-ch24-6",
+    chapterId: "ch24",
+    level: "staff",
+    q: "A service does many small appends and needs each acknowledged write to survive a crash. What do you need to know and do?",
+    a:
+      "Key fact: a successful `write()` only reaches the OS **page cache** — it can sit in RAM for seconds before hitting the disk. To make an ack durable you must **fsync** the file (and, for a newly created file, fsync its **directory** too, or the name may not survive). Only after fsync returns is the data on stable media.\n" +
+      "Beyond correctness: batch appends and fsync **once per batch** (group commit) rather than per record, because each fsync is a durability barrier that can cost milliseconds; consider O_DIRECT or a dedicated log device if the page cache hurts; and know your file system's journaling mode — metadata journaling protects the *structure*, not necessarily your last data write. This is exactly why databases keep their own **write-ahead log** and fsync it deliberately rather than trusting buffered writes.",
+  },
+
+  // ch25 · Concurrency
+  {
+    id: "iv-ch25-1",
+    chapterId: "ch25",
+    level: "mid",
+    q: "What is a race condition? Give the canonical example.",
+    a:
+      "A **race condition** is when the correctness of a result depends on the **timing/interleaving** of concurrent operations that no one controls.\n" +
+      "The canonical example is `count++` from two threads without synchronization. `count++` isn't atomic — it's **load, increment, store**. If both threads load the same value, both increment their private register, and both store, the counter rises by **one** instead of two: a **lost update**. The fix is mutual exclusion (a lock, or an atomic operation) so the read-modify-write is indivisible.",
+  },
+  {
+    id: "iv-ch25-2",
+    chapterId: "ch25",
+    level: "mid",
+    q: "Mutex vs semaphore vs condition variable — when do you use each?",
+    a:
+      "A **mutex** enforces mutual exclusion: one holder at a time, and (by convention) the holder releases it — use it to protect a critical section.\n" +
+      "A **semaphore** is a counter with atomic wait/signal (Dijkstra's P/V): a *binary* semaphore acts like a lock, but a *counting* one lets up to N through — use it to model a pool of N interchangeable resources or to signal availability between threads.\n" +
+      "A **condition variable** lets a thread **wait until a predicate holds** (e.g. 'queue non-empty'), always paired with a mutex and used in a `while (!predicate) wait()` loop to handle spurious wakeups — use it for 'sleep until something changes' coordination, not for mutual exclusion itself.",
+  },
+  {
+    id: "iv-ch25-3",
+    chapterId: "ch25",
+    level: "senior",
+    q: "State the four conditions necessary for deadlock, and how each is broken.",
+    a:
+      "**Coffman's four** (all must hold at once): **mutual exclusion** (a resource is held exclusively), **hold-and-wait** (hold one resource while waiting for another), **no-preemption** (a resource is released only voluntarily), and **circular wait** (a closed chain of waiters).\n" +
+      "Because they're jointly necessary, removing **any one** prevents deadlock: impose a global **resource ordering** to kill *circular wait*; require **all-or-nothing** acquisition to kill *hold-and-wait*; allow **preemption/rollback** (trylock + release) to kill *no-preemption*. Mutual exclusion is usually the one you can't drop — a lock is inherently exclusive — so real prevention attacks the other three.",
+  },
+  {
+    id: "iv-ch25-4",
+    chapterId: "ch25",
+    level: "senior",
+    q: "How does an OS or database detect deadlock, and how does it recover?",
+    a:
+      "Build the **wait-for graph** — a node per thread/transaction, an edge from each blocked one to the holder of the resource it wants — and look for a **cycle** (a DFS in O(V+E) for single-instance resources). A cycle *is* a deadlock: every member waits for the next, forever.\n" +
+      "Recovery breaks the cycle by **preempting a victim**: databases abort and roll back the transaction 'chosen as deadlock victim' (usually the cheapest to undo), then let it retry; an OS might kill a process or force-release a resource. This is the **detection + recovery** posture — as opposed to **prevention** (structurally remove a condition), **avoidance** (Banker's algorithm — stay in safe states, needs max claims up front), or the **ostrich algorithm** (ignore it), which most general-purpose OSes use for application-level locks.",
+  },
+  {
+    id: "iv-ch25-5",
+    chapterId: "ch25",
+    level: "senior",
+    q: "Deadlock, livelock, starvation, priority inversion — distinguish them.",
+    a:
+      "**Deadlock**: a set of threads blocked in a wait-for cycle — nobody runs, nobody yields. **Livelock**: threads *are* running but make no progress, e.g. repeatedly detecting a conflict, backing off, and retrying in lockstep (two people sidestepping in a hallway) — fixed with randomized backoff. **Starvation**: a runnable thread is perpetually passed over because others keep winning the resource (an unfair scheduler or a stream of higher-priority work) — fixed with aging/fairness.\n" +
+      "**Priority inversion**: a low-priority thread holds a lock a high-priority thread needs, and a medium-priority thread preempts the low one, so the high-priority thread is blocked indefinitely by a lower-priority one. The fix is **priority inheritance** (the holder temporarily inherits the waiter's priority) — famously the bug that reset the **Mars Pathfinder** rover in 1997.",
+  },
+  {
+    id: "iv-ch25-6",
+    chapterId: "ch25",
+    level: "staff",
+    q: "A service intermittently hangs under load; you suspect a lock-ordering deadlock. How do you confirm and fix it?",
+    a:
+      "**Confirm**: take a **thread/stack dump** of the hung process (jstack, gdb `thread apply all bt`, pprof) and look for two-plus threads each **blocked acquiring a lock while holding another** — the wait-for cycle is visible in the stacks. Many runtimes and tooling (Java's deadlock detector, TSAN, lock-order validators like the Linux kernel's lockdep) will name the inverted acquisition order directly.\n" +
+      "**Fix**: impose a **global lock ordering** and make every path acquire in that order — the structural cure for circular wait. Where that's impractical, use **lock-free** structures or a single coarser lock for the contended invariant, shrink critical sections so locks are held briefly, or use **trylock with timeout + backoff** to break cycles at the cost of retries. Then add a **lockdep/TSAN** gate in CI so a re-introduced inversion fails a test rather than a customer.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

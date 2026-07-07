@@ -63,6 +63,11 @@ const sims: Record<SimKey, LazyComp> = {
   "syscall-boundary": lazy(() => import("../components/sims/syscall-boundary/SyscallBoundary.tsx")),
   "address-translate": lazy(() => import("../components/sims/paging/AddressTranslate.tsx")),
   "page-fault-lab": lazy(() => import("../components/sims/paging/PageFaultLab.tsx")),
+  // P6 · Operating Systems (S12)
+  "inode-explorer": lazy(() => import("../components/sims/files/InodeExplorer.tsx")),
+  "disk-allocation": lazy(() => import("../components/sims/files/DiskAllocation.tsx")),
+  "race-lab": lazy(() => import("../components/sims/concurrency/RaceLab.tsx")),
+  "deadlock-lab": lazy(() => import("../components/sims/concurrency/DeadlockLab.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -96,6 +101,9 @@ const figs: Record<FigKey, LazyComp> = {
   // P6 · Operating Systems
   "process-states": lazy(() => import("../components/figures/ProcessStates.tsx")),
   "stack-vs-heap": lazy(() => import("../components/figures/StackVsHeap.tsx")),
+  // P6 · Operating Systems (S12)
+  "journaling": lazy(() => import("../components/figures/JournalingStepper.tsx")),
+  "wait-for-graph": lazy(() => import("../components/figures/WaitForGraph.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {
