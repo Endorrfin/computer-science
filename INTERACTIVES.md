@@ -153,22 +153,23 @@
 
 ## P5 · Theory
 
-### ch.19 — Automata & regular languages
-- [micro] `fsm-builder` — draw states/transitions, mark accepting; feed strings, watch the token walk; challenges ("accept binary numbers divisible by 3")
-- [micro] `regex-nfa` — type a regex → NFA renders; test string lights the live paths (including parallel ones)
-- [fig] `chomsky-rings` — regular ⊂ context-free ⊂ … nesting, stepped with example languages
+### ch.19 — Automata & regular languages *(built S10)*
+- [micro] `fsm-builder` — draw states/transitions, mark accepting; feed strings, watch the token walk; challenge: "accept binary numbers divisible by 3" (graded against the true language)
+- [micro] `regex-nfa` — type a regex → Thompson ε-NFA renders; test string lights the live paths (parallel ones included); shows the equivalent-DFA state count (NFA≡DFA)
+- [fig] `chomsky-rings` — regular ⊂ context-free ⊂ context-sensitive ⊂ recursively-enumerable ⊂ beyond, stepped with example languages + the machine each needs
+- [quiz] `regular-or-not` — classify languages as regular or not (the pumping-lemma boundary)
 
-### ch.20 — Computability
-- [HERO] `turing-machine` — tape editor + rule table; run/step; presets: unary addition, palindrome checker, 3-state busy beaver (with step-count fireworks)
+### ch.20 — Computability *(built S10)*
+- [HERO] `turing-machine` — tape window + editable rule table; step/run/timeout; presets: unary addition, palindrome checker, 3- & 4-state busy beavers (with step-count fireworks + S(3)=21 / S(5)=47,176,870 note); boss mode grades an aⁿbⁿ decider
 - [fig] `halting-paradox` — the diagonalization self-reference told as a 6-frame comic stepper
-- [quiz] `does-it-halt` — programs you *can* and provably *can't* decide
-- [boss] `P5: build a TM that accepts aⁿbⁿ` (rule table from scratch, test suite must pass) — badge: *Halting Oracle*
+- [quiz] `does-it-halt` — problems you *can* and provably *can't* decide (halting, Rice, busy beaver)
+- [boss] `P5: build a TM that accepts aⁿbⁿ` (rule table from scratch, full test suite must pass) — badge: *Halting Oracle*
 
-### ch.21 — Complexity
-- [micro] `brute-force-death-watch` — subset-sum/TSP brute force; n slider; live time-at-10⁹-ops/s readout ("n=25 → 4 centuries")
-- [micro] `tsp-playground` — drag cities; nearest-neighbor vs 2-opt vs brute force; tour-length scoreboard
-- [fig] `pnp-map` — P / NP / NP-complete / NP-hard territory map, stepped
-- [quiz] `np-or-not` — classify 5 problems
+### ch.21 — Complexity *(built S10)*
+- [micro] `brute-force-death-watch` — n slider × problem (O(n)…O(n!)) × rate (10⁶…10¹⁸ ops/s); live op-count + honest wall-clock ("age-of-universe" readout); log-scale bars
+- [micro] `tsp-playground` — drag/add cities; nearest-neighbour vs 2-opt vs brute-force optimal; tour-length scoreboard + (n−1)!/2 tour count; brute force locked past n=9
+- [fig] `pnp-map` — P / NP / NP-complete / NP-hard territory map + the P=NP two-worlds collapse, stepped
+- [quiz] `np-or-not` — classify problems as P / NP / NP-complete / NP-hard / undecidable
 
 ## P6 · Operating Systems
 
@@ -303,6 +304,12 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 - `topo-order` — a valid topological order via Kahn, [] on a cycle *(ch.17)*
 - `lcs-length` — longest common subsequence length via the DP table *(ch.18)*
 - `coin-change-min` — fewest coins for an amount (DP, where greedy fails) *(ch.18)*
+- `dfa-accepts` — simulate a DFA over an input string, dead-state on missing transitions *(ch.19)*
+- `binary-divisible-by-three` — the mod-3 remainder automaton in O(1) space *(ch.19)*
+- `anbn-decide` — decide { aⁿbⁿ : n ≥ 0 }, the non-regular language a counter cracks *(ch.20)*
+- `collatz-steps` — count steps to 1 (halting for one input, though the general case is open) *(ch.20)*
+- `subset-sum-decide` — reachable-sums DP for the NP-complete decision problem *(ch.21)*
+- `verify-hamiltonian` — the easy "check a certificate" side of an NP problem *(ch.21)*
 
 ## Shared framework (built once at S1, reused ~90 times)
 
@@ -323,7 +330,9 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 **17 HERO** (incl. stack-map + grand-traversal; P4 carries 3, P1/P2/P6 carry 2 each) ·
 **65 micro** · **36 fig** (+complexity-ladder, +hash-anatomy at S7; +tree-rotation,
 +rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
-**kata runner** (10 katas at v1, S7 → **20 katas** after S8's +10 tree/heap/sort batch) ·
-quizzes in every chapter ≈ **126+ touchables**. As of S8 the live build carries **33 sims,
-18 figures, 16 quizzes, 78 interview Qs, 20 katas** across 16 live chapters (`npm run qa`
-prints the running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate).
+**kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
+S10's +6 automata/computability/complexity batch) · quizzes in every chapter. As of **S10**
+the live build carries **44 sims, 22 figures, 21 quizzes, 106 interview Qs, 30 katas** across
+**21 live chapters** (`npm run qa` prints the running census and enforces the per-chapter
+minimums — CLAUDE.md §6 mandate). **Part 5 · Theory complete** (ch.19–21 + the *Halting
+Oracle* boss inside `turing-machine`).

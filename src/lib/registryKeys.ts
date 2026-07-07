@@ -51,6 +51,12 @@ export const SIM_KEYS = [
   "dp-table-filler", // ch.18 micro — LCS: exploding recursion vs the memo table filled cell by cell
   "nqueens-backtracker", // ch.18 micro — place/conflict/back-track with a tries counter vs Nⁿ brute force
   "greedy-fails", // ch.18 micro — coin change: greedy vs optimal; hunt the smallest counterexample
+  // P5 · Theory (S10)
+  "fsm-builder", // ch.19 micro — build a DFA; feed strings; the divisible-by-3 challenge
+  "regex-nfa", // ch.19 micro — regex → Thompson ε-NFA; live parallel paths; NFA≡DFA state count
+  "turing-machine", // ch.20 HERO — tape + rule table; presets (unary add, palindrome, busy beavers) + aⁿbⁿ boss
+  "brute-force-death-watch", // ch.21 micro — grow n, watch runtime explode at a billion ops/s
+  "tsp-playground", // ch.21 micro — nearest-neighbour vs 2-opt vs brute-force optimal
 ] as const;
 
 export const FIG_KEYS = [
@@ -82,6 +88,10 @@ export const FIG_KEYS = [
   "sort-stability", // ch.16 — what "stable" means: equal keys keep their input order (the race can't show this)
   // P4 · Algorithms & Data Structures (S9)
   "mst-grow", // ch.17 — Kruskal (edge-first, global) vs Prim (vertex-first, local) grow the same MST
+  // P5 · Theory (S10)
+  "chomsky-rings", // ch.19 — regular ⊂ context-free ⊂ context-sensitive ⊂ recursively-enumerable ⊂ beyond
+  "halting-paradox", // ch.20 — the diagonalization self-reference, as a 6-frame comic
+  "pnp-map", // ch.21 — P / NP / NP-complete / NP-hard territory + the P=NP two-worlds frame
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

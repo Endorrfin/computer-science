@@ -52,6 +52,12 @@ const sims: Record<SimKey, LazyComp> = {
   "dp-table-filler": lazy(() => import("../components/sims/dp-table-filler/DpTableFiller.tsx")),
   "nqueens-backtracker": lazy(() => import("../components/sims/nqueens-backtracker/NQueensBacktracker.tsx")),
   "greedy-fails": lazy(() => import("../components/sims/greedy-fails/GreedyFails.tsx")),
+  // P5 · Theory
+  "fsm-builder": lazy(() => import("../components/sims/automata/FsmBuilder.tsx")),
+  "regex-nfa": lazy(() => import("../components/sims/automata/RegexNfa.tsx")),
+  "turing-machine": lazy(() => import("../components/sims/turing/TuringMachine.tsx")),
+  "brute-force-death-watch": lazy(() => import("../components/sims/complexity/BruteForceDeathWatch.tsx")),
+  "tsp-playground": lazy(() => import("../components/sims/complexity/TspPlayground.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -78,6 +84,10 @@ const figs: Record<FigKey, LazyComp> = {
   "merge-recursion": lazy(() => import("../components/figures/MergeRecursion.tsx")),
   "sort-stability": lazy(() => import("../components/figures/SortStability.tsx")),
   "mst-grow": lazy(() => import("../components/figures/MstGrow.tsx")),
+  // P5 · Theory
+  "chomsky-rings": lazy(() => import("../components/figures/ChomskyRings.tsx")),
+  "halting-paradox": lazy(() => import("../components/figures/HaltingParadox.tsx")),
+  "pnp-map": lazy(() => import("../components/figures/PnpMap.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

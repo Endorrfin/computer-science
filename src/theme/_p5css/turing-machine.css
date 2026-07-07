@@ -1,0 +1,413 @@
+/* turing-machine (ch.20 HERO) — hover / animation / layout only. All functional
+   coloring is inline-styled from theme vars in TuringMachine.tsx, so the sim
+   still reads if this sheet is absent. Imported directly by the component so it
+   loads without touching shared CSS. Prefix: tm-. */
+
+/* ------------------------------- controls ------------------------------- */
+.tm-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.tm-ctl .ss-field {
+  gap: 4px;
+}
+.tm-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 8px;
+  width: 9rem;
+  letter-spacing: 0.1em;
+}
+.tm-input--sm {
+  width: 6.5rem;
+}
+.tm-input:focus-visible {
+  outline: 2px solid var(--accent, var(--sem-data));
+  outline-offset: 1px;
+}
+
+/* ------------------------------- tape (SVG) ------------------------------- */
+.tm-stage {
+  background: var(--surface);
+  border-radius: var(--r-s);
+  padding: 8px 4px 4px;
+  overflow-x: auto;
+}
+.tm-svg {
+  display: block;
+  width: 100%;
+  min-width: 520px;
+}
+
+.tm-cell {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.tm-cell--blank {
+  fill: color-mix(in srgb, var(--surface) 70%, var(--s2));
+}
+.tm-cell--head {
+  fill: color-mix(in srgb, var(--sem-control) 20%, var(--s2));
+  stroke-width: 2.5;
+}
+.tm-anim .tm-cell {
+  transition:
+    fill 0.16s ease,
+    stroke 0.16s ease,
+    stroke-width 0.16s ease;
+}
+
+.tm-glyph {
+  fill: var(--tx);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+}
+.tm-glyph--blank {
+  fill: var(--tx3);
+  font-weight: 400;
+}
+.tm-idx {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+
+.tm-head-tri {
+  fill: var(--sem-control);
+}
+.tm-anim .tm-head-tri {
+  animation: tm-bob 1.1s ease-in-out infinite;
+}
+@keyframes tm-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+.tm-statelabel {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ------------------------------- footer / blurb ------------------------------- */
+.tm-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.tm-blurb {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.tm-muted {
+  color: var(--tx3);
+}
+
+/* ------------------------------- busy beaver ------------------------------- */
+.tm-beaver {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  padding: 0.55rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.tm-beaver--win {
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 10%, var(--surface));
+}
+.tm-beaver-hit {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--tx);
+}
+.tm-beaver-hit b {
+  color: var(--sem-ok);
+}
+.tm-beaver-idle {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--tx2);
+}
+.tm-beaver-fact {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--tx3);
+}
+.tm-beaver-fact b {
+  color: var(--tx2);
+}
+.tm-fireworks {
+  display: inline-block;
+  font-size: 1.05rem;
+}
+.tm-beaver--win .tm-fireworks {
+  animation: tm-pop 0.6s ease-out;
+}
+@keyframes tm-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ------------------------------- rule editor ------------------------------- */
+.tm-editor {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  overflow: hidden;
+}
+.tm-editor-toggle {
+  width: 100%;
+  text-align: left;
+  background: var(--s2);
+  border: none;
+  border-bottom: 1px solid transparent;
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  padding: 0.5rem 0.7rem;
+  cursor: pointer;
+}
+.tm-editor-toggle[aria-expanded="true"] {
+  border-bottom-color: var(--line);
+}
+.tm-editor-toggle:hover {
+  background: color-mix(in srgb, var(--accent, var(--sem-data)) 8%, var(--s2));
+}
+.tm-editor-body {
+  padding: 0.6rem 0.7rem 0.7rem;
+  overflow-x: auto;
+}
+
+.tm-rules {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.tm-rules th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--tx3);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 0.4rem 0.3rem;
+}
+.tm-rules td {
+  padding: 0.2rem 0.4rem;
+  vertical-align: middle;
+}
+.tm-rules select {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+.tm-arrow {
+  color: var(--tx3);
+  font-family: var(--font-mono);
+}
+.tm-move {
+  display: inline-flex;
+}
+.tm-sel-ok {
+  color: var(--sem-ok);
+}
+.tm-sel-err {
+  color: var(--sem-err);
+}
+.tm-del {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  color: var(--tx3);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.tm-del:hover {
+  color: var(--sem-err);
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+}
+
+.tm-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.6rem;
+}
+.tm-newstate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tm-editor-help {
+  margin: 0.55rem 0 0;
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+.tm-editor-help code {
+  font-family: var(--font-mono);
+  color: var(--tx2);
+}
+.tm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ------------------------------- boss ------------------------------- */
+.tm-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  padding: 0.75rem 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tm-boss--won {
+  border-color: color-mix(in srgb, var(--sem-ok) 60%, var(--line));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--sem-ok) 22%, transparent);
+}
+.tm-boss-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.tm-boss-task {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.tm-boss-task code,
+.tm-boss-task b {
+  font-family: var(--font-mono);
+}
+.tm-boss-task code {
+  color: var(--sem-data);
+}
+.tm-boss-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.tm-verdict {
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+}
+.tm-verdict.no {
+  color: var(--sem-err);
+}
+
+.tm-boss-results {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  width: 100%;
+  max-width: 30rem;
+}
+.tm-boss-results th {
+  text-align: left;
+  color: var(--tx3);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+.tm-boss-results td {
+  padding: 0.18rem 0.6rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.tm-mono {
+  font-family: var(--font-mono);
+}
+.tm-row-ok td:last-child {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.tm-row-bad td:last-child {
+  color: var(--sem-err);
+  font-weight: 700;
+}
+.tm-row-bad td {
+  background: color-mix(in srgb, var(--sem-err) 6%, transparent);
+}
+
+.tm-boss-badge {
+  border-radius: var(--r-s);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  background: color-mix(in srgb, var(--sem-ok) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-ok) 50%, var(--line));
+  color: var(--tx);
+}
+.tm-boss-badge b {
+  color: var(--sem-ok);
+}
+
+.tm-hint {
+  font-size: 0.8rem;
+  color: var(--tx2);
+}
+.tm-hint summary {
+  cursor: pointer;
+  color: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.tm-hint summary:hover {
+  color: var(--tx2);
+}
+.tm-hint p {
+  margin: 0.5rem 0 0;
+  line-height: 1.55;
+}
+.tm-hint code {
+  font-family: var(--font-mono);
+  color: var(--sem-state);
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tm-cell,
+  .tm-head-tri,
+  .tm-fireworks,
+  .tm-del {
+    transition: none;
+    animation: none;
+  }
+}

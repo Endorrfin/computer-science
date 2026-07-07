@@ -1,0 +1,131 @@
+/* fsm-builder (ch.19 micro) — small sheet: hover/animation/layout only.
+   All functional coloring is inline-styled from theme vars in FsmBuilder.tsx,
+   so the sim still reads correctly if this sheet is absent. Prefix: fsm-. */
+
+.fsm-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.fsm-ctl .ss-field {
+  gap: 4px;
+}
+.fsm-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 8px;
+  width: 8.5rem;
+  letter-spacing: 0.12em;
+}
+.fsm-input:focus-visible {
+  outline: 2px solid var(--accent, var(--p5));
+  outline-offset: 1px;
+}
+
+.fsm-stage {
+  background: var(--surface);
+  border-radius: var(--r-s);
+  padding: 6px;
+  touch-action: none;
+}
+.fsm-svg {
+  display: block;
+  width: 100%;
+  cursor: default;
+}
+.fsm-svg.is-move .fsm-node {
+  cursor: grab;
+}
+.fsm-svg.is-move .fsm-node:active {
+  cursor: grabbing;
+}
+.fsm-svg.is-pick .fsm-node {
+  cursor: pointer;
+}
+
+/* node hit target — the visible ring is a sibling <circle> */
+.fsm-node circle {
+  transition: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fsm-ring {
+    transition: fill 0.18s ease, stroke 0.18s ease;
+  }
+  .fsm-edge path,
+  .fsm-edge polygon {
+    transition: stroke 0.18s ease, fill 0.18s ease;
+  }
+}
+
+.fsm-hint {
+  fill: var(--tx3);
+  font: 12px var(--font-body);
+}
+
+/* footer: challenge panel + legend */
+.fsm-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.fsm-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+.fsm-task {
+  flex: 1 1 16rem;
+  min-width: 12rem;
+  font-size: 0.82rem;
+  color: var(--tx2);
+  line-height: 1.5;
+}
+.fsm-badge {
+  align-self: flex-start;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+}
+.fsm-badge.ok {
+  background: color-mix(in srgb, var(--sem-ok) 15%, var(--surface));
+  border-color: color-mix(in srgb, var(--sem-ok) 50%, var(--line));
+  color: var(--tx);
+}
+.fsm-badge.bad {
+  background: color-mix(in srgb, var(--sem-err) 15%, var(--surface));
+  border-color: color-mix(in srgb, var(--sem-err) 50%, var(--line));
+  color: var(--tx);
+}
+.fsm-badge code {
+  font-family: var(--font-mono);
+  color: var(--sem-err);
+}
+.fsm-badge.ok code {
+  color: var(--sem-ok);
+}
+.fsm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.72rem;
+  color: var(--tx3);
+}
+.fsm-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.fsm-sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid var(--line);
+}

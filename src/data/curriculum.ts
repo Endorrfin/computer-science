@@ -3027,6 +3027,432 @@ const ch18: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.19 — Automata & regular languages  (P5 · Theory, built in S10)
+// ---------------------------------------------------------------
+const ch19: Chapter = {
+  id: "ch19",
+  part: "p5",
+  order: 21,
+  title: "Automata & regular languages",
+  tagline: "The simplest machines — finite states, no memory — and the exact boundary of what they can and cannot recognize",
+  readMins: { foundations: 20, senior: 32 },
+  storyHook: {
+    md:
+      "1943. Neurophysiologist **Warren McCulloch** and logician **Walter Pitts** publish a model of the brain as a network of idealized on/off neurons. A decade later, at RAND, the logician **Stephen Kleene** tries to pin down exactly which patterns such a nerve net can detect — and in doing so invents the **regular expression** and proves it equivalent to a **finite automaton** (published 1956). In 1956 **Noam Chomsky** slots these machines into a hierarchy of grammars; in 1959 **Michael Rabin** and **Dana Scott** add *nondeterminism* and prove it buys no new power — work that later won them the Turing Award. Out of brains and grammars fell the humblest machine in this whole guide: finitely many states, no memory, one pass over the input — and a crisp, provable limit on what it can do.",
+  },
+  assumes: [
+    { chapterId: "ch1", oneLiner: "A string is a finite sequence of symbols drawn from an alphabet (e.g. bits over {0,1}). Automata read strings and answer yes/no." },
+    { chapterId: "ch7", oneLiner: "A CPU's control unit is a finite-state machine — it's in one of finitely many states and jumps to the next on each clock. Strip away the memory and that core is an automaton." },
+  ],
+  mentalModel:
+    "A finite automaton is a machine whose entire memory IS its current state — one of a fixed, finite set. It reads a string once, left to right, taking exactly one transition per symbol, and accepts if it ends in an accepting state. The languages such machines recognize are called REGULAR, and they are the same class three ways: what DFAs accept, what NFAs accept (Rabin–Scott: nondeterminism only saves states, never adds power), and what regular expressions describe (Kleene). The defining limitation: with finitely many states and no stack, an automaton cannot count without bound — so aⁿbⁿ (n a's then n b's) is NOT regular. That single wall is the doorway to the more powerful machine of ch.20.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## A machine that is all control, no memory\n" +
+        "Strip a computer of its RAM and you are left with a **control unit** (ch.7): a thing that is in one of a fixed, finite set of **states** and, on each input symbol, jumps to a next state. That is a **finite automaton**. Formally it is five things: a set of states, an input alphabet, a **start** state, a set of **accepting** states, and a **transition function** δ(state, symbol) → state. Feed it a string; it walks one transition per symbol; if it lands in an accepting state, the string is **accepted**. The set of all strings a machine accepts is its **language**. Build one and feed it strings:",
+    },
+    { kind: "sim", sim: "fsm-builder" },
+    {
+      kind: "prose",
+      md:
+        "## Determinism, and a machine that guesses\n" +
+        "The machine above is **deterministic** (a DFA): exactly one transition per (state, symbol), so its path is forced. A **nondeterministic** finite automaton (NFA) relaxes this — a state may have several transitions on the same symbol, or **ε-moves** that jump for free without reading input. Picture it as exploring *all* choices at once and accepting if **any** path ends accepting. This sounds more powerful. It is not.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Three faces of one class\n" +
+        "**Kleene's theorem** says a language is describable by a **regular expression** exactly when some finite automaton recognizes it. The bridge runs both ways and is mechanical: **Thompson's construction** turns any regex into an ε-NFA, and the **subset construction** turns any NFA into an equivalent DFA (Rabin–Scott, 1959) — its states are *sets* of NFA states, tracking every place the guess could be at once. So regex, NFA, and DFA all describe the identical class: the **regular languages**. Type a pattern and watch its NFA light up all live paths as it reads:",
+    },
+    { kind: "sim", sim: "regex-nfa" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The subset construction can explode — and that's a real bug class",
+      lens: "senior",
+      md:
+        "An NFA with *n* states can determinize to a DFA with up to **2ⁿ** states (the reachable subsets). Usually far fewer appear, but the worst case is real: the language \"the *k*-th symbol from the end is 1\" needs a tiny NFA and an exponential DFA. This is the engineering trade-off behind text tooling: `grep` and lexers compile regexes to a DFA for **linear-time** matching, while backtracking regex engines (PCRE, JS `RegExp`) keep an NFA-like search that can blow up to exponential time on adversarial input — **ReDoS**, a genuine denial-of-service vector (ch.32).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Where regular sits — the Chomsky hierarchy\n" +
+        "Regular languages are the *bottom* rung of a ladder Chomsky described in 1956. Each rung is a class of grammars matched by a strictly more powerful machine: **regular** (finite automaton, no memory) ⊂ **context-free** (pushdown automaton, one stack) ⊂ **context-sensitive** (linear-bounded automaton) ⊂ **recursively enumerable** (Turing machine, unbounded tape — ch.20). More memory structure, more languages. Step outward through the rings:",
+    },
+    { kind: "figure", fig: "chomsky-rings", caption: "Each ring adds memory: nothing → a stack → a bounded tape → an unbounded tape. Regular languages are the innermost, simplest class." },
+    {
+      kind: "prose",
+      md:
+        "## The wall: a finite machine cannot count\n" +
+        "Here is the limit that defines the whole class. To accept **aⁿbⁿ** — *n* a's followed by *exactly n* b's — a machine must remember how many a's it saw, and *n* is unbounded. A finite automaton has only finitely many states, so on a long enough string two different prefixes must land in the *same* state — after which the machine can't tell them apart. That's the **pumping lemma**: every long accepted string has a middle chunk you can repeat (\"pump\") and stay in the language. aⁿbⁿ has no such chunk, so **no** regular expression, however clever, matches balanced counts. You need a stack — a context-free machine — which is exactly the boundary ch.20 pushes past. Test your intuition:",
+    },
+    { kind: "quiz", quiz: "regular-or-not" },
+    {
+      kind: "compare",
+      a: "DFA (deterministic)",
+      b: "NFA (nondeterministic)",
+      rows: [
+        ["Transitions per (state, symbol)", "exactly one — the path is forced", "zero, one, or many; plus ε-moves"],
+        ["How it accepts", "the single run ends accepting", "some run ends accepting (explores all at once)"],
+        ["Size", "can be exponentially larger", "often exponentially smaller"],
+        ["Match speed", "linear, no backtracking", "linear only after determinizing/simulating carefully"],
+        ["Expressive power", "regular languages", "regular languages — identical (Rabin–Scott)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the pumping lemma, and why aⁿbⁿ isn't regular",
+      md:
+        "**Pumping lemma (regular languages).** If L is regular, there is a length p such that every string s ∈ L with |s| ≥ p can be split s = xyz with (1) |y| ≥ 1, (2) |xy| ≤ p, and (3) xyⁱz ∈ L for **all** i ≥ 0.\n\n" +
+        "**Why:** run the DFA on s. With p = (number of states), reading the first p symbols visits p+1 states, so by the **pigeonhole principle** some state repeats. The substring y between the two visits forms a loop — traverse it 0, 1, 2… times and the machine still ends where it did, so all xyⁱz are accepted.\n\n" +
+        "**aⁿbⁿ fails it.** Suppose it were regular with pumping length p. Take s = aᵖbᵖ. By (2), xy lies inside the a's, so y is all a's; pumping to xy²z adds a's without b's, giving more a's than b's — not in the language. Contradiction, so aⁿbⁿ is not regular. The same argument kills \"balanced parentheses\" and \"palindromes.\"",
+    },
+    {
+      kind: "table",
+      caption: "The Chomsky hierarchy: more memory structure buys a larger language class.",
+      head: ["Class (type)", "Machine", "Memory", "Example language"],
+      rows: [
+        ["Regular (3)", "finite automaton", "none (just state)", "a*b*, identifiers, integer literals"],
+        ["Context-free (2)", "pushdown automaton", "one stack", "aⁿbⁿ, balanced parens, arithmetic"],
+        ["Context-sensitive (1)", "linear-bounded automaton", "tape ~ input size", "aⁿbⁿcⁿ"],
+        ["Recursively enumerable (0)", "Turing machine (ch.20)", "unbounded tape", "the set of halting programs"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Finite automata gave us a machine and a *provable* limit — the first time in this guide we've said \"no machine of this kind can do X\" and meant it mathematically. Add one thing the automaton lacks — an **unbounded, rewritable tape** — and you get the **Turing machine** of ch.20: powerful enough to compute anything computable at all, and powerful enough to run into a deeper, stranger wall — problems that *no* machine can decide.",
+    },
+  ],
+  keyPoints: [
+    "A finite automaton's only memory is its current state — it reads a string once, one transition per symbol, and accepts if it ends in an accepting state.",
+    "Regular languages are one class described three equivalent ways — DFAs, NFAs, and regular expressions all recognize exactly them (Kleene's theorem).",
+    "Nondeterminism adds no power, only compactness — every NFA becomes an equivalent DFA by the subset construction (Rabin–Scott), sometimes with an exponential blow-up in states.",
+    "A finite machine cannot count without bound — aⁿbⁿ and balanced parentheses are not regular, as the pumping lemma proves via the pigeonhole principle.",
+    "The Chomsky hierarchy nests the classes — regular ⊂ context-free ⊂ context-sensitive ⊂ recursively enumerable — each recognized by a strictly more capable machine.",
+    "Real tools run automata — lexers and grep compile regexes to a DFA for linear-time matching, while backtracking regex engines risk exponential ReDoS blow-ups.",
+  ],
+  pitfalls: [
+    {
+      title: "Confusing programming-language \"regex\" with regular languages",
+      body: "Modern regex engines add backreferences and lookaround, which push them BEYOND regular — `(.*)\\1` matches squares, which no true regular language can. \"Regex\" the feature ≠ regular the class; the extra power is exactly what makes backtracking engines slow.",
+      lens: "both",
+    },
+    {
+      title: "Believing an NFA can recognize more than a DFA",
+      body: "It cannot — they define the identical class. Nondeterminism and ε-moves make automata smaller and easier to build (straight from a regex), but the subset construction always yields an equivalent DFA. Reach for NFAs for expressiveness, DFAs for speed.",
+      lens: "both",
+    },
+    {
+      title: "Trying to match nested/balanced structure with a regular expression",
+      body: "Balanced parentheses, aⁿbⁿ, and HTML nesting are context-free, not regular — a finite automaton has no stack to count depth. Use a real parser (ch.11). The famous \"don't parse HTML with regex\" rule is this theorem in disguise.",
+      lens: "both",
+    },
+    {
+      title: "Ignoring the determinization blow-up in production",
+      body: "A compact NFA can determinize to exponentially many states, and a backtracking engine can take exponential TIME on inputs like `(a+)+$`. Untrusted input against a hand-written regex is a real DoS surface (ReDoS) — bound it, or use a linear-time engine like RE2.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch19-1", "iv-ch19-2", "iv-ch19-3", "iv-ch19-4", "iv-ch19-5"],
+  kataIds: ["dfa-accepts", "binary-divisible-by-three"],
+  seeAlso: ["ch7", "ch11", "ch20"],
+  sources: [
+    { title: "Regular language & Kleene's theorem (Wikipedia)", url: "https://en.wikipedia.org/wiki/Regular_language" },
+    { title: "Nondeterministic finite automaton — subset construction, Rabin–Scott (Wikipedia)", url: "https://en.wikipedia.org/wiki/Nondeterministic_finite_automaton" },
+    { title: "Chomsky hierarchy (Wikipedia)", url: "https://en.wikipedia.org/wiki/Chomsky_hierarchy" },
+    { title: "Pumping lemma for regular languages (Wikipedia)", url: "https://en.wikipedia.org/wiki/Pumping_lemma_for_regular_languages" },
+    { title: "Thompson's construction — regex → NFA (Wikipedia)", url: "https://en.wikipedia.org/wiki/Thompson%27s_construction" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.20 — Computability  (P5 · Theory, built in S10)
+// ---------------------------------------------------------------
+const ch20: Chapter = {
+  id: "ch20",
+  part: "p5",
+  order: 22,
+  title: "Computability",
+  tagline: "One tape more than an automaton buys the power to compute anything computable — and the first problems no machine can ever solve",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "1928. David Hilbert poses the **Entscheidungsproblem**: is there a mechanical procedure that, given any mathematical statement, decides whether it's provable? Most assumed the answer was yes — mathematics just hadn't found the procedure. In 1936 a 23-year-old **Alan Turing**, to even *state* the question precisely, invents an imaginary machine: an infinite paper tape, a head that reads and writes one symbol at a time, and a tiny table of rules. He then proves — the same year Alonzo Church reached it by other means — that the answer is **no**. Some perfectly precise yes/no questions have *no* algorithm, ever. The machine Turing built to kill Hilbert's dream turned out to be the definition of computation itself, and the blueprint for every computer since.",
+  },
+  assumes: [
+    { chapterId: "ch7", oneLiner: "A CPU is a finite controller plus memory that it reads and writes. A Turing machine is that idea with the memory made unbounded — and it's the ancestor of the stored-program computer." },
+    { chapterId: "ch19", oneLiner: "Finite automata can't count without bound (aⁿbⁿ isn't regular). Add a rewritable, unbounded tape and the limit vanishes — you get universal computing power." },
+  ],
+  mentalModel:
+    "A Turing machine is a finite-state controller plus an unbounded tape it can read, write, and move across one cell at a time. That minimal gadget is astonishingly powerful: it can compute anything that is computable at all (the Church–Turing thesis), and one machine — a UNIVERSAL one — can simulate any other from its description (the idea underneath every stored-program computer). But the power has a hard ceiling. Some questions about machines are UNDECIDABLE: no program can answer them for all inputs. The flagship is the HALTING problem — no program can decide, for every program, whether it eventually stops. This isn't a gap in our cleverness; diagonalization proves the wall is real, and Rice's theorem shows it surrounds essentially every interesting question about program behavior.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Automaton plus tape\n" +
+        "Take the finite controller of ch.19 and give it the one thing it lacked: an **unbounded tape** it can not only read but **write**, moving left or right one cell per step. Each rule says: *in this state, reading this symbol, write that symbol, move left/right, and switch to that state.* Two special states, **accept** and **reject**, halt the machine. That's a **Turing machine** — the whole of it. It looks like a toy; it is the most powerful model of computation we have. Load a preset and run it:",
+    },
+    { kind: "sim", sim: "turing-machine" },
+    {
+      kind: "prose",
+      md:
+        "## Universality, and the Church–Turing thesis\n" +
+        "Two facts make this toy the definition of computing. First, **universality**: there is a single Turing machine U that takes the *description* of any machine M plus an input and simulates M on it. U is a programmable computer; M is its software — the **stored-program** idea von Neumann turned into hardware (ch.7). Second, the **Church–Turing thesis**: every model of \"effective computation\" anyone has proposed — λ-calculus, register machines, your laptop, a Python program — computes exactly the same functions as a Turing machine. \"Computable\" has one robust meaning, and this is it.",
+    },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "The universal machine became the computer on your desk",
+      md:
+        "Turing's 1936 *universal machine* — one device that runs any other, given its description as data — is the theoretical seed of the stored-program computer. When von Neumann's 1945 EDVAC report put code and data in the same memory (ch.7), it was building a physical universal Turing machine. Every general-purpose computer since is one machine pretending to be any machine — which is why the same laptop runs a browser, a compiler, and this simulator.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Decidable, recognizable, and the halting problem\n" +
+        "A language is **decidable** if some machine always halts and correctly answers yes/no (a *decider* — like the aⁿbⁿ machine you can build in the boss). It's merely **recognizable** (recursively enumerable) if a machine halts and says \"yes\" on members but may **run forever** on non-members. That gap is where the trouble lives. The **halting problem** asks for a decider H(program, input) that says whether the program halts. It sounds reasonable — and it's impossible. Walk the contradiction:",
+    },
+    { kind: "figure", fig: "halting-paradox", caption: "Assume a perfect halting-decider H, build a program that does the opposite of what H predicts about itself, and every case contradicts. So H cannot exist." },
+    {
+      kind: "prose",
+      md:
+        "## Why it can't be patched\n" +
+        "The proof is **diagonalization**, the same self-reference behind the liar paradox and Cantor's uncountability. Assume H decides halting. Build D(p) that runs H(p, p) and then does the **opposite** — loops if H says \"halts,\" halts if H says \"loops.\" Now ask what D(D) does: if it halts, H must have said \"loops,\" so D should have looped; if it loops, H said \"halts,\" so it should have halted. Every branch contradicts. The flaw isn't H's algorithm — it's the *assumption that H exists*. No faster computer, cleverer language, or future AI escapes it: the wall is a theorem, not a technology limit. Predict which of these you could actually decide:",
+    },
+    { kind: "quiz", quiz: "does-it-halt" },
+    {
+      kind: "prose",
+      md:
+        "## Rice's theorem: the wall is everywhere\n" +
+        "Halting is not a lone freak. **Rice's theorem** (1953) says *every* non-trivial property of the function a program computes is undecidable. \"Does this program ever output 42?\" \"Do these two programs behave identically?\" \"Does this code ever access freed memory on some input?\" — all undecidable in general. A property is \"trivial\" only if it's true of every program or of none; anything that actually depends on behavior falls to the same diagonal argument (usually by **reduction** — showing that deciding it would let you decide halting).",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "This is why your tools are conservative — and why they can't be perfect",
+      lens: "senior",
+      md:
+        "Rice's theorem is the reason a perfect **static analyzer**, an exact **compiler optimizer**, a complete **virus detector**, or a total **`terminates?` linter** cannot exist. Real tools cope by being **sound but incomplete** (reject some safe programs to guarantee no bad one slips through — most type systems) or **unsound but useful** (miss some bugs to avoid drowning you in false positives — most linters). Whenever a vendor promises to detect *all* of some behavioral class with no false positives, they're either restricting the input language (so the property becomes decidable) or overselling. The halting problem is a daily constraint, not a museum piece.",
+    },
+    {
+      kind: "compare",
+      a: "Decidable (recursive)",
+      b: "Recognizable (recursively enumerable)",
+      rows: [
+        ["The machine…", "always halts with yes or no", "halts & says yes on members; may loop forever on non-members"],
+        ["Guarantee", "a total decision procedure", "a semi-decision — you can confirm a yes, never rule one out"],
+        ["Example", "aⁿbⁿ, \"is this a prime?\"", "\"does program P halt on x?\" (recognizable, not decidable)"],
+        ["Closed under complement?", "yes", "no — that's exactly why halting is undecidable"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the halting proof, and a concrete uncomputable function",
+      md:
+        "**Undecidability of halting.** Suppose a total decider H exists with H(⟨M⟩, x) = 1 iff M halts on x. Define D(⟨M⟩): if H(⟨M⟩, ⟨M⟩) = 1 then loop forever, else halt. Consider D(⟨D⟩). If D(⟨D⟩) halts, then H(⟨D⟩, ⟨D⟩)=1, so by definition D loops — contradiction. If D(⟨D⟩) loops, then H(⟨D⟩, ⟨D⟩)=0, so D halts — contradiction. Hence no such H exists. ∎\n\n" +
+        "**The busy beaver — uncomputable, and now partly known.** BB(n) (Radó, 1962) is the most steps any halting n-state, 2-symbol Turing machine makes from a blank tape. It grows faster than *any* computable function (compute it and you'd solve halting). Known values: BB(1)=1, BB(2)=6, BB(3)=**21**, BB(4)=**107**, and BB(5)=**47,176,870** — the last proved only in **2024** by the bbchallenge collaboration (a machine-checked Coq proof). BB(6) is already known to exceed 10↑↑15-scale towers: a five-line question ordinary mathematics may never answer.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Meet the busy beaver\n" +
+        "The turing-machine sim ships two busy beavers. The **3-state** champion writes six 1s and halts after **14** steps; the **4-state** one runs **107** steps. Tiny rule tables, wildly disproportionate runtimes — and the growth is uncomputably fast: BB(5) is over 47 million steps, BB(6) is beyond description. Run them and watch a five-rule machine think for a surprisingly long time before it stops.",
+    },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Boss — become the Halting Oracle",
+      md:
+        "The ch.19 pumping lemma proved **aⁿbⁿ** is beyond any finite automaton. A Turing machine has the tape to do it. **Open the turing-machine boss** and build a rule table that ACCEPTS exactly { aⁿbⁿ : n ≥ 0 } and rejects everything else; pass the full test suite to earn the **Halting Oracle** badge. Hint: mark a leftmost `a`, sweep right to cross off a matching `b`, return, and repeat — accept only when nothing is left unmatched.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Computability drew the line between what *can* and *cannot* be computed at all. But most problems we care about are squarely decidable — the real question is whether we can afford them. **Part 5 closes with ch.21, Complexity**: not \"is there an algorithm?\" but \"is there a *fast* one?\" — P versus NP, the problems we can check but maybe never quickly solve, and the million-dollar question at the center of computer science.",
+    },
+  ],
+  keyPoints: [
+    "A Turing machine is a finite controller plus an unbounded read/write tape — a minimal model that nonetheless captures everything computable (the Church–Turing thesis).",
+    "Universality means one machine can simulate any other from its description — the stored-program computer of ch.7 is a physical universal Turing machine.",
+    "Decidable means a machine always halts with the right answer, while recognizable only guarantees a halt on \"yes\" — a strictly weaker promise, and the gap where undecidability lives.",
+    "The halting problem is undecidable — no program can decide for all programs whether they halt — proven by diagonalization, so no future hardware or AI can fix it.",
+    "Rice's theorem generalizes it — every non-trivial property of a program's behavior is undecidable — which is why perfect static analysis, optimization, and virus detection cannot exist.",
+    "The busy beaver BB(n) grows faster than any computable function — BB(5)=47,176,870 was proved only in 2024, and BB(6) is beyond the reach of ordinary mathematics.",
+  ],
+  pitfalls: [
+    {
+      title: "Reading \"undecidable\" as merely \"very hard\"",
+      body: "Undecidable means NO algorithm exists for the general case — not that we haven't found a fast one yet. That's a different axis from ch.21's tractability: halting has no decider at any speed, whereas an NP-hard problem has algorithms, just slow ones.",
+      lens: "both",
+    },
+    {
+      title: "Confusing recognizable with decidable",
+      body: "Recognizable (RE) machines can confirm a \"yes\" but may loop forever on a \"no,\" so you can never be sure a non-answer means \"no\" rather than \"not yet.\" Halting is recognizable but not decidable — run the program and you'll see it halt if it does, but waiting forever tells you nothing.",
+      lens: "senior",
+    },
+    {
+      title: "Thinking a bigger computer or an AI could decide halting",
+      body: "The impossibility is model-independent — it holds for any system as powerful as a Turing machine, which includes every real computer and any AI running on one. More speed or data changes nothing; the contradiction is logical, not physical.",
+      lens: "both",
+    },
+    {
+      title: "Assuming a specific program's halting is undecidable",
+      body: "Undecidability is about the GENERAL problem over all programs. Any particular program's halting on a particular input is a definite fact, and countless specific cases are easy to settle. What can't exist is one procedure that settles them all.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch20-1", "iv-ch20-2", "iv-ch20-3", "iv-ch20-4", "iv-ch20-5", "iv-ch20-6"],
+  kataIds: ["anbn-decide", "collatz-steps"],
+  seeAlso: ["ch7", "ch19", "ch21"],
+  sources: [
+    { title: "Turing machine (Wikipedia)", url: "https://en.wikipedia.org/wiki/Turing_machine" },
+    { title: "Halting problem (Wikipedia)", url: "https://en.wikipedia.org/wiki/Halting_problem" },
+    { title: "Church–Turing thesis (Wikipedia)", url: "https://en.wikipedia.org/wiki/Church%E2%80%93Turing_thesis" },
+    { title: "Rice's theorem (Wikipedia)", url: "https://en.wikipedia.org/wiki/Rice%27s_theorem" },
+    { title: "Busy beaver — BB(5)=47,176,870 proved 2024 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Busy_beaver" },
+    { title: "The Busy Beaver Challenge — BB(5) story (bbchallenge.org)", url: "https://bbchallenge.org/story" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.21 — Complexity  (P5 · Theory, built in S10)
+// ---------------------------------------------------------------
+const ch21: Chapter = {
+  id: "ch21",
+  part: "p5",
+  order: 23,
+  title: "Complexity",
+  tagline: "Among the problems we CAN solve, which can we solve fast — and the million-dollar question of whether checking is really easier than finding",
+  readMins: { foundations: 20, senior: 35 },
+  storyHook: {
+    md:
+      "1971. **Stephen Cook** proves something eerie: a single problem — Boolean **satisfiability** (SAT) — is as hard as *every* problem whose solutions can be quickly checked. One year later **Richard Karp** shows that 21 famous, seemingly unrelated problems — the travelling salesman, graph colouring, scheduling, knapsack — are all secretly **the same problem in disguise**: crack one efficiently and you crack them all. Whether that's possible is **P versus NP**, and in 2000 the Clay Mathematics Institute put **US $1,000,000** on it. Half a century later it's still open — and almost everyone believes the answer is that *finding* a solution really is fundamentally harder than *checking* one.",
+  },
+  assumes: [
+    { chapterId: "ch13", oneLiner: "Big-O growth: polynomial (n, n², n³) is tractable; exponential (2ⁿ) and factorial (n!) explode past any hardware. Complexity theory is built on that divide." },
+    { chapterId: "ch20", oneLiner: "Computability asked whether a problem can be solved at all. Complexity assumes it can, and asks the sharper question: can it be solved FAST?" },
+  ],
+  mentalModel:
+    "Complexity theory sorts the SOLVABLE problems by cost. P is the class solvable in polynomial time — the practical line between tractable and hopeless. NP is the class whose solutions can be VERIFIED in polynomial time — a lucky guess is cheap to check, even if finding it seems hard (NP = nondeterministic-polynomial, NOT 'non-polynomial'). Every problem in NP reduces to the NP-COMPLETE ones (SAT, TSP, …), so they share one fate: a polynomial algorithm for any single NP-complete problem would give one for all of NP, i.e. P = NP. Nobody knows if P = NP, but the whole field — and all of cryptography — runs on the belief that P ≠ NP: that checking is genuinely easier than finding. When a problem is NP-hard you don't chase an optimal fast algorithm; you cope — approximate, use heuristics, restrict to special cases, or search exponentially but prune hard.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## The line at polynomial time\n" +
+        "Computability (ch.20) asked *can* we solve it. Complexity asks *can we afford to*. The dividing line, drawn by **Cobham** and **Edmonds** in 1965, is **polynomial time**: an algorithm running in O(n), O(n²), O(n³)… is **tractable**; one running in O(2ⁿ) or O(n!) is **intractable** — not because it's impossible, but because the runtime outgrows the universe on modest inputs. The class **P** is the problems with a polynomial-time algorithm. Watch how fast the intractable ones leave P behind:",
+    },
+    { kind: "sim", sim: "brute-force-death-watch" },
+    {
+      kind: "prose",
+      md:
+        "## Verify vs solve — the class NP\n" +
+        "Some problems seem hard to *solve* but are trivial to *check*. A finished Sudoku, a satisfying assignment for a logic formula, a short-enough travelling-salesman tour — you may not know how to find one quickly, but handed a candidate you can **verify** it in polynomial time. That's the class **NP**: problems whose \"yes\" answers have a certificate checkable in polynomial time. Crucially **P ⊆ NP** (if you can solve fast, you can certainly check fast).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## NP-completeness — all for one\n" +
+        "A **polynomial-time reduction** turns problem A into problem B so that B's answer gives A's — meaning B is at least as hard as A. **Cook and Levin** (1971) proved that *every* problem in NP reduces to **SAT**: SAT is **NP-complete** — in NP and as hard as anything in it. **Karp** (1972) then reduced SAT to 21 classic problems, showing they're all NP-complete too. The payoff is stark: find a polynomial algorithm for *one* NP-complete problem and you've solved *all* of NP. Here's the territory:",
+    },
+    { kind: "figure", fig: "pnp-map", caption: "P inside NP; the NP-complete problems as the hardest core of NP; NP-hard reaching beyond NP (even to undecidable problems). And the open question: does the whole picture collapse?" },
+    {
+      kind: "prose",
+      md:
+        "## The million-dollar question\n" +
+        "So: **does P = NP?** Is every quickly-checkable problem also quickly-solvable? If yes, thousands of intractable problems fall at once — and most modern **cryptography**, which relies on some things being easy to check (a signature) but hard to find (the key), collapses. If no, the wall between checking and finding is permanent. It's one of the seven **Clay Millennium Prize** problems (**$1,000,000**, posed 2000), unsolved — and the overwhelming consensus is **P ≠ NP**, though nobody can prove it. Classify a few problems yourself:",
+    },
+    { kind: "quiz", quiz: "np-or-not" },
+    {
+      kind: "prose",
+      md:
+        "## Coping with hardness\n" +
+        "NP-hard doesn't mean *give up* — it means *stop looking for a fast, exact, general algorithm* and pick a compromise. **Approximation**: accept an answer with a *proven* ratio to optimal (Christofides guarantees metric-TSP tours within 1.5× of the best possible). **Heuristics**: no worst-case guarantee, but excellent in practice (2-opt local search cleans up a tour in a few percent; industrial SAT solvers dispatch millions of variables). **Special cases**: the general problem is hard, yours may not be (shortest path is easy; longest path is NP-hard). **Exponential-but-pruned**: branch and bound explores the huge space while cutting hopeless branches. Try the trade-off on the travelling salesman:",
+    },
+    { kind: "sim", sim: "tsp-playground" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "NP-hard vs NP-complete, pseudo-polynomial, and approximation ratios",
+      lens: "senior",
+      md:
+        "**NP-hard ⊇ NP-complete.** NP-complete = in NP *and* NP-hard. NP-hard just means \"at least as hard as all of NP\" and can sit *outside* NP — the halting problem is NP-hard but undecidable, so not in NP. **Pseudo-polynomial:** 0/1 knapsack's O(nW) DP looks polynomial, but W is a numeric *value*, not an input *length* — in the number of bits it's exponential, which is why knapsack is still NP-complete. **Approximation has limits too:** metric-TSP has a 1.5-approximation (Christofides, 1976) and general TSP can't be approximated within any constant unless P = NP. Knowing *which* coping strategy a problem admits is the senior skill.",
+    },
+    {
+      kind: "compare",
+      a: "P",
+      b: "NP-complete",
+      rows: [
+        ["Solving", "polynomial-time algorithm known", "no polynomial algorithm known (and probably none exists)"],
+        ["Verifying a solution", "polynomial", "polynomial — that's what puts it in NP"],
+        ["Examples", "sorting, shortest path, primality", "SAT, travelling salesman, graph colouring, knapsack"],
+        ["If you find a fast algorithm", "business as usual", "you've proved P = NP and won $1,000,000"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — P, NP, reductions, and NP-completeness",
+      md:
+        "**P** = languages decided by a deterministic Turing machine in O(nᵏ) time for some constant k.\n\n" +
+        "**NP** = languages with a polynomial-time **verifier**: L ∈ NP iff there's a poly-time V and polynomial p such that x ∈ L ⟺ ∃ certificate c with |c| ≤ p(|x|) and V(x, c) accepts. (Equivalently, decided by a nondeterministic TM in polynomial time — hence the name.)\n\n" +
+        "**Polynomial-time (Karp) reduction** A ≤ₚ B: a poly-time map f with x ∈ A ⟺ f(x) ∈ B. If B ∈ P and A ≤ₚ B then A ∈ P.\n\n" +
+        "**NP-hard**: every L ∈ NP reduces to it (≤ₚ). **NP-complete**: NP-hard *and* in NP. **Cook–Levin:** SAT is NP-complete. So if any NP-complete problem is in P, then P = NP. Whether P = NP is open — the central question of theoretical computer science.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next — and the end of Part 5\n" +
+        "That completes **Theory**: automata drew the map of the simplest machines (ch.19), Turing machines drew the outer edge of the computable (ch.20), and complexity sorted the computable by cost (ch.21). You now know which problems are impossible, which are merely expensive, and how to tell. **Part 6, Operating Systems**, comes back down to earth: given real, finite, fast-enough hardware, how does one machine juggle many programs, fake unlimited memory, and keep it all from colliding — the great illusion that makes a computer usable.",
+    },
+  ],
+  keyPoints: [
+    "P is the class of problems solvable in polynomial time — the practical boundary between tractable and intractable (the Cobham–Edmonds thesis).",
+    "NP is the class whose solutions can be verified in polynomial time — finding may be hard, checking is easy — and NP means nondeterministic-polynomial, not \"non-polynomial.\"",
+    "The NP-complete problems are the hardest in NP and all inter-reducible — SAT (Cook–Levin, 1971) and Karp's 21 (1972) — so a fast algorithm for one is a fast algorithm for all of NP.",
+    "P versus NP asks whether verifying is truly easier than finding — an open Clay Millennium Prize worth $1,000,000, with near-universal belief that P ≠ NP.",
+    "NP-hard means at least as hard as every NP problem but not necessarily in NP — some NP-hard problems, like halting, are even undecidable.",
+    "You cope with NP-hardness rather than beat it — approximation with guarantees, heuristics, special cases, or exponential search with aggressive pruning.",
+  ],
+  pitfalls: [
+    {
+      title: "Reading NP as \"non-polynomial\"",
+      body: "NP means nondeterministic-polynomial: solutions are polynomial-time VERIFIABLE. Every P problem is in NP. Calling NP \"not polynomial\" both misnames it and prejudges the open P-vs-NP question.",
+      lens: "both",
+    },
+    {
+      title: "Treating NP-complete as unsolvable",
+      body: "NP-complete problems are perfectly solvable — SAT solvers and TSP tools crack big instances daily. They're just not known to be solvable in polynomial time in the worst case. \"Intractable in general\" is not \"impossible,\" and real instances are often easy.",
+      lens: "both",
+    },
+    {
+      title: "Using a heuristic or approximation without knowing its guarantee",
+      body: "\"Approximation\" should come with a proven ratio (Christofides' 1.5× for metric TSP); a heuristic like nearest-neighbour or 2-opt has no constant-factor guarantee and can be arbitrarily bad on a crafted input. Know whether you have a proven bound or just hope before you ship it.",
+      lens: "senior",
+    },
+    {
+      title: "Calling a pseudo-polynomial algorithm polynomial",
+      body: "Knapsack's O(nW) is polynomial in the numeric value W, not in its bit-length — so it's exponential in input size and knapsack stays NP-complete. Watch for algorithms whose cost scales with a number's magnitude rather than its encoding length.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch21-1", "iv-ch21-2", "iv-ch21-3", "iv-ch21-4", "iv-ch21-5", "iv-ch21-6"],
+  kataIds: ["subset-sum-decide", "verify-hamiltonian"],
+  seeAlso: ["ch13", "ch18", "ch20"],
+  sources: [
+    { title: "P versus NP problem (Wikipedia)", url: "https://en.wikipedia.org/wiki/P_versus_NP_problem" },
+    { title: "Cook–Levin theorem — SAT is NP-complete (Wikipedia)", url: "https://en.wikipedia.org/wiki/Cook%E2%80%93Levin_theorem" },
+    { title: "Karp's 21 NP-complete problems (Wikipedia)", url: "https://en.wikipedia.org/wiki/Karp%27s_21_NP-complete_problems" },
+    { title: "NP-hardness (Wikipedia)", url: "https://en.wikipedia.org/wiki/NP-hardness" },
+    { title: "Millennium Prize Problems — P vs NP, $1M (Wikipedia)", url: "https://en.wikipedia.org/wiki/Millennium_Prize_Problems" },
+    { title: "Travelling salesman problem — heuristics & approximation (Wikipedia)", url: "https://en.wikipedia.org/wiki/Travelling_salesman_problem" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -3053,10 +3479,10 @@ export const CHAPTERS: Chapter[] = [
   ch16,
   ch17,
   ch18,
-  // P5 · Theory
-  stub("ch19", "p5", 21, "Automata & regular languages", "FSMs, regex↔NFA/DFA, the Chomsky hierarchy", 10, { foundations: 20, senior: 32 }),
-  stub("ch20", "p5", 22, "Computability", "Turing machines, universality, the halting problem", 10, { foundations: 22, senior: 35 }),
-  stub("ch21", "p5", 23, "Complexity", "P vs NP, NP-completeness, coping strategies", 10, { foundations: 20, senior: 35 }),
+  // P5 · Theory (built in S10)
+  ch19,
+  ch20,
+  ch21,
   // P6 · Operating Systems
   stub("ch22", "p6", 24, "Processes & scheduling", "Kernel mode, syscalls, threads, schedulers", 11, { foundations: 22, senior: 35 }),
   stub("ch23", "p6", 25, "Memory", "Virtual memory, paging, stack vs heap, GC intuition", 11, { foundations: 22, senior: 38 }),

@@ -1,0 +1,172 @@
+/* tsp-playground (ch.21 micro) — small sheet: hover/animation/layout only.
+   All functional coloring is inline-styled from theme vars in TspPlayground.tsx,
+   so the sim still reads correctly if this sheet is absent. Prefix: tsp-. */
+
+.tsp-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+/* ---- stage ---- */
+.tsp-stage {
+  background: var(--surface);
+  border-radius: var(--r-s);
+  padding: 6px;
+  touch-action: none;
+}
+.tsp-svg {
+  display: block;
+  width: 100%;
+  cursor: crosshair; /* click empty space to add a city */
+}
+.tsp-svg.is-delete {
+  cursor: not-allowed;
+}
+.tsp-svg.is-move .tsp-city {
+  cursor: grab;
+}
+.tsp-svg.is-delete .tsp-city {
+  cursor: pointer;
+}
+.tsp-city {
+  cursor: grab;
+}
+.tsp-city:active {
+  cursor: grabbing;
+}
+.tsp-city-hit {
+  /* transparent, generous pointer target around the visible dot */
+  fill: transparent;
+  stroke: none;
+}
+.tsp-hint {
+  fill: var(--tx3);
+  font: 3.4px var(--font-body);
+  user-select: none;
+}
+
+/* motion polish — disabled under reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .tsp-dot {
+    transition: r 0.12s ease, fill 0.15s ease, stroke 0.15s ease;
+  }
+  .tsp-edge {
+    transition: stroke 0.2s ease, opacity 0.2s ease;
+  }
+  /* draw-in of the tour polyline: dash animates from fully-hidden to shown.
+     The component sets --tsp-len (path length) and toggles .is-draw. */
+  .tsp-tour.is-draw {
+    stroke-dasharray: var(--tsp-len);
+    stroke-dashoffset: var(--tsp-len);
+    animation: tsp-draw 0.55s ease forwards;
+  }
+}
+@keyframes tsp-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tsp-dot,
+  .tsp-edge {
+    transition: none;
+  }
+  .tsp-tour.is-draw {
+    animation: none;
+  }
+}
+
+/* ---- footer / scoreboard ---- */
+.tsp-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.tsp-board {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.tsp-card {
+  flex: 1 1 9rem;
+  min-width: 8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+}
+.tsp-card.is-shown {
+  border-color: color-mix(in srgb, var(--accent, var(--p5)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p5)) 8%, var(--s2));
+}
+.tsp-card-k {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.tsp-card-v {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.tsp-card-sub {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--tx2);
+}
+.tsp-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+/* the "tours to check" shock number — ties to the death-watch sim */
+.tsp-tours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  font-size: 0.8rem;
+  color: var(--tx2);
+}
+.tsp-tours b {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--sem-control);
+}
+.tsp-tours.is-huge b {
+  color: var(--sem-err);
+}
+.tsp-tours-note {
+  color: var(--tx3);
+}
+
+.tsp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.72rem;
+  color: var(--tx3);
+}
+.tsp-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
