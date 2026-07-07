@@ -1,0 +1,247 @@
+/* brute-force-death-watch (ch.21 micro) — layout, hover and a single grow-in
+   animation only. All functional coloring is inline-styled from theme vars in
+   BruteForceDeathWatch.tsx, so the sim still reads correctly without this sheet.
+   Prefix: bf-. Static/log visual → reduced-motion safe by construction. */
+
+/* ------------------------------- controls ------------------------------- */
+.bf-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+.bf-ctl .ss-field {
+  gap: 6px;
+}
+.bf-nfield {
+  gap: 8px;
+}
+.bf-nval {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.6em;
+  display: inline-block;
+  text-align: right;
+}
+.bf-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12rem;
+  max-width: 42vw;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  outline-offset: 3px;
+}
+.bf-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.08s ease;
+}
+.bf-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.bf-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+}
+.bf-slider:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+
+/* ------------------------------- stage ------------------------------- */
+.bf-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* headline readout */
+.bf-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 10px 14px;
+  padding: 12px 14px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.bf-ro-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 9rem;
+}
+.bf-ro-time {
+  margin-left: auto;
+  text-align: right;
+  align-items: flex-end;
+}
+.bf-ro-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.bf-ro-count,
+.bf-ro-time-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(20px, 4.4vw, 30px);
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.bf-ro-sub {
+  font-size: 12px;
+  color: var(--tx2);
+}
+.bf-ro-arrow {
+  align-self: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  white-space: nowrap;
+}
+
+/* ------------------------------- svg bars ------------------------------- */
+.bf-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 6px;
+}
+.bf-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  opacity: 0.6;
+}
+.bf-axis {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.bf-grid-lbl {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+.bf-svg-cap {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.bf-bar-g {
+  transition: opacity 0.18s ease;
+}
+.bf-bar {
+  transition:
+    height 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    y 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.18s ease;
+  transform-box: fill-box;
+}
+.bf-bar-g.is-sel .bf-bar {
+  stroke: var(--tx);
+  stroke-width: 1.5;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+.bf-bar-count {
+  fill: var(--tx2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.bf-bar-count.is-sel {
+  fill: var(--tx);
+  font-weight: 700;
+}
+.bf-bar-of {
+  fill: var(--sem-err);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+.bf-bar-expr {
+  fill: var(--tx2);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+.bf-bar-expr.is-sel {
+  fill: var(--tx);
+  font-weight: 700;
+}
+.bf-bar-tag {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+/* ------------------------------- death-watch ------------------------------- */
+.bf-dw {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.bf-dw-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.bf-dw-rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+.bf-dw-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 9px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.bf-dw-n {
+  color: var(--tx2);
+  font-variant-numeric: tabular-nums;
+}
+.bf-dw-arrow {
+  color: var(--tx3);
+}
+.bf-dw-t {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .bf-bar,
+  .bf-bar-g,
+  .bf-slider::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+.bf-bar-g.is-reduced .bf-bar {
+  transition: none;
+}

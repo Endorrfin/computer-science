@@ -1,0 +1,54 @@
+/* regex-nfa — small hover/animation only. Colors & layout come from inline SVG
+   styles (CSS vars) in RegexNfa.tsx; this file just adds motion and hover polish.
+   Imported directly by the component so it loads without touching shared CSS. */
+
+.rx-stage {
+  overflow-x: auto;
+}
+
+.rx-svg {
+  display: block;
+}
+
+/* live states in the parallel set: a soft pulse (disabled under reduced motion). */
+.rx-node-ring.is-live {
+  animation: rx-pulse 1.1s ease-in-out infinite;
+}
+@keyframes rx-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+
+/* the symbol currently being consumed, in the input tape */
+.rx-tape-cell {
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.rx-node-group {
+  transition: opacity 0.18s ease;
+}
+
+.rx-edge,
+.rx-edge-label {
+  transition: opacity 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rx-node-ring.is-live {
+    animation: none;
+  }
+  .rx-tape-cell,
+  .rx-node-group,
+  .rx-edge,
+  .rx-edge-label {
+    transition: none;
+  }
+}

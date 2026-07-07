@@ -1711,6 +1711,252 @@ Greedy — take the biggest coin that fits — is optimal only on canonical syst
       { name: "zero amount → 0", body: `assertEqual(minCoins([5], 0), 0);` },
     ],
   },
+  // ========================================================================
+  // ch19 · Automata & regular languages
+  // ========================================================================
+  {
+    id: "dfa-accepts",
+    chapterId: "ch19",
+    title: "Run a DFA",
+    difficulty: "intro",
+    tags: ["automata", "state-machine"],
+    prompt: `
+Simulate a **deterministic finite automaton**. Given its transition table \`delta\` (a map \`state → symbol → nextState\`), a \`start\` state, the list of \`accept\` states, and an \`input\` string, return whether the DFA **accepts** the input.
+
+Walk one transition per symbol from \`start\`. If a needed transition is missing, the string is rejected (the machine falls into an implicit dead state). Accept only if the final state is in \`accept\`.
+
+- Time: **O(n)** in the input length. Space: **O(1)**.
+
+### Example
+- Even-number-of-1s DFA \`{E:{"0":"E","1":"O"}, O:{"0":"O","1":"E"}}\`, start \`E\`, accept \`["E"]\`: accepts \`"11"\`, rejects \`"1"\`.
+`,
+    signature: `function dfaAccepts(delta: Record<string, Record<string, string>>, start: string, accept: string[], input: string): boolean`,
+    exportName: "dfaAccepts",
+    starter: `function dfaAccepts(delta, start, accept, input) {
+  // TODO: follow one transition per symbol; reject on a missing transition.
+  return false;
+}`,
+    solution: `function dfaAccepts(delta, start, accept, input) {
+  let cur = start;
+  for (const ch of input) {
+    const next = delta[cur] && delta[cur][ch];
+    if (next === undefined) return false;
+    cur = next;
+  }
+  return accept.includes(cur);
+}`,
+    tests: [
+      { name: "even 1s: accepts \"\" and \"11\"", body: `const d = { E: { "0": "E", "1": "O" }, O: { "0": "O", "1": "E" } };
+assertEqual(dfaAccepts(d, "E", ["E"], ""), true);
+assertEqual(dfaAccepts(d, "E", ["E"], "11"), true);` },
+      { name: "even 1s: rejects odd counts, accepts even", body: `const d = { E: { "0": "E", "1": "O" }, O: { "0": "O", "1": "E" } };
+assertEqual(dfaAccepts(d, "E", ["E"], "1"), false);
+assertEqual(dfaAccepts(d, "E", ["E"], "0110"), true);` },
+      { name: "missing transition rejects", body: `const d = { S: { "a": "S" } }; // no rule for 'b'
+assertEqual(dfaAccepts(d, "S", ["S"], "aaa"), true);
+assertEqual(dfaAccepts(d, "S", ["S"], "aba"), false);` },
+      { name: "ends-in-ab DFA", body: `const d = { q0: { a: "q1", b: "q0" }, q1: { a: "q1", b: "q2" }, q2: { a: "q1", b: "q0" } };
+assertEqual(dfaAccepts(d, "q0", ["q2"], "ab"), true);
+assertEqual(dfaAccepts(d, "q0", ["q2"], "aab"), true);
+assertEqual(dfaAccepts(d, "q0", ["q2"], "aba"), false);` },
+    ],
+  },
+  {
+    id: "binary-divisible-by-three",
+    chapterId: "ch19",
+    title: "Divisible by three (as an automaton)",
+    difficulty: "core",
+    tags: ["automata", "modular-arithmetic"],
+    prompt: `
+Return whether a **binary string** (most-significant bit first) represents a number **divisible by 3** — using only a running remainder, no \`parseInt\`, no big numbers.
+
+This is a 3-state automaton in disguise: keep the value **mod 3** in one variable. Reading a bit \`b\` updates the remainder \`r → (2·r + b) mod 3\`. Accept when the final remainder is 0. The empty string is value 0 (divisible).
+
+- Time: **O(n)**. Space: **O(1)** — three states, exactly what a DFA would use.
+`,
+    signature: `function divisibleByThree(bits: string): boolean`,
+    exportName: "divisibleByThree",
+    starter: `function divisibleByThree(bits) {
+  // TODO: carry the remainder mod 3; r -> (2*r + bit) % 3.
+  return true;
+}`,
+    solution: `function divisibleByThree(bits) {
+  let r = 0;
+  for (const ch of bits) r = (r * 2 + (ch === "1" ? 1 : 0)) % 3;
+  return r === 0;
+}`,
+    tests: [
+      { name: "empty string is 0 (divisible)", body: `assertEqual(divisibleByThree(""), true);` },
+      { name: "small values", body: `assertEqual(divisibleByThree("0"), true);
+assertEqual(divisibleByThree("11"), true);
+assertEqual(divisibleByThree("110"), true);
+assertEqual(divisibleByThree("1001"), true);` },
+      { name: "non-multiples", body: `assertEqual(divisibleByThree("1"), false);
+assertEqual(divisibleByThree("10"), false);
+assertEqual(divisibleByThree("101"), false);` },
+      { name: "agrees with arithmetic for 0..63", body: `for (let v = 0; v < 64; v++) {
+  const bits = v.toString(2);
+  assertEqual(divisibleByThree(bits), v % 3 === 0, "value " + v);
+}` },
+    ],
+  },
+  // ========================================================================
+  // ch20 · Computability
+  // ========================================================================
+  {
+    id: "anbn-decide",
+    chapterId: "ch20",
+    title: "Decide aⁿbⁿ",
+    difficulty: "core",
+    tags: ["computability", "counting"],
+    prompt: `
+Decide the language **{ aⁿbⁿ : n ≥ 0 }** — some a's, then an equal number of b's, nothing else. Return \`true\` for \`""\`, \`"ab"\`, \`"aabb"\`, \`"aaabbb"\`; \`false\` otherwise.
+
+A finite automaton **cannot** do this (ch.19's pumping-lemma result), but with a counter it's trivial — which is exactly the extra power a Turing machine's tape gives. Count the leading a's, then require exactly that many b's and nothing left over.
+
+- Time: **O(n)**. Space: **O(1)** (a counter).
+`,
+    signature: `function isAnBn(s: string): boolean`,
+    exportName: "isAnBn",
+    starter: `function isAnBn(s) {
+  // TODO: count leading a's, then require the same number of b's and no leftovers.
+  return true;
+}`,
+    solution: `function isAnBn(s) {
+  let i = 0;
+  while (s[i] === "a") i++;
+  const a = i;
+  while (s[i] === "b") i++;
+  return i === s.length && i - a === a;
+}`,
+    tests: [
+      { name: "members", body: `for (const s of ["", "ab", "aabb", "aaabbb", "aaaabbbb"]) assertEqual(isAnBn(s), true, JSON.stringify(s));` },
+      { name: "wrong counts", body: `for (const s of ["a", "b", "aab", "abb", "aaabb", "aabbb"]) assertEqual(isAnBn(s), false, JSON.stringify(s));` },
+      { name: "wrong order / interleaving", body: `for (const s of ["ba", "abab", "aba", "bbaa", "abba"]) assertEqual(isAnBn(s), false, JSON.stringify(s));` },
+      { name: "foreign symbols rejected", body: `assertEqual(isAnBn("aXbb"), false); assertEqual(isAnBn("aabbc"), false);` },
+    ],
+  },
+  {
+    id: "collatz-steps",
+    chapterId: "ch20",
+    title: "Collatz steps",
+    difficulty: "intro",
+    tags: ["computability", "halting"],
+    prompt: `
+Return how many steps the **Collatz** process takes to reach 1 from \`n\` (n ≥ 1). Each step: if \`n\` is even, halve it; if odd, do \`3n + 1\`.
+
+Whether this *always* reaches 1 is an **open problem** — nobody has proved it halts for every n. But for any *specific* n we can simply run it and count (undecidability is about the general case, not each instance).
+
+### Examples
+- \`collatzSteps(1)\` → \`0\`
+- \`collatzSteps(6)\` → \`8\` (6→3→10→5→16→8→4→2→1)
+`,
+    signature: `function collatzSteps(n: number): number`,
+    exportName: "collatzSteps",
+    starter: `function collatzSteps(n) {
+  // TODO: count steps until n === 1 (even: n/2, odd: 3n+1).
+  return 0;
+}`,
+    solution: `function collatzSteps(n) {
+  let steps = 0;
+  while (n !== 1) {
+    n = n % 2 === 0 ? n / 2 : 3 * n + 1;
+    steps++;
+  }
+  return steps;
+}`,
+    tests: [
+      { name: "base case n=1 → 0", body: `assertEqual(collatzSteps(1), 0);` },
+      { name: "small values", body: `assertEqual(collatzSteps(2), 1);
+assertEqual(collatzSteps(3), 7);
+assertEqual(collatzSteps(6), 8);` },
+      { name: "the famous long one: 27 → 111", body: `assertEqual(collatzSteps(27), 111);` },
+      { name: "powers of two take log2 steps", body: `assertEqual(collatzSteps(16), 4); assertEqual(collatzSteps(1024), 10);` },
+    ],
+  },
+  // ========================================================================
+  // ch21 · Complexity
+  // ========================================================================
+  {
+    id: "subset-sum-decide",
+    chapterId: "ch21",
+    title: "Subset sum (decision)",
+    difficulty: "core",
+    tags: ["complexity", "NP", "dynamic-programming"],
+    prompt: `
+Decide whether **some subset** of \`nums\` (non-negative integers) sums to exactly \`target\`. Return \`true\`/\`false\`. The empty subset sums to 0.
+
+Subset-sum is **NP-complete**, but this decision version has a clean pseudo-polynomial DP: track the set of **reachable sums**. Start with \`{0}\`; for each number \`x\`, add \`s + x\` for every reachable \`s\`. Then check whether \`target\` is reachable.
+
+- Time: **O(n · S)** where S is the number of distinct reachable sums — polynomial in the *value* of the sums, exponential in their bit-length (why subset-sum stays NP-complete).
+`,
+    signature: `function subsetSum(nums: number[], target: number): boolean`,
+    exportName: "subsetSum",
+    starter: `function subsetSum(nums, target) {
+  // TODO: grow the set of reachable subset sums, then test target.
+  return false;
+}`,
+    solution: `function subsetSum(nums, target) {
+  const reach = new Set([0]);
+  for (const x of nums) {
+    for (const s of [...reach]) reach.add(s + x);
+  }
+  return reach.has(target);
+}`,
+    tests: [
+      { name: "empty subset makes 0", body: `assertEqual(subsetSum([], 0), true);
+assertEqual(subsetSum([], 5), false);` },
+      { name: "classic hits", body: `assertEqual(subsetSum([1, 2, 3], 5), true);
+assertEqual(subsetSum([3, 34, 4, 12, 5, 2], 9), true);` },
+      { name: "unreachable targets", body: `assertEqual(subsetSum([1, 2, 3], 7), false);
+assertEqual(subsetSum([2, 4, 6], 7), false);` },
+      { name: "whole-array sum and single elements", body: `assertEqual(subsetSum([5, 10, 15], 30), true);
+assertEqual(subsetSum([5, 10, 15], 15), true);
+assertEqual(subsetSum([5, 10, 15], 4), false);` },
+    ],
+  },
+  {
+    id: "verify-hamiltonian",
+    chapterId: "ch21",
+    title: "Verify a Hamiltonian cycle",
+    difficulty: "core",
+    tags: ["complexity", "NP", "graphs", "verification"],
+    prompt: `
+*Finding* a Hamiltonian cycle is NP-complete — but **verifying** a proposed one is easy, and that gap is the whole point of NP. Given \`n\` vertices \`0..n-1\`, an undirected \`edges\` list, and a candidate \`order\` (a sequence of vertices), return whether \`order\` is a valid **Hamiltonian cycle**: it visits **every** vertex exactly once and each consecutive pair — including last→first — is connected by an edge.
+
+- Time: **O(n + E)** — polynomial. This is the "certificate check" that puts Hamiltonian-cycle in NP.
+`,
+    signature: `function isHamiltonianCycle(n: number, edges: [number, number][], order: number[]): boolean`,
+    exportName: "isHamiltonianCycle",
+    starter: `function isHamiltonianCycle(n, edges, order) {
+  // TODO: check it's a permutation of all n vertices AND every consecutive pair (incl. wrap) is an edge.
+  return true;
+}`,
+    solution: `function isHamiltonianCycle(n, edges, order) {
+  if (order.length !== n) return false;
+  const seen = new Set(order);
+  if (seen.size !== n) return false;
+  for (const v of order) if (v < 0 || v >= n) return false;
+  const key = (a, b) => (a < b ? a + "," + b : b + "," + a);
+  const has = new Set(edges.map(([a, b]) => key(a, b)));
+  for (let i = 0; i < n; i++) {
+    if (!has.has(key(order[i], order[(i + 1) % n]))) return false;
+  }
+  return true;
+}`,
+    tests: [
+      { name: "square 4-cycle is valid", body: `const e = [[0, 1], [1, 2], [2, 3], [3, 0]];
+assertEqual(isHamiltonianCycle(4, e, [0, 1, 2, 3]), true);` },
+      { name: "non-edge in the tour", body: `const e = [[0, 1], [1, 2], [2, 3], [3, 0]];
+assertEqual(isHamiltonianCycle(4, e, [0, 2, 1, 3]), false);` },
+      { name: "wrong length / repeats", body: `const e = [[0, 1], [1, 2], [2, 3], [3, 0]];
+assertEqual(isHamiltonianCycle(4, e, [0, 1, 2]), false);
+assertEqual(isHamiltonianCycle(4, e, [0, 1, 1, 3]), false);` },
+      { name: "triangle (K3) both directions", body: `const e = [[0, 1], [1, 2], [2, 0]];
+assertEqual(isHamiltonianCycle(3, e, [0, 1, 2]), true);
+assertEqual(isHamiltonianCycle(3, e, [0, 2, 1]), true);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

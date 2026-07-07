@@ -904,3 +904,69 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   tries counter; greedy-fails: preset {1,3,4} + "jump to failure"; mst-grow auto-plays). **S9 CLOSED
   pending user commit. Next: S10 — P5 · Theory: ch.19 (Automata — fsm-builder) + ch.20 (Computability —
   turing-machine HERO) + ch.21 (Complexity — P vs NP) + P5 boss (Halting Oracle).**
+- **2026-07-07 · S10 (P5 · Theory — PART 5 COMPLETE)** — ch.19–21 built to the golden bar; the
+  guide now carries the whole arc automata → computability → complexity, and the **P5 boss
+  `Halting Oracle` went live** inside the turing-machine HERO. **Kickoff (4 AskUserQuestion):**
+  user chose (1) **whole S10 in one pass**, (2) **full INTERACTIVES.md inventory**, (3) asked for
+  the recommended **TM convention** → Sipser accept/reject decider (single tape; (state,read)→
+  (write,move L/R,next); explicit `accept`/`reject` halt states; busy beavers just halt into
+  `accept`) — one engine serves deciders, transducers, and busy beavers, and the aⁿbⁿ boss is a
+  clean "halts-in-accept?" check; (4) **stage-only** hand-off (user commits on the Mac). **ch.19
+  Automata** (story: McCulloch–Pitts 1943 → Kleene's regex/finite-automata 1951/1956 → Chomsky
+  1956 → Rabin–Scott NFA 1959, all web-verified): DFA/NFA, ε-moves, Kleene's theorem, Thompson +
+  subset construction (NFA≡DFA, the 2ⁿ blow-up + ReDoS senior beat), the Chomsky hierarchy, and
+  the pumping-lemma wall (aⁿbⁿ not regular) — 6 keyPoints, 4 pitfalls, 5 sources. **ch.20
+  Computability** (story: Hilbert's Entscheidungsproblem → Turing 1936): TM model, universality +
+  Church–Turing (tie back to ch.7's stored program), decidable vs recognizable, the **halting
+  problem** by diagonalization, **Rice's theorem** + the static-analysis consequences, and the
+  **busy beaver** (Σ(3)=6/14 steps, Σ(4)=13/107 steps, S(3)=21, **S(5)=47,176,870 proved 2024** —
+  web-verified, Coq-checked) — 6 keyPoints, 4 pitfalls, 6 sources. **ch.21 Complexity** (story:
+  Cook 1971 SAT → Karp 1972's 21 → Clay **$1,000,000** 2000): P (Cobham–Edmonds), NP = poly-
+  *verifiable* (not "non-polynomial"), NP-completeness & reductions, P vs NP, and coping
+  (approximation with a *proven* ratio like Christofides 1.5× vs heuristics like 2-opt) — 6
+  keyPoints, 4 pitfalls, 6 sources. **5 sims + 3 figs + 3 quizzes + 1 boss** — `fsm-builder`
+  (editable DFA + div-by-3 challenge graded against the true language), `regex-nfa` (Thompson
+  ε-NFA, live parallel-path walk, equivalent-DFA state count), **`turing-machine` HERO** (scrolling
+  tape + editable rule table; step/run/timeout; presets unary-add/palindrome/BB3/BB4 with step-
+  count fireworks; **boss mode grades an aⁿbⁿ decider → `markChallengeDone("boss-p5")` = *Halting
+  Oracle***), `brute-force-death-watch` (n × growth × rate → honest wall-clock, log-scale bars),
+  `tsp-playground` (NN vs 2-opt vs brute-force optimal, tour-count lock past n=9); figs
+  `chomsky-rings`, `halting-paradox` (6-frame diagonalization comic), `pnp-map` (P/NP/NPC/NP-hard +
+  P=NP two-worlds); quizzes `regular-or-not` / `does-it-halt` / `np-or-not`; **+6 katas**
+  (dfa-accepts, binary-divisible-by-three [ch19]; anbn-decide, collatz-steps [ch20];
+  subset-sum-decide, verify-hamiltonian [ch21]) → batch now **30** (149 cases). **3 pure engines**
+  (`automata/model.ts`, `turing/model.ts`, `complexity/model.ts`) + **`scripts/test-ch19.ts`**
+  (div-by-3 correct vs value%3 to len 12; regex→NFA→subsetDFA agree on all |s|≤6 for 4 regexes;
+  a+/a?/a* semantics), **`test-ch20.ts`** (unary-add sums; palindrome decides; **BB(3)=14 steps/6
+  ones, BB(4)=107/13** exactly; accept/reject/timeout trichotomy; REFERENCE_ANBN passes the boss
+  suite, starter fails), **`test-ch21.ts`** (2ⁿ/n!/tour counts; time math; 2-opt never lengthens;
+  optimal ≤ 2-opt ≤ NN) — all wired into `npm test` + `verify`. **Sim components + figures were
+  delegated to parallel subagents then reviewed** (each built only its own file against the
+  tested engines; per-component styles live in `src/theme/_p5css/*.css`, imported as side-effects —
+  a light modularization; figures use inline SVG styling as before). **Adversarial review**
+  (subagent: independent Node probes on all three engines + web-verified every dated fact +
+  recomputed all 9 quiz keys + ran the katas): all facts correct (incl. the tricky **Σ(3)=6 /
+  S(3)=21** distinction), all quiz keys correct, all engine invariants hold — and it caught **one
+  BLOCKING bug the sandbox's truncated test output had hidden**: `twoOpt` non-terminated on the
+  demoCities instance because the i=0/k=n-1 case reverses the *entire* tour (a direction flip the
+  edge-delta scores as an eternal improvement), hanging both `test-ch21` and the tsp sim on mount —
+  fixed by skipping that degenerate whole-tour reversal (locked by the now-completing test). Three
+  polish items also actioned: 2-opt reclassified from "approximation with a ratio" to a heuristic
+  (only Christofides carries the proven 1.5×) in both the coping prose and the pitfall; a kata
+  label and a stale test comment corrected. **verify = typecheck ✓ · lint ✓ (0/0) · qa ✓ (21 live
+  chapters; 44 sims · 22 figs · 21 quizzes · 106 interview Qs · 30 katas · 10 bosses; mandate
+  holds) · test ✓ (18 suites; +test-ch19/20/21, +6 katas → 149 cases) · build ✓** (fresh
+  `dist-s10b`: TuringMachine 18.0 KB · HaltingParadox 14.4 · FsmBuilder 12.5 · SortingRace 10.9 ·
+  PnpMap 10.7 · RegexNfa 9.8 · TspPlayground 7.3 · BruteForceDeathWatch 6.9 · react-vendor 190 KB ·
+  index 522 KB/190 gzip — data modules still in the main bundle, S18/S19 lazy-load note stands).
+  `dist-s10*` gitignored (`dist-*`); sandbox `unlink` still blocked (harmless). **INTERACTIVES.md**
+  updated (ch.19–21 → shipped keys + the 3 quizzes + 6 katas + census → Part 5 complete). NOT
+  sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (fsm-builder:
+  build the div-by-3 DFA, feed strings, run the challenge check; regex-nfa: type `(a|b)*abb`, step
+  a string, watch the live-set + DFA-state count; turing-machine: run each preset, watch BB3 halt
+  at 14 steps, then boss → build aⁿbⁿ → suite passes → *Halting Oracle* badge; brute-force-death-
+  watch: drag n, flip problem/rate, see the years/universe readout; tsp-playground: drag cities,
+  NN→2-opt→optimal, brute force locks past n=9; chomsky-rings / halting-paradox / pnp-map auto-play).
+  **S10 CLOSED pending user commit — suggested branch `feat/s10-p5-theory`. PART 5 COMPLETE. Next:
+  S11 — P6 · Operating Systems I: ch.22 (Processes & scheduling — scheduler-sim HERO) + ch.23
+  (Memory — paging/address-translation steppers).**

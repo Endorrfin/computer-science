@@ -543,6 +543,117 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "regular-or-not",
+    chapterId: "ch19",
+    questions: [
+      {
+        prompt: "Which of these languages is **not** regular?",
+        options: [
+          "Binary strings with an even number of 1s",
+          "Strings over {a,b} that end in `ab`",
+          "aⁿbⁿ — n a's followed by exactly n b's",
+          "Strings that contain the substring `101`",
+        ],
+        answer: 2,
+        explain:
+          "aⁿbⁿ needs the machine to **count** the a's so it can match the b's, and n is unbounded — impossible with finitely many states (the pumping lemma proves it). The other three are all recognizable by a small DFA: each needs only a fixed, finite amount of state.",
+      },
+      {
+        prompt: "Can a classical regular expression match **balanced parentheses** nested to any depth?",
+        options: ["Yes", "No"],
+        answer: 1,
+        explain:
+          "No — balanced parentheses is **context-free**, not regular. Tracking nesting depth needs a stack (a pushdown automaton), which a finite automaton doesn't have. This is the theorem behind \"don't parse HTML with regex.\"",
+      },
+      {
+        prompt: "An NFA has **5 states**. Its equivalent DFA, built by the subset construction, has at most how many states?",
+        options: ["5", "10", "25", "32"],
+        answer: 3,
+        explain:
+          "The DFA's states are **subsets** of the NFA's states, so at most 2⁵ = **32**. Usually far fewer are reachable, but the exponential worst case is real — it's the blow-up behind determinized regex engines.",
+      },
+    ],
+  },
+  {
+    id: "does-it-halt",
+    chapterId: "ch20",
+    questions: [
+      {
+        prompt: "Which of these is **undecidable** — no program can answer it correctly for every input program?",
+        options: [
+          "Does this source file have a syntax error?",
+          "Will this program eventually halt on its input?",
+          "Is this list already sorted?",
+          "Does this integer exceed 1000?",
+        ],
+        answer: 1,
+        explain:
+          "Halting is the classic undecidable problem (Turing, 1936) — assume a decider and diagonalization derives a contradiction. The others are all decidable: parsing, a single scan, and a comparison each always finish with a definite answer.",
+      },
+      {
+        prompt: "Is *\"does program P ever print the word HELLO on some input?\"* decidable?",
+        options: ["Yes", "No"],
+        answer: 1,
+        explain:
+          "No — it's a **non-trivial property of P's behavior**, so **Rice's theorem** makes it undecidable. You could reduce halting to it: deciding it in general would let you decide halting.",
+      },
+      {
+        prompt: "Why can't we just write a clever program that computes the busy beaver BB(n) for every n?",
+        options: [
+          "BB grows faster than any computable function — computing it would solve the halting problem",
+          "We simply haven't found the right algorithm yet",
+          "BB(n) is infinite for every n",
+          "It would need more RAM than exists",
+        ],
+        answer: 0,
+        explain:
+          "BB is **uncomputable**: it dominates every computable function, and knowing BB(n) would let you decide halting for all n-state machines (run each for BB(n) steps — if it hasn't halted, it never will). BB(5) = 47,176,870 was pinned down only in 2024; BB(6) is beyond current mathematics.",
+      },
+    ],
+  },
+  {
+    id: "np-or-not",
+    chapterId: "ch21",
+    questions: [
+      {
+        prompt: "Which statement best describes the class **NP**?",
+        options: [
+          "Problems with no polynomial-time algorithm",
+          "Problems whose proposed solutions can be verified in polynomial time",
+          "Problems that require special nondeterministic hardware",
+          "Problems that are impossible to solve",
+        ],
+        answer: 1,
+        explain:
+          "NP = **nondeterministic-polynomial** = a candidate solution is checkable in polynomial time. It is *not* \"non-polynomial\": in fact every P problem is in NP (P ⊆ NP). Whether NP has problems outside P is the open P-vs-NP question.",
+      },
+      {
+        prompt: "You discover a polynomial-time algorithm for the travelling-salesman **decision** problem (which is NP-complete). What follows?",
+        options: [
+          "Only TSP gets faster; nothing else changes",
+          "Every problem in NP now has a polynomial algorithm — you've proved P = NP",
+          "Nothing — TSP isn't actually in NP",
+          "The halting problem becomes decidable",
+        ],
+        answer: 1,
+        explain:
+          "Every NP problem reduces to any NP-complete one, so a fast algorithm for TSP-decision gives a fast algorithm for **all** of NP — that's P = NP (and a $1,000,000 prize). Halting stays undecidable regardless: it's not in NP at all.",
+      },
+      {
+        prompt: "Which of these is **not** known to be in NP?",
+        options: [
+          "Boolean satisfiability (SAT)",
+          "Graph 3-colouring",
+          "The halting problem",
+          "n×n Sudoku solvability",
+        ],
+        answer: 2,
+        explain:
+          "The halting problem is **undecidable**, so it can't be in NP (NP problems are at least decidable). It *is* NP-hard — at least as hard as everything in NP — which is why NP-hard ⊋ NP-complete. The other three have polynomial-time-checkable certificates.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

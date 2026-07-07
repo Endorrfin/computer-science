@@ -828,6 +828,162 @@ export const INTERVIEW: InterviewQ[] = [
       "**Backtracking** prunes a branch only when a partial solution becomes **infeasible**. **Branch & bound** adds an **optimistic bound**: compute the best value any completion of the current partial solution could reach, and prune the branch whenever that bound can't beat the best solution found so far. It's backtracking guided by a DP-/relaxation-style estimate.\n" +
       "It's the backbone of exact **integer/linear programming** (LP-relaxation bounds), **SAT/CSP** solvers (with clause learning and constraint propagation), and exact **TSP**. The staff point: the quality of the bound and the branching/variable-ordering heuristics decide whether the search is tractable — a tight bound prunes exponentially more of the tree.",
   },
+  // ---- ch.19 · Automata & regular languages ----
+  {
+    id: "iv-ch19-1",
+    chapterId: "ch19",
+    level: "mid",
+    q: "What's the difference between a DFA and an NFA, and is one more powerful?",
+    a:
+      "Same power, different shape. A **DFA** has exactly one transition per (state, symbol) — its run is forced. An **NFA** may have zero, one, or many, plus ε-moves, and accepts if *some* path accepts.\n" +
+      "They recognize the identical class (regular languages): the **subset construction** turns any NFA into a DFA whose states are sets of NFA states (Rabin–Scott). NFAs are smaller and drop straight out of a regex; DFAs run in linear time with no backtracking. The only cost of converting is size — up to 2ⁿ states.",
+  },
+  {
+    id: "iv-ch19-2",
+    chapterId: "ch19",
+    level: "senior",
+    q: "Prove that aⁿbⁿ is not a regular language.",
+    a:
+      "Pumping lemma. Assume it's regular with pumping length p and take s = aᵖbᵖ. The lemma splits s = xyz with |xy| ≤ p and |y| ≥ 1, so y sits entirely inside the a's. Pump to xy²z: it has more a's than b's, so it's not in the language — contradiction.\n" +
+      "The deeper reason: a DFA with p states, reading p+1 a's, must repeat a state (pigeonhole), and from then on it can't tell two different a-counts apart. Finite memory can't track an unbounded count.",
+  },
+  {
+    id: "iv-ch19-3",
+    chapterId: "ch19",
+    level: "senior",
+    q: "Your API accepts a user-supplied regular expression and runs it on request data. What's the risk, and how do you handle it?",
+    a:
+      "**ReDoS** — catastrophic backtracking. Patterns like `(a+)+$` make a backtracking engine explore exponentially many ways to match, so one crafted string pins a CPU (a denial of service).\n" +
+      "Mitigations: run a **linear-time** engine (RE2, Rust `regex`) that compiles to an automaton and has no backtracking; or if stuck with a backtracking engine, impose a match **timeout**, cap input length, and forbid dangerous features (nested quantifiers, backreferences). The root cause is that \"regex\" features like backreferences exceed the regular languages, which is exactly what forces the exponential search.",
+  },
+  {
+    id: "iv-ch19-4",
+    chapterId: "ch19",
+    level: "mid",
+    q: "Give one regular language and one non-regular language, and say what separates them.",
+    a:
+      "Regular: \"binary strings with an even number of 1s\" — two states (even/odd) suffice. Non-regular: \"aⁿbⁿ\" or \"balanced parentheses\" — both need to count to an unbounded depth.\n" +
+      "The dividing line is **bounded vs unbounded memory**. A regular language needs only a fixed amount of state; the moment correctness depends on remembering an unbounded quantity (a count, a nesting depth), it leaves the regular class and needs at least a stack (context-free).",
+  },
+  {
+    id: "iv-ch19-5",
+    chapterId: "ch19",
+    level: "staff",
+    q: "Where do finite automata actually show up in production systems?",
+    a:
+      "Everywhere small, fast recognition is needed. **Lexers/tokenizers** (ch.11) are DFAs. `grep`/RE2 compile patterns to automata for linear-time search; **Aho–Corasick** is an automaton for multi-pattern matching (IDS, virus signatures). **Protocol and UI state machines** — the TCP connection lifecycle (ch.27) is literally a finite automaton. Validators (dates, identifiers) are regular. Even hardware controllers (ch.7) are FSMs.\n" +
+      "Senior beats: **DFA minimization** (Hopcroft) for table size, and choosing an automaton engine over a backtracking one when input is untrusted.",
+  },
+  // ---- ch.20 · Computability ----
+  {
+    id: "iv-ch20-1",
+    chapterId: "ch20",
+    level: "mid",
+    q: "State the halting problem and sketch why it's undecidable.",
+    a:
+      "Halting: decide, for an arbitrary program P and input x, whether P(x) eventually stops. No algorithm does this for all cases.\n" +
+      "Sketch (diagonalization): suppose a decider H(P,x) exists. Build D(P) = { if H(P,P) says \"halts\" then loop forever, else halt }. Ask what D(D) does — if it halts, H said \"halts,\" so D should have looped; if it loops, H said \"loops,\" so D should have halted. Both contradict, so H can't exist.",
+  },
+  {
+    id: "iv-ch20-2",
+    chapterId: "ch20",
+    level: "senior",
+    q: "Decidable vs recognizable (recursively enumerable) — what's the difference, and where does halting sit?",
+    a:
+      "**Decidable**: a machine always halts and answers yes/no correctly. **Recognizable (RE)**: a machine halts and says \"yes\" on members, but may run forever on non-members — a semi-decision.\n" +
+      "Halting is **recognizable but not decidable**: run P(x) and you'll see it halt if it does, but no finite wait proves it never will. A language is decidable iff both it and its complement are recognizable (RE ∩ co-RE) — and halting's complement is *not* RE, which is precisely why halting isn't decidable.",
+  },
+  {
+    id: "iv-ch20-3",
+    chapterId: "ch20",
+    level: "senior",
+    q: "What is Rice's theorem, and what does it mean for static analysis tools?",
+    a:
+      "Rice's theorem: **every non-trivial property of the function a program computes is undecidable** (trivial = true for all programs or none). \"Does it ever return null?\", \"are these two functions equivalent?\", \"is this code dead?\" — all undecidable in general.\n" +
+      "So tools must compromise: **sound but incomplete** (over-approximate — reject some safe programs to guarantee catching every bad one, like a type system) or **unsound but useful** (under-approximate — miss some to avoid false-positive noise, like most linters). A tool claiming to detect *all* of some behavioral class with zero false positives is either restricting the language or overselling.",
+  },
+  {
+    id: "iv-ch20-4",
+    chapterId: "ch20",
+    level: "staff",
+    q: "How would you prove some new problem X is undecidable?",
+    a:
+      "**Reduction from a known-undecidable problem** (usually halting). Show that if you had a decider for X, you could use it to build a decider for halting — which can't exist, so X's decider can't either.\n" +
+      "Concretely: map an arbitrary halting instance (P, x) to an instance of X such that the X-answer reveals whether P halts on x. The mapping must be computable. This \"halting ≤ X\" structure is the standard template; Rice's theorem is essentially this argument done once for all non-trivial semantic properties.",
+  },
+  {
+    id: "iv-ch20-5",
+    chapterId: "ch20",
+    level: "mid",
+    q: "If detecting infinite loops is undecidable, how do compilers and linters warn about them at all?",
+    a:
+      "They don't solve the general problem — they **approximate** it, and only over decidable sub-cases. A compiler can flag an obviously-infinite `while(true)` with no break, or unreachable code after a provable non-return, because those are syntactic/structural patterns, not the full semantic question.\n" +
+      "The trade-off is baked in: be **conservative** (warn only when certain, missing subtle cases) or **noisy** (warn on suspicion, with false positives). Undecidability guarantees no analyzer is both complete and sound for the general case.",
+  },
+  {
+    id: "iv-ch20-6",
+    chapterId: "ch20",
+    level: "staff",
+    q: "What is the busy beaver function and why is it interesting?",
+    a:
+      "BB(n) (Radó, 1962) is the maximum number of steps a halting n-state, 2-symbol Turing machine can take from a blank tape. It's **uncomputable** and grows faster than any computable function — if you could compute BB(n), you'd decide halting for all n-state machines (run each BB(n) steps; if it hasn't stopped, it never will).\n" +
+      "It makes uncomputability concrete: BB(1..4) = 1, 6, 21, 107, then BB(5) = **47,176,870**, proved only in **2024** (a machine-checked Coq proof by the bbchallenge collaboration). BB(6) is astronomically large and likely independent of standard axioms — a tiny question mathematics may never settle.",
+  },
+  // ---- ch.21 · Complexity ----
+  {
+    id: "iv-ch21-1",
+    chapterId: "ch21",
+    level: "mid",
+    q: "Define P and NP precisely, and state their relationship.",
+    a:
+      "**P**: problems a deterministic machine solves in polynomial time (O(nᵏ)). **NP**: problems whose \"yes\" answers have a **certificate** verifiable in polynomial time — equivalently, solvable by a nondeterministic machine in polynomial time.\n" +
+      "**P ⊆ NP**: if you can solve it fast, you can certainly verify a solution fast. Whether the inclusion is strict (P ≠ NP) is the open question. Note NP is about *verification*, not \"non-polynomial.\"",
+  },
+  {
+    id: "iv-ch21-2",
+    chapterId: "ch21",
+    level: "senior",
+    q: "What does NP-complete mean, and how do you show a problem is NP-complete?",
+    a:
+      "NP-complete = **in NP** *and* **NP-hard** (every NP problem reduces to it in polynomial time). They're the hardest problems in NP and all inter-reducible.\n" +
+      "To prove a problem X is NP-complete: (1) show **X ∈ NP** — give a poly-time verifier for a certificate; (2) show **X is NP-hard** — pick a known NP-complete problem (3-SAT, vertex cover, subset-sum) and give a poly-time reduction *from* it *to* X. Cook–Levin bootstraps the whole chain by proving SAT NP-complete from the definition of NP directly.",
+  },
+  {
+    id: "iv-ch21-3",
+    chapterId: "ch21",
+    level: "senior",
+    q: "In an interview you realize the problem is essentially the travelling salesman. How do you proceed?",
+    a:
+      "Name it: \"this is NP-hard, so I won't chase an exact polynomial algorithm.\" Then clarify scope. **Small n?** Exact via DP (Held–Karp, O(n²2ⁿ)) or branch and bound. **Large n?** A heuristic + local search: nearest-neighbour then **2-opt**, or accept an **approximation** (metric-TSP has Christofides' 1.5×). **Structure?** If distances are a tree/Euclidean/bounded, special-case algorithms may exist.\n" +
+      "The signal interviewers want: recognize the hardness, don't pretend it away, and choose the right *coping* strategy for the constraints.",
+  },
+  {
+    id: "iv-ch21-4",
+    chapterId: "ch21",
+    level: "mid",
+    q: "Why does P vs NP matter outside academia?",
+    a:
+      "Most **cryptography** assumes P ≠ NP-style hardness: it's easy to verify a signature or check a key, and (believed) hard to forge one or factor. If P = NP with a practical algorithm, much of that collapses.\n" +
+      "It also bounds **optimization** everywhere — logistics, scheduling, chip layout, protein folding are NP-hard, so we rely on heuristics and approximations rather than optimal solvers. And it would reshape AI/math: finding proofs would be as easy as checking them. The stakes are why it's a $1,000,000 Millennium Prize.",
+  },
+  {
+    id: "iv-ch21-5",
+    chapterId: "ch21",
+    level: "staff",
+    q: "Explain pseudo-polynomial time using knapsack, and why knapsack is still NP-complete.",
+    a:
+      "The 0/1 knapsack DP runs in O(nW) where W is the capacity. That's polynomial in the **numeric value** W but exponential in its **encoding length** (W takes log₂W bits), so on the true input size it's exponential — **pseudo-polynomial**.\n" +
+      "Knapsack is therefore **weakly** NP-complete: it has a pseudo-poly algorithm and an FPTAS. Contrast **strongly** NP-hard problems like TSP, which stay hard even when all numbers are polynomially bounded — no pseudo-poly algorithm unless P = NP. Watch for costs that scale with a number's magnitude rather than its bit-length.",
+  },
+  {
+    id: "iv-ch21-6",
+    chapterId: "ch21",
+    level: "staff",
+    q: "Give an example of an NP-hard problem that is not NP-complete, and explain why.",
+    a:
+      "The **halting problem** is NP-hard (every NP problem reduces to it — with unlimited power you can brute-force any certificate) but **not** NP-complete, because it isn't in NP: it's undecidable, and NP problems are at least decidable.\n" +
+      "This shows NP-hard ⊋ NP-complete: NP-hardness is a *lower bound* (\"at least as hard as all of NP\") that says nothing about membership. Optimization variants (find the *shortest* TSP tour, as a function problem) are also NP-hard without being NP-complete decision problems.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {
