@@ -57,6 +57,11 @@ export const SIM_KEYS = [
   "turing-machine", // ch.20 HERO — tape + rule table; presets (unary add, palindrome, busy beavers) + aⁿbⁿ boss
   "brute-force-death-watch", // ch.21 micro — grow n, watch runtime explode at a billion ops/s
   "tsp-playground", // ch.21 micro — nearest-neighbour vs 2-opt vs brute-force optimal
+  // P6 · Operating Systems (S11)
+  "scheduler-sim", // ch.22 HERO — FCFS/SJF/SRTF/RR/priority/MLFQ; live Gantt, stats, context-switch cost
+  "syscall-boundary", // ch.22 micro — user↔kernel mode crossing, stepped
+  "address-translate", // ch.23 micro — virtual addr → page-table walk → TLB → physical, digit by digit
+  "page-fault-lab", // ch.23 micro — FIFO/LRU/Optimal/Clock over a reference string; thrashing & Bélády
 ] as const;
 
 export const FIG_KEYS = [
@@ -92,6 +97,9 @@ export const FIG_KEYS = [
   "chomsky-rings", // ch.19 — regular ⊂ context-free ⊂ context-sensitive ⊂ recursively-enumerable ⊂ beyond
   "halting-paradox", // ch.20 — the diagonalization self-reference, as a 6-frame comic
   "pnp-map", // ch.21 — P / NP / NP-complete / NP-hard territory + the P=NP two-worlds frame
+  // P6 · Operating Systems (S11)
+  "process-states", // ch.22 — new→ready→running→blocked→terminated lifecycle, transitions animate
+  "stack-vs-heap", // ch.23 — one process's address space: stack grows down, heap grows up, a leak ratchets
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

@@ -984,6 +984,117 @@ export const INTERVIEW: InterviewQ[] = [
       "The **halting problem** is NP-hard (every NP problem reduces to it — with unlimited power you can brute-force any certificate) but **not** NP-complete, because it isn't in NP: it's undecidable, and NP problems are at least decidable.\n" +
       "This shows NP-hard ⊋ NP-complete: NP-hardness is a *lower bound* (\"at least as hard as all of NP\") that says nothing about membership. Optimization variants (find the *shortest* TSP tour, as a function problem) are also NP-hard without being NP-complete decision problems.",
   },
+  // ===================== ch.22 · Processes & scheduling =====================
+  {
+    id: "iv-ch22-1",
+    chapterId: "ch22",
+    level: "mid",
+    q: "What's the difference between a process and a thread, and when would you reach for one over the other?",
+    a:
+      "A **process** has its own address space and resources; a **thread** is a schedulable flow of execution *inside* a process, sharing that address space with sibling threads.\n" +
+      "Threads are cheaper to create and switch (no new page tables, no full TLB flush) and communicate by touching shared memory — great for parallelism within one app, at the cost of needing synchronization (ch.25) and shared-fate crashes. Processes give **isolation**: a fault or compromise is contained, and they only talk via IPC. Reach for processes when you want fault/security boundaries (browser tab-per-process), threads when you want cheap shared-memory concurrency.",
+  },
+  {
+    id: "iv-ch22-2",
+    chapterId: "ch22",
+    level: "mid",
+    q: "Walk through what physically happens on a context switch, and why it costs more than the register save/restore suggests.",
+    a:
+      "The kernel saves the running thread's CPU state (registers, PC, stack pointer) into its PCB, picks the next thread, loads *its* saved state, and (for a cross-process switch) swaps the page-table base register. Direct cost: ~a microsecond, a few thousand cycles.\n" +
+      "The bigger, hidden cost is **indirect**: the new thread starts with cold L1/L2 caches, a cold branch predictor, and a TLB that's been flushed or holds the wrong process's entries — so it stalls on misses until it warms back up. On real workloads this indirect cost often exceeds the direct one, which is why excessive switching (tiny quanta, too many runnable threads) hurts throughput.",
+  },
+  {
+    id: "iv-ch22-3",
+    chapterId: "ch22",
+    level: "senior",
+    q: "SJF is provably optimal for average waiting time. Why don't real schedulers use it, and what do they do instead?",
+    a:
+      "SJF needs the length of each job's next CPU burst **in advance** — an oracle the OS doesn't have. So it's a theoretical optimum, not an implementation.\n" +
+      "Practical answers: **estimate** the next burst from history (exponential averaging: τₙ₊₁ = α·tₙ + (1−α)·τₙ), or use a **feedback** scheduler like **MLFQ** that doesn't need the estimate — it starts every job at high priority and demotes ones that use full quanta, so short/interactive jobs stay near the top and CPU-bound jobs sink, approximating shortest-first from observed behaviour. General-purpose schedulers (Linux CFS/EEVDF) instead target *fairness* (equal share via virtual runtime) plus latency, which sidesteps the oracle entirely.",
+  },
+  {
+    id: "iv-ch22-4",
+    chapterId: "ch22",
+    level: "senior",
+    q: "How do you choose a round-robin time quantum? What breaks at each extreme?",
+    a:
+      "You balance responsiveness against overhead. **Too large** → RR degenerates into FCFS: the convoy effect returns and interactive jobs wait behind long ones. **Too small** → context-switch overhead dominates; a large fraction of every quantum is spent switching rather than computing.\n" +
+      "The rule of thumb (Silberschatz): pick a quantum large enough that ~80% of CPU bursts finish within it, so most jobs complete in one slice while still preempting the rare long one — typically ~10–100 ms, and always ≫ the context-switch time. The right value depends on the measured switch cost and the workload's burst distribution.",
+  },
+  {
+    id: "iv-ch22-5",
+    chapterId: "ch22",
+    level: "senior",
+    q: "What is starvation, which schedulers cause it, and how is it fixed?",
+    a:
+      "**Starvation** is a runnable process never getting the CPU because the policy always prefers others. **Priority** scheduling (especially preemptive) causes it: a steady stream of higher-priority work can keep a low-priority job off the CPU forever. SJF/SRTF can starve long jobs the same way.\n" +
+      "The fix is **aging**: gradually raise the priority of a process the longer it waits, guaranteeing it eventually wins. Fairness-based schedulers avoid it structurally — MLFQ periodically **boosts** everyone back to the top queue; CFS/EEVDF track accumulated CPU (virtual runtime / lag) so a neglected task's eligibility rises until it's scheduled.",
+  },
+  {
+    id: "iv-ch22-6",
+    chapterId: "ch22",
+    level: "staff",
+    q: "Sketch how Linux's scheduler evolved (O(1) → CFS → EEVDF) and what problem each step solved.",
+    a:
+      "**O(1)** (2.6, early 2000s): constant-time next-task selection via per-priority run-queues and a bitmap. Fast, but its heuristics for detecting 'interactive' tasks were fragile.\n" +
+      "**CFS** (2007): drop fixed time-slices; track each task's **virtual runtime** and always run the one with the least — an ordered red-black tree that approximates giving every task an equal share, weighted by nice value. Clean and fair, but low-latency needs bolted on 'latency-nice' patches.\n" +
+      "**EEVDF** (default since 6.6, Oct 2023): keep fair sharing but add **eligibility** (a task can't run ahead of its fair share — tracked as *lag*) and per-request **virtual deadlines**, so latency-sensitive tasks get served on time by construction. All three schedule **threads** and, on SMP, keep per-CPU run-queues with periodic load balancing.",
+  },
+  // ===================== ch.23 · Memory =====================
+  {
+    id: "iv-ch23-1",
+    chapterId: "ch23",
+    level: "mid",
+    q: "What does virtual memory buy you, and how does a virtual address become a physical one?",
+    a:
+      "Virtual memory gives each process a private address space starting at zero. That buys **isolation** (a process can't even name another's memory), **relocation/simplicity** (every program is linked for the same clean layout), and the ability to use **more memory than physically exists** (cold pages live on disk).\n" +
+      "Translation is by **paging**: the virtual address splits into a page number (high bits) and a byte offset (low bits). The MMU looks the page number up — first in the **TLB**, else by walking the page table — to get a physical frame, then forms `frame × page_size + offset`. It happens in hardware on every single access.",
+  },
+  {
+    id: "iv-ch23-2",
+    chapterId: "ch23",
+    level: "mid",
+    q: "What is a TLB, and why does the system slow to a crawl without a good hit rate?",
+    a:
+      "The **TLB** (translation lookaside buffer) is a small, fast cache of recent virtual-page → physical-frame translations, sitting in the MMU.\n" +
+      "Without it, *every* memory access would need extra memory reads to walk the page table — and with multi-level tables that's one read **per level** (four on x86-64) before the actual access. A TLB hit collapses all of that into a single fast lookup. Because programs have locality, a small TLB catches the vast majority of translations; a poor hit rate (e.g. a working set that overflows TLB reach) means every access pays the walk, which is exactly what **huge pages** exist to mitigate.",
+  },
+  {
+    id: "iv-ch23-3",
+    chapterId: "ch23",
+    level: "mid",
+    q: "Distinguish a page fault from a segmentation fault.",
+    a:
+      "A **page fault** is a normal, expected event: the accessed address is *valid* but its page isn't currently in RAM (never loaded, or evicted). The MMU traps, the OS loads the page (evicting a victim if needed), updates the table, and restarts the instruction — the program never notices except as a pause.\n" +
+      "A **segmentation fault** is an *error*: the address has no valid mapping at all (or the wrong permissions — writing read-only memory, dereferencing null). The OS can't satisfy it, so it signals the process (SIGSEGV), usually killing it. Same machinery (the MMU trap), opposite meaning: one is 'fetch it', the other is 'you may not touch that'.",
+  },
+  {
+    id: "iv-ch23-4",
+    chapterId: "ch23",
+    level: "senior",
+    q: "Why are page tables multi-level instead of one flat array, and what does that cost?",
+    a:
+      "A flat table needs one entry per virtual page whether or not it's used. For a 48-bit space with 4 KiB pages that's 2³⁶ entries **per process** — terabytes of table for programs that touch megabytes. Absurd.\n" +
+      "**Multi-level (radix) tables** slice the page number into an index per level; subtrees for unmapped regions simply don't exist, so the table's size tracks what's actually mapped (sparse). The cost is a longer **walk** on a TLB miss — one memory reference per level (x86-64: 4 levels, optionally 5) — which is precisely why the TLB and huge pages matter. It's the classic space-vs-time trade, resolved by caching the result.",
+  },
+  {
+    id: "iv-ch23-5",
+    chapterId: "ch23",
+    level: "senior",
+    q: "Compare FIFO, LRU, Optimal and Clock. What's Bélády's anomaly and which policies avoid it?",
+    a:
+      "**Optimal (MIN)** evicts the page used farthest in the future — provably fewest faults, but unrealizable (needs the future); it's the benchmark. **LRU** approximates it using the past (evict least-recently-used); near-optimal under locality but expensive to track exactly. **Clock/second-chance** approximates LRU cheaply with a reference bit and a sweeping hand. **FIFO** evicts the oldest-loaded page — trivial, but blind to usage.\n" +
+      "**Bélády's anomaly**: under FIFO, adding frames can *increase* faults (e.g. 1 2 3 4 1 2 5 1 2 3 4 5 → 9 faults at 3 frames, 10 at 4). It happens because FIFO isn't a **stack algorithm** — its resident set with n frames isn't necessarily a subset of the set with n+1. LRU and Optimal satisfy that inclusion property, so they're immune.",
+  },
+  {
+    id: "iv-ch23-6",
+    chapterId: "ch23",
+    level: "staff",
+    q: "A production box grinds to a halt paging constantly, though CPU is near idle. What's happening and how do you fix it?",
+    a:
+      "That's **thrashing**: the combined **working sets** of the running processes exceed physical RAM, so nearly every access faults, evicting a page that's needed again immediately. The disk (or swap) is the bottleneck; the CPU stalls waiting on I/O, so it looks idle while throughput craters.\n" +
+      "The cure is **not** a smarter replacement policy — it's reducing memory pressure: lower the multiprogramming level (admit fewer processes / cap concurrency), add RAM, or size each process's frames to its working set (Denning's model, or a page-fault-frequency controller that grants more frames when a process faults too often and reclaims them when it faults rarely). Killing or suspending the biggest offender is the emergency stop.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

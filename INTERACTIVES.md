@@ -173,15 +173,17 @@
 
 ## P6 · Operating Systems
 
-### ch.22 — Processes & scheduling
-- [HERO] `scheduler-sim` — define processes (arrival/burst/priority); run FCFS/SJF/RR (quantum slider)/priority; live Gantt chart, per-process wait/turnaround stats; context-switch cost toggle shows overhead eating throughput
-- [fig] `process-states` — new→ready→running→blocked→done state machine; transitions animate with causes
-- [micro] `syscall-boundary` — user→kernel mode crossing stepper (what a "system call" physically is)
+### ch.22 — Processes & scheduling *(built S11)*
+- [HERO] `scheduler-sim` — editable process table (arrival/burst/priority); run FCFS/SJF/SRTF/RR (quantum slider)/priority (preemptive + aging)/MLFQ; live Gantt revealed by the transport, per-process wait/turnaround/response + averages/utilization; context-switch cost slider shows overhead eating throughput; Convoy/Mixed/RR presets
+- [fig] `process-states` — new→ready→running→blocked→terminated state machine; an 8-frame walk lights one process's transitions with their causes (incl. the involuntary, OS-drawn preempt arrow)
+- [micro] `syscall-boundary` — user↔kernel mode crossing, 7-step trap stepper: mode bit flips, control token crosses the one vetted entry point (what a "system call" physically is)
+- [quiz] `scheduling-predict` — convoy effect (FCFS avg-wait), tiny-quantum overhead, why SJF needs an unknowable oracle
 
-### ch.23 — Memory
-- [micro] `address-translate` — virtual address → page-table walk → TLB hit/miss → physical address, digit-by-digit stepper
-- [micro] `page-fault-lab` — frames vs working set; eviction policy (FIFO/LRU) selector; shrink RAM → thrashing meltdown visible
-- [fig] `stack-vs-heap` — one process's address space; calls grow stack, mallocs pepper heap; leak animation
+### ch.23 — Memory *(built S11)*
+- [micro] `address-translate` — virtual address → bit-split (VPN/offset, sub-split per level) → single/2-level page-table walk → TLB hit/miss (persists across translations) → physical address, step by step; page-fault trap
+- [micro] `page-fault-lab` — reference string × frames × policy (FIFO/LRU/Optimal/Clock, clock shows ref-bits + hand); fault/hit counters, fault-vs-frames curve, Bélády's-anomaly callout, thrashing intuition; Silberschatz/Bélády presets
+- [fig] `stack-vs-heap` — one process's address space; calls grow the stack down, mallocs grow the heap up, a leak ratchets the high-water mark toward OOM
+- [quiz] `paging-predict` — Bélády's anomaly, page-fault-≠-segfault, LRU-vs-FIFO fault count
 
 ### ch.24 — Files & storage
 - [micro] `fs-blocks` — create/grow/delete files on a block grid; fragmentation emerges; inode pointer fan-out view
@@ -331,8 +333,10 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 **65 micro** · **36 fig** (+complexity-ladder, +hash-anatomy at S7; +tree-rotation,
 +rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
 **kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
-S10's +6 automata/computability/complexity batch) · quizzes in every chapter. As of **S10**
-the live build carries **44 sims, 22 figures, 21 quizzes, 106 interview Qs, 30 katas** across
-**21 live chapters** (`npm run qa` prints the running census and enforces the per-chapter
-minimums — CLAUDE.md §6 mandate). **Part 5 · Theory complete** (ch.19–21 + the *Halting
-Oracle* boss inside `turing-machine`).
+S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
+batch) · quizzes in every chapter. As of **S11** the live build carries **48 sims, 24 figures,
+23 quizzes, 118 interview Qs, 34 katas** across **23 live chapters** (`npm run qa` prints the
+running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate). **Part 5 · Theory
+complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · OS I**
+shipped ch.22–23 with the `scheduler-sim` HERO; ch.24–25 + the *Deadlock Breaker* boss land in
+S12.

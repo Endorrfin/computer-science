@@ -3453,6 +3453,303 @@ const ch21: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.22 — Processes & scheduling  (P6 · Operating Systems, built in S11)
+// ---------------------------------------------------------------
+const ch22: Chapter = {
+  id: "ch22",
+  part: "p6",
+  order: 24,
+  title: "Processes & scheduling",
+  tagline: "One CPU, many programs — how the OS fakes a computer for each of them, and decides who runs next",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "1961. A computer costs more than a house and serves one person at a time: you book an hour, feed in your punched cards, and if a comma is missing you get your printout and your failure the next day. At MIT that November, **Fernando Corbató** demonstrates something close to magic on an IBM 709 — the **Compatible Time-Sharing System**. Several people at separate terminals each *feel* like they own the machine, because the computer switches between them dozens of times a second, faster than a human notices. Nobody's program finished faster; the machine simply learned to **share**. That trick — one CPU pretending to be many — is the whole job of this part, and it starts with the unit the OS shares the CPU between: the **process**.",
+  },
+  assumes: [
+    { chapterId: "ch7", oneLiner: "A CPU runs one instruction stream via fetch-decode-execute, with a program counter and registers. A 'process' is that machine state made schedulable — and swappable." },
+    { chapterId: "ch10", oneLiner: "The call stack holds a program's live function frames. Each process gets its own stack (and its own everything) — the state a context switch must save and restore." },
+  ],
+  mentalModel:
+    "A process is a running program plus all the state that makes it resumable: its registers, program counter, stack, address space and open files — bundled in a kernel record called the PCB. The CPU can run only one process at a time, so the OS creates the illusion of many by switching between them faster than you notice; each switch saves one PCB and loads another (a context switch, costing microseconds plus lost cache/TLB warmth). The scheduler is the policy that answers 'who runs next?' — trading five goals (CPU utilization, throughput, turnaround, waiting time, response time) that no single algorithm maximizes at once. Preemptive policies can yank the CPU back mid-run (responsive, needs a timer); non-preemptive ones wait for the process to yield (simple, risks a convoy). Redraw the state machine — ready ⇄ running, running → blocked → ready — and the Gantt chart of a policy, and you have the chapter.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "You have a CPU that runs one instruction stream (ch.7) and programs written in languages that compile down to it (P3). But your laptop runs *hundreds* of programs at once on a handful of cores. **Part 6 is about the illusion that makes that possible** — and the illusionist is the **operating system**, a program whose job is to manage the others.\n" +
+        "This chapter builds the first illusion: **many programs on one CPU**. It rests on one data structure (the process) and one decision (who runs next).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Program vs process\n" +
+        "A **program** is passive — bytes on disk. A **process** is a program *in execution*: the code, plus everything that makes it a live, resumable thing. The OS tracks each in a **Process Control Block (PCB)** — a kernel record holding the process's saved registers and **program counter**, its scheduling state, its **address space** (the page tables of ch.23), and its open files. The PCB *is* the process, from the kernel's point of view: to pause a process is to save its PCB; to resume it is to load one back.\n" +
+        "A process is never simply 'running'. It moves through a small state machine: fresh (**new**), waiting its turn (**ready**), on the CPU (**running**), stalled on I/O (**blocked**), or finished (**terminated**). Watch the transitions — and note the one arrow the process doesn't control:",
+    },
+    { kind: "figure", fig: "process-states", caption: "The process lifecycle. A process yields the CPU two ways: voluntarily (running → blocked, e.g. waiting on disk) or involuntarily (running → ready, when the scheduler preempts it). Only the OS draws the running → ready arrow." },
+    {
+      kind: "compare",
+      a: "Process",
+      b: "Thread",
+      lens: "senior",
+      rows: [
+        ["Address space", "its own — isolated from other processes", "shared with sibling threads in the same process"],
+        ["Created / switched", "heavier (new page tables, TLB flush)", "lighter (same memory map; registers + stack only)"],
+        ["Communication", "IPC: pipes, sockets, shared-memory segments", "just read/write shared variables (hence the races of ch.25)"],
+        ["A crash / bad pointer", "contained to that process", "can corrupt every thread in the process"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## User mode, kernel mode, and the system call\n" +
+        "If any process could touch any memory or device, isolation would be a fiction. So the CPU runs in one of (at least) two privilege levels: **user mode**, where dangerous instructions and other processes' memory are off-limits, and **kernel mode**, where the OS has full power. A normal program lives in user mode. When it needs something only the kernel may do — open a file, send a packet, create a process — it makes a **system call**: it doesn't *jump* into the kernel (it can't), it executes a special trap instruction that hands control to a fixed, vetted kernel entry point. Step across that boundary:",
+    },
+    { kind: "sim", sim: "syscall-boundary" },
+    {
+      kind: "prose",
+      md:
+        "## The context switch — price of the illusion\n" +
+        "To switch from process A to process B, the kernel **saves A's CPU state into A's PCB and loads B's** — registers, program counter, stack pointer, the pointer to B's address space. That direct save/restore costs on the order of **a microsecond (a few thousand cycles)**. But the real bill is *indirect*: B's data isn't in the caches or the TLB yet, so it runs cold for a while, and those misses often cost more than the switch itself. This is why 'just add more threads' isn't free, and why a scheduler that switches too eagerly can spend more time switching than working.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Scheduling — who runs next?\n" +
+        "When the CPU is free and several processes are **ready**, the **scheduler** picks one. There is no single 'best' pick because the goals conflict: maximize **CPU utilization** and **throughput** (work per second), while minimizing **turnaround** (submit → done), **waiting time** (time stuck in the ready queue), and **response time** (submit → first reaction — what makes a UI feel snappy). Batch systems chase throughput; interactive systems chase response time. Build a workload and race the classic policies — watch the Gantt chart and the averages move:",
+    },
+    { kind: "sim", sim: "scheduler-sim" },
+    {
+      kind: "prose",
+      md:
+        "## The classic policies\n" +
+        "**FCFS** (first-come, first-served) runs processes in arrival order — simple and fair-sounding, but one long job makes everyone behind it wait (the **convoy effect**). **SJF** (shortest job first) runs the shortest burst next and is **provably optimal for average waiting time** — but it needs to know burst lengths in advance (an oracle you don't have; real schedulers *estimate*). **SRTF** is preemptive SJF: a newly-arrived shorter job snatches the CPU. **Round-robin** gives each ready process a fixed **time quantum** then rotates — the quantum is everything: too large and it decays into FCFS, too small and context-switch overhead eats the CPU. **Priority** scheduling runs the most important process first — and can **starve** low-priority ones forever, which **aging** (slowly raising a waiting process's priority) fixes. Predict how these behave before you trust your intuition:",
+    },
+    { kind: "quiz", quiz: "scheduling-predict" },
+    {
+      kind: "table",
+      caption: "The scheduling cheat-sheet. 'Optimizes' is what each policy is good at; every one trades away something else.",
+      head: ["Policy", "Preemptive?", "Optimizes", "Failure mode"],
+      rows: [
+        ["FCFS", "no", "simplicity, no starvation", "convoy effect — a long job delays everyone"],
+        ["SJF", "no", "average waiting time (provably)", "needs burst oracle; can starve long jobs"],
+        ["SRTF", "yes", "average waiting (preemptive)", "same oracle; more switches; starves long jobs"],
+        ["Round-robin", "yes", "response time / fairness", "quantum too small → switch overhead dominates"],
+        ["Priority", "either", "importance / deadlines", "starvation (fixed by aging)"],
+        ["MLFQ", "yes", "favors short & interactive jobs, no oracle", "tuning-heavy; gameable without a boost"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "What Linux actually runs — O(1) → CFS → EEVDF",
+      lens: "senior",
+      md:
+        "Real schedulers must also be **fast to decide** and **scale to many cores**. Linux's 2.6 **O(1)** scheduler picked the next task in constant time via per-priority run-queues. In 2007 the **Completely Fair Scheduler (CFS)** replaced it: no fixed time-slices, just a **virtual runtime** per task in a red-black tree — always run the task that has had the least CPU, which approximates giving everyone an equal share. Since **Linux 6.6 (October 2023)** the default is **EEVDF** (Earliest Eligible Virtual Deadline First), which adds a notion of **lag** and per-request **deadlines** so latency-sensitive tasks are served on time without CFS's pile of 'latency-nice' patches. Threads, not processes, are what all of these actually schedule; on multicore each CPU keeps its own run-queue and the kernel periodically **load-balances** between them.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the metrics, and why SJF is optimal",
+      md:
+        "For process i with arrival aᵢ, burst bᵢ, and completion cᵢ:\n\n" +
+        "**turnaround** Tᵢ = cᵢ − aᵢ · **waiting** Wᵢ = Tᵢ − bᵢ · **response** Rᵢ = (first-run time) − aᵢ.\n\n" +
+        "**Throughput** = processes completed per unit time; **CPU utilization** = busy time / wall-clock.\n\n" +
+        "**SJF minimizes average waiting time** (all jobs present at t = 0): run bursts in order b₍₁₎ ≤ … ≤ b₍ₙ₎. Job k waits for all before it, so total waiting = Σₖ (n−k)·b₍ₖ₎. The largest weight (n−1) multiplies the *smallest* burst, the next weight the next-smallest, and so on — any swap that puts a longer job earlier raises the sum (a rearrangement-inequality argument). Hence shortest-first is optimal; no non-preemptive order does better on mean waiting time.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now share **one CPU** among many processes and reason about the trade-offs of who runs next. But every one of those processes thinks it owns the machine's **memory**, too — all of it, contiguously, starting at address zero. That illusion is even bolder than time-sharing, and it's the subject of **ch.23**: virtual memory, paging, and the hardware that translates a made-up address into a real one on every single memory access.",
+    },
+  ],
+  keyPoints: [
+    "A process is a program in execution — code plus its resumable state (registers, PC, stack, address space, open files) — bundled by the kernel in a Process Control Block (PCB).",
+    "A process moves through a state machine — new → ready ⇄ running → (blocked) → terminated — and only the OS can draw the running → ready (preemption) arrow.",
+    "Threads share their process's address space while processes are isolated — so threads are cheaper to switch but can corrupt each other (the races of ch.25).",
+    "A system call is a controlled trap from unprivileged user mode into privileged kernel mode — a program can't jump into the kernel, only request via a vetted entry point.",
+    "A context switch saves one PCB and loads another — a microsecond of direct cost plus a larger indirect cost as the new process runs with cold caches and TLB.",
+    "Scheduling juggles five conflicting goals — CPU utilization, throughput, turnaround, waiting and response time — and no single policy wins them all; SJF is provably optimal for average waiting but needs burst lengths it can't know.",
+    "Round-robin's quantum is the key dial — too big decays to FCFS, too small drowns in context-switch overhead — and priority scheduling needs aging to prevent starvation.",
+  ],
+  pitfalls: [
+    {
+      title: "Confusing a program with a process (and a process with a thread)",
+      body: "A program is passive bytes on disk; a process is one running instance of it with its own address space; a thread is one schedulable flow inside a process, sharing that address space with its siblings. Run the same program twice → two processes, fully isolated. Spawn two threads → one process, shared memory (and shared bugs).",
+      lens: "both",
+    },
+    {
+      title: "Thinking a bigger time quantum is always better",
+      body: "A large round-robin quantum improves throughput (fewer switches) but wrecks response time — in the limit it IS FCFS. A tiny quantum feels responsive but can spend most of the CPU on context switches. There's no universally right value; it's tuned to the switch cost and the target responsiveness.",
+      lens: "both",
+    },
+    {
+      title: "Assuming preemptive scheduling means no starvation",
+      body: "Preemption is about *responsiveness*, not fairness. Preemptive priority (and SRTF) can starve a low-priority or long job indefinitely if higher-priority work keeps arriving. Starvation is cured by aging or a fairness mechanism (MLFQ's periodic boost, CFS's virtual runtime), not by preemption itself.",
+      lens: "senior",
+    },
+    {
+      title: "Ignoring the indirect cost of a context switch",
+      body: "Counting only the register save/restore (~a microsecond) badly underestimates the real cost. The new process runs with cold caches, a cold branch predictor and a flushed/foreign TLB, and those misses frequently dwarf the direct cost — which is exactly why over-threading or over-frequent preemption can make a system slower, not faster.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch22-1", "iv-ch22-2", "iv-ch22-3", "iv-ch22-4", "iv-ch22-5", "iv-ch22-6"],
+  kataIds: ["sjf-average-wait", "round-robin-order"],
+  seeAlso: ["ch7", "ch10", "ch23", "ch25"],
+  sources: [
+    { title: "Compatible Time-Sharing System — CTSS (Wikipedia)", url: "https://en.wikipedia.org/wiki/Compatible_Time-Sharing_System" },
+    { title: "Scheduling (computing) — algorithms & criteria (Wikipedia)", url: "https://en.wikipedia.org/wiki/Scheduling_(computing)" },
+    { title: "Completely Fair Scheduler (Wikipedia)", url: "https://en.wikipedia.org/wiki/Completely_Fair_Scheduler" },
+    { title: "Earliest eligible virtual deadline first — EEVDF (Wikipedia)", url: "https://en.wikipedia.org/wiki/Earliest_eligible_virtual_deadline_first_scheduling" },
+    { title: "EEVDF Scheduler — Linux kernel documentation", url: "https://docs.kernel.org/scheduler/sched-eevdf.html" },
+    { title: "Context switch — direct & indirect costs (Wikipedia)", url: "https://en.wikipedia.org/wiki/Context_switch" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.23 — Memory  (P6 · Operating Systems, built in S11)
+// ---------------------------------------------------------------
+const ch23: Chapter = {
+  id: "ch23",
+  part: "p6",
+  order: 25,
+  title: "Memory",
+  tagline: "Every process is told it owns all of memory, alone, from address zero — and hardware keeps the lie true on every single access",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "December 1962, University of Manchester. Programmers of the era hand-managed a cruel split: a little fast **core** memory and a big slow **drum**, and your program had to explicitly shuffle data between them — 'overlays' — or it wouldn't fit. Then **Tom Kilburn's** team switched on the **Atlas** and its **one-level store**: the machine now *pretended* core and drum were a single large memory, automatically moving 512-word pages in and out behind the programmer's back. The programmer wrote to one flat address space; the hardware and OS made it real. We call that illusion **virtual memory**, and every program you run today — thinking it owns gigabytes starting at address zero — is living inside Kilburn's trick.",
+  },
+  assumes: [
+    { chapterId: "ch6", oneLiner: "RAM is an addressable array of bytes, and the memory hierarchy (registers → cache → RAM → disk) trades speed for size. Virtual memory is the OS extending that hierarchy down onto disk, transparently." },
+    { chapterId: "ch22", oneLiner: "Each process has its own address space in its PCB. This chapter is what that address space actually is, and how the hardware translates it on every access." },
+  ],
+  mentalModel:
+    "Every process runs in its own virtual address space and believes it owns all of memory from zero. Reality is smaller and shared, so hardware translates every virtual address to a physical one. Paging is how: chop the virtual space into fixed-size pages and physical memory into equal frames, and keep a per-process page table mapping page → frame. On each access the MMU splits the address into a page number and an offset, looks the page number up (first in the fast TLB cache, else by walking the page table), and forms the physical address — unless the page isn't resident, which triggers a page fault that traps to the OS to fetch it from disk (and maybe evict another page). Replacement policy decides the victim: Optimal is the unbeatable benchmark you can't build, LRU approximates it, Clock approximates LRU cheaply, and FIFO is simple but can even fault MORE with more memory (Bélády's anomaly). Give a process too few frames for its working set and it thrashes — all fault, no progress.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## The boldest illusion\n" +
+        "In ch.22 the OS shared **one CPU** among many processes. Here it does something bolder with **memory**: it tells *every* process that it owns the entire address space, privately, starting at address zero — even though there's one physical RAM, smaller than the sum of their appetites, shared by all of them. Two processes can both use 'address 0x400000' and never collide, because those are **virtual** addresses that map to *different* physical locations.\n" +
+        "This buys three things at once: **isolation** (a process can't name, let alone touch, another's memory), **simplicity** (every program is compiled for the same clean layout), and **more memory than you have** (rarely-used pages live on disk until touched).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The address space\n" +
+        "A process's virtual address space has a conventional shape. Low addresses hold the **code** (the program's instructions) and static **data**. Above them the **heap** grows *upward* as the program asks for memory (malloc / new). From the top, the **stack** grows *downward* — one frame per live function call (ch.10). Between them yawns a huge unused gap, which is exactly why both can grow freely. Picture one process's space, and watch what a call and a leak do to it:",
+    },
+    { kind: "figure", fig: "stack-vs-heap", caption: "One process's virtual address space: code & data at the bottom, heap growing up, stack growing down, a vast gap between. A never-freed allocation is a leak — the heap high-water mark ratchets up and never comes back." },
+    {
+      kind: "prose",
+      md:
+        "## Paging — the mechanism\n" +
+        "How do you map a giant virtual space onto smaller physical RAM without a per-byte lookup table? **Paging**: chop the virtual space into fixed-size **pages** (4 KiB is the classic size) and physical memory into equal-size **frames**. A per-process **page table** maps each virtual page number to a physical frame. Because pages are a power of two, translation is pure bit-slicing: the low bits are a **byte offset** that passes through unchanged, and the high bits are the **page number** you look up. The **MMU** (memory-management unit) does this in hardware on every access. Translate one address by hand:",
+    },
+    { kind: "sim", sim: "address-translate" },
+    {
+      kind: "prose",
+      md:
+        "## When the page isn't there — the page fault\n" +
+        "The page table has a **valid bit** per entry. If a process touches a page that isn't in RAM (valid = 0) — never loaded, or evicted to disk — the MMU raises a **page fault**: a trap to the OS. The OS finds the page on disk, loads it into a free frame (evicting another page if memory is full), updates the table, and **restarts the faulting instruction** — which now succeeds. The program never knows. But if every frame is taken, the OS must choose a **victim** to evict, and that choice is a whole subject. Run reference strings through the policies and watch the faults:",
+    },
+    { kind: "sim", sim: "page-fault-lab" },
+    {
+      kind: "prose",
+      md:
+        "## Replacement policies\n" +
+        "**Optimal (MIN)** evicts the page whose *next* use is farthest in the future. It provably minimizes faults — and is **unrealizable**, because it needs to see the future; it exists only as the benchmark every real policy is measured against. **LRU** (least-recently-used) approximates it by betting the past predicts the future: evict whatever hasn't been touched longest. True LRU is costly to track exactly, so real systems run **Clock** (second-chance): a reference bit per frame gives recently-used pages a reprieve as a hand sweeps around. **FIFO** just evicts the oldest-loaded page — cheap, but it can behave pathologically: on some reference strings, **giving it more memory produces *more* faults** (Bélády's anomaly, 1969). Predict a few outcomes:",
+    },
+    { kind: "quiz", quiz: "paging-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Thrashing and the working set\n" +
+        "Paging works because programs have **locality**: at any moment a process touches only a small set of pages — its **working set** (Peter Denning, 1968). Give it enough frames to hold that set and faults are rare. Shrink below it — too many processes competing for too little RAM — and every eviction throws out a page that's about to be needed again, so the system does nothing but shuttle pages to and from disk. Throughput collapses toward zero: this is **thrashing**. The cure isn't a cleverer replacement policy; it's giving each process its working set, or admitting fewer processes.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Real hardware — multi-level tables, x86-64, and huge pages",
+      lens: "senior",
+      md:
+        "A flat page table for a 48-bit space with 4 KiB pages would need 2³⁶ entries per process — absurd. So tables are **multi-level (radix)**: the page number is sliced into several indices, one per level, and unused subtrees simply don't exist. **x86-64** uses **4-level paging** (the PML4 walk) to translate **48-bit** virtual addresses to up to 52-bit physical; recent chips add optional **5-level paging** for **57-bit** (256 TiB → 128 PiB). A walk that misses the **TLB** touches memory once *per level*, which is why the TLB matters so much — and why **huge pages** (x86-64 offers **2 MiB** and **1 GiB** alongside 4 KiB) exist: a bigger page means one TLB entry covers far more memory (more 'TLB reach') and the walk is shorter. This is the same locality lesson as the caches of ch.8, one level down. (Reclaiming memory *within* a process's heap is the sibling problem: allocators fight fragmentation, and garbage collectors — mark-and-sweep, generational — automate free by finding what's still reachable.)",
+    },
+    {
+      kind: "compare",
+      a: "Optimal (MIN)",
+      b: "LRU",
+      rows: [
+        ["Evicts", "the page used farthest in the future", "the page unused for the longest time (past)"],
+        ["Fault count", "provably minimal — the lower bound", "near-optimal when locality holds"],
+        ["Realizable?", "no — needs the future reference string", "yes, but exact tracking is expensive → approximated by Clock"],
+        ["Bélády's anomaly", "immune (a stack algorithm)", "immune (a stack algorithm)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — translation arithmetic & why paging beats external fragmentation",
+      md:
+        "With page size P = 2ᵏ, a virtual address v splits with no arithmetic: **offset = v mod P** (low k bits), **page number = ⌊v / P⌋** (high bits). Translation: **physical = frame(page number) × P + offset**. A two-level table splits the page-number bits into (dir index, table index); the walk reads the level-1 table to find the level-2 base, then the level-2 entry to find the frame.\n\n" +
+        "**Why fixed pages?** Because every free frame is interchangeable, a page fits any free frame — so paging has **no external fragmentation** (unlike variable-size segments, which leave unusable gaps between allocations). The price is **internal fragmentation**: the last page of an allocation is, on average, half wasted — a bounded, accepted cost (≤ P per region).\n\n" +
+        "**Optimal is optimal:** evicting the page referenced farthest in the future minimizes total faults — provable by an exchange argument against any other policy — but it requires the future reference string, so it is a benchmark, not an implementation.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Two illusions down: many programs on one CPU (ch.22), and a private, oversized memory for each (ch.23) — both built on the same move of putting a fast indirection (the scheduler, the page table + TLB) in front of a scarce shared resource. **Part 6 continues** with the storage those pages fault in from — file systems, inodes and the HDD-vs-SSD gap (ch.24) — and then the hardest illusion to keep honest: many things happening at *once*, and the races, locks and deadlocks of concurrency (ch.25).",
+    },
+  ],
+  keyPoints: [
+    "Virtual memory gives every process a private address space starting at zero, and hardware translates each virtual address to a physical one on every access — buying isolation, simplicity, and more memory than physically exists.",
+    "Paging maps fixed-size virtual pages to equal-size physical frames — a per-process page table holds the mapping, and each virtual address splits into a page number to look up (high bits) and an unchanged byte offset (low bits).",
+    "The TLB caches recent translations because a page-table walk costs an extra memory access per level — a TLB hit skips the walk entirely.",
+    "A page fault is a trap for a non-resident page: the OS loads it from disk (evicting a victim if memory is full), updates the table, and restarts the instruction — invisibly to the program.",
+    "Optimal (MIN) replacement is provably minimal but unrealizable — it needs the future, so LRU approximates it from the past, Clock approximates LRU cheaply, and FIFO is simplest but can suffer Bélády's anomaly.",
+    "Bélády's anomaly is FIFO faulting MORE with more frames — stack algorithms like LRU and Optimal are immune to it by the inclusion property.",
+    "Thrashing is throughput collapsing to near zero when processes lack the frames for their working set (Denning, 1968) — cured by supplying working sets, not by a smarter policy.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking a virtual address is a physical address",
+      body: "A pointer value your program sees is virtual — it is translated on every dereference. Two processes printing the same pointer are naming different physical bytes, and the same virtual address in one process can map to different physical frames over time (or to disk). The physical address is never visible to user code.",
+      lens: "both",
+    },
+    {
+      title: "Assuming more memory always means fewer page faults",
+      body: "It usually does — but not always. Under FIFO, some reference strings fault MORE with more frames (Bélády's anomaly). Only 'stack' algorithms (LRU, Optimal), where the pages held with n frames are always a subset of those held with n+1, are guaranteed monotone. Don't reason about FIFO as if adding RAM can't hurt.",
+      lens: "senior",
+    },
+    {
+      title: "Calling Optimal (MIN) a usable policy",
+      body: "Optimal replacement requires knowing the entire future reference string, so it can't be implemented — it exists purely as the theoretical lower bound to measure LRU/Clock/FIFO against. If a design 'uses the optimal policy', it's really using an approximation; name which one (usually Clock).",
+      lens: "senior",
+    },
+    {
+      title: "Blaming thrashing on the replacement algorithm",
+      body: "When a box thrashes, swapping a FIFO for LRU won't save it — the problem is that the combined working sets don't fit in RAM. The fix is fewer concurrent processes (or more RAM), i.e. giving each process enough frames for its working set. A better victim-choice only helps when there's a reasonable amount of memory to begin with.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch23-1", "iv-ch23-2", "iv-ch23-3", "iv-ch23-4", "iv-ch23-5", "iv-ch23-6"],
+  kataIds: ["page-table-translate", "fifo-page-faults"],
+  seeAlso: ["ch6", "ch22", "ch24"],
+  sources: [
+    { title: "Atlas (computer) — the one-level store, 1962 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Atlas_(computer)" },
+    { title: "Virtual memory (Wikipedia)", url: "https://en.wikipedia.org/wiki/Virtual_memory" },
+    { title: "Page replacement algorithm — FIFO / LRU / Optimal / Clock (Wikipedia)", url: "https://en.wikipedia.org/wiki/Page_replacement_algorithm" },
+    { title: "Bélády's anomaly (Wikipedia)", url: "https://en.wikipedia.org/wiki/B%C3%A9l%C3%A1dy%27s_anomaly" },
+    { title: "Intel 5-level paging — 48-bit vs 57-bit, page sizes (Wikipedia)", url: "https://en.wikipedia.org/wiki/Intel_5-level_paging" },
+    { title: "Working set & thrashing — Denning, 1968 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Working_set" },
+    { title: "Translation lookaside buffer — the TLB (Wikipedia)", url: "https://en.wikipedia.org/wiki/Translation_lookaside_buffer" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -3483,9 +3780,9 @@ export const CHAPTERS: Chapter[] = [
   ch19,
   ch20,
   ch21,
-  // P6 · Operating Systems
-  stub("ch22", "p6", 24, "Processes & scheduling", "Kernel mode, syscalls, threads, schedulers", 11, { foundations: 22, senior: 35 }),
-  stub("ch23", "p6", 25, "Memory", "Virtual memory, paging, stack vs heap, GC intuition", 11, { foundations: 22, senior: 38 }),
+  // P6 · Operating Systems (ch.22–23 built in S11)
+  ch22,
+  ch23,
   stub("ch24", "p6", 26, "Files & storage", "File systems, inodes, journaling, HDD vs SSD", 12, { foundations: 18, senior: 28 }),
   stub("ch25", "p6", 27, "Concurrency", "Races, mutexes, deadlock — and how to break it", 12, { foundations: 22, senior: 38 }),
   // P7 · Networks
