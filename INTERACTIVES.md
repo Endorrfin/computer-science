@@ -185,16 +185,18 @@
 - [fig] `stack-vs-heap` — one process's address space; calls grow the stack down, mallocs grow the heap up, a leak ratchets the high-water mark toward OOM
 - [quiz] `paging-predict` — Bélády's anomaly, page-fault-≠-segfault, LRU-vs-FIFO fault count
 
-### ch.24 — Files & storage
-- [micro] `fs-blocks` — create/grow/delete files on a block grid; fragmentation emerges; inode pointer fan-out view
-- [fig] `hdd-vs-ssd` — seek arm physically travels vs instant flash lookup
-- [fig] `journal-replay` — crash mid-write; journal replays to consistency, stepped
+### ch.24 — Files & storage *(built S12)*
+- [HERO] `inode-explorer` — scrub a byte offset (or block/pointer-size presets) → the direct/single/double/triple-indirect walk lights up; logical block, offset-in-block, disk-read count (indirection depth + 1), and the live maximum file size the fan-out yields
+- [micro] `disk-allocation` — allocate files on a 48-block device under contiguous/linked/indexed; click a file to delete it; first-fit placement, external-fragmentation meter, a "fragment it" preset that defeats contiguous, and the per-method random-read cost
+- [fig] `journaling` — write-ahead logging in 6 frames: the multi-block update, the crash-in-the-middle hazard, log → commit → checkpoint, and both crash cases (before commit ⇒ discard, after ⇒ replay)
+- [quiz] `files-predict` — pointers-per-block fan-out, contiguous fragmentation failure, crash-before-commit recovery
 
-### ch.25 — Concurrency
-- [HERO] `deadlock-lab` — two exhibits: **(a) race:** two threads `count++` interleaved instruction-by-instruction → lost updates counter; add mutex → correct but slower (throughput bar). **(b) dining philosophers:** run → deadlock freeze-frame with the wait-cycle highlighted; fixes: resource ordering / waiter — replay
-- [micro] `producer-consumer` — bounded buffer; speed sliders both sides; full/empty stalls visible
-- [quiz] `find-the-race` — spot the unprotected access
-- [boss] `P6: unfreeze the philosophers` (pick + apply the right fix, explain why) — badge: *Deadlock Breaker*
+### ch.25 — Concurrency *(built S12)*
+- [HERO] `deadlock-lab` — dining philosophers around a shared plate; **Naive** freezes into a red circular-wait (wait-for arrows drawn), then four fixes — resource ordering / arbitrator (both-or-none) / trylock+backoff / bounded diners — each let all five eat, annotated with the Coffman condition they break; the P6 boss hosts here
+- [micro] `race-lab` — two threads run `count++` as load·inc·store; step them by hand to lose an update or auto-interleave; flip the mutex on and the section is atomic (exact); live trace + expected-vs-actual counter
+- [fig] `wait-for-graph` — deadlock detection as graph search in 5 frames: resource-allocation graph → wait-for graph → "a cycle *is* a deadlock" → the five-philosopher cycle → break one edge (ordering) ⇒ deadlock-free
+- [quiz] `concurrency-predict` — smallest lost-update value, "remove any one Coffman condition", the lock-ordering fix
+- [boss] `P6: unfreeze the philosophers` — pick a fix that frees the table **and** name the condition it breaks — badge: 🔓 *Deadlock Breaker*
 
 ## P7 · Networks
 
@@ -334,9 +336,11 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 +rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
 **kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
-batch) · quizzes in every chapter. As of **S11** the live build carries **48 sims, 24 figures,
-23 quizzes, 118 interview Qs, 34 katas** across **23 live chapters** (`npm run qa` prints the
-running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate). **Part 5 · Theory
-complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · OS I**
-shipped ch.22–23 with the `scheduler-sim` HERO; ch.24–25 + the *Deadlock Breaker* boss land in
-S12.
+batch; **38** after S12's +4 files/concurrency batch) · quizzes in every chapter. As of **S12**
+the live build carries **52 sims, 26 figures, 25 quizzes, 130 interview Qs, 38 katas** across
+**25 live chapters** (`npm run qa` prints the running census and enforces the per-chapter
+minimums — CLAUDE.md §6 mandate). **Part 5 · Theory complete** (ch.19–21 + the *Halting Oracle*
+boss inside `turing-machine`). **Part 6 · Operating Systems complete** (ch.22–25): S11 shipped
+ch.22–23 with the `scheduler-sim` HERO; **S12** shipped ch.24 (Files & storage, `inode-explorer`
+HERO) and ch.25 (Concurrency, `deadlock-lab` HERO) with the *Deadlock Breaker* boss inside
+`deadlock-lab`.

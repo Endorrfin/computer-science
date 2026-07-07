@@ -1,0 +1,197 @@
+/* deadlock-lab (ch.25 HERO) — dining philosophers around a shared plate. */
+
+.dl-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dl-stage {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 8px;
+}
+.dl-svg {
+  max-width: 460px;
+  font-family: var(--font-mono);
+}
+.dl-anim .dl-fork,
+.dl-anim .dl-philg circle {
+  transition:
+    stroke 0.25s ease,
+    stroke-width 0.25s ease,
+    fill 0.25s ease;
+}
+
+.dl-plate {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.dl-frozen .dl-plate {
+  stroke: var(--sem-err);
+}
+.dl-plate-t {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--tx2);
+  letter-spacing: 0.06em;
+}
+.dl-frozen .dl-plate-t {
+  fill: var(--sem-err);
+}
+.dl-plate-s {
+  font-size: 10px;
+  fill: var(--tx3);
+}
+
+.dl-fork-id {
+  font-size: 9px;
+  fill: var(--tx3);
+}
+.dl-phil-id {
+  font-size: 13px;
+  font-weight: 700;
+  fill: var(--tx);
+}
+.dl-phil-ph {
+  font-size: 12px;
+}
+.dl-phil-cap {
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.dl-wait {
+  stroke: var(--sem-err);
+  stroke-width: 2.25;
+  opacity: 0.9;
+}
+.dl-eat {
+  filter: drop-shadow(0 0 5px var(--sem-ok));
+}
+.dl-frozen {
+  animation: dl-shake 0.5s ease;
+}
+@keyframes dl-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dl-frozen { animation: none; }
+}
+
+/* footer — strategy explainer + legend */
+.dl-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dl-how {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.dl-how b {
+  color: var(--tx);
+}
+.dl-breaks {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sem-ok) 16%, transparent);
+  color: var(--sem-ok);
+  font-size: 0.8rem;
+}
+.dl-breaks--none {
+  background: color-mix(in srgb, var(--sem-err) 16%, transparent);
+  color: var(--sem-err);
+}
+
+.dl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.78rem;
+  color: var(--tx2);
+}
+.dl-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dl-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+/* boss */
+.dl-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+}
+.dl-boss--won {
+  border-color: var(--sem-ok);
+}
+.dl-boss-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dl-boss-head strong {
+  font-family: var(--font-head);
+}
+.dl-muted {
+  color: var(--tx3);
+  font-size: 0.82rem;
+}
+.dl-boss-task {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.dl-boss-picks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.dl-verdict {
+  margin: 0;
+  font-size: 0.88rem;
+}
+.dl-verdict.no {
+  color: var(--sem-control);
+}
+.dl-boss-badge {
+  padding: 10px 12px;
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--sem-ok) 14%, transparent);
+  color: var(--sem-ok);
+  font-size: 0.9rem;
+}
+.dl-hint {
+  font-size: 0.85rem;
+  color: var(--tx2);
+}
+.dl-hint summary {
+  cursor: pointer;
+  color: var(--tx3);
+}
+.dl-hint p {
+  margin: 8px 0 0;
+  line-height: 1.55;
+}

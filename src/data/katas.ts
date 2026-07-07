@@ -2166,6 +2166,175 @@ assert(fifoPageFaults(s, 4) > fifoPageFaults(s, 3), "the anomaly");`,
       },
     ],
   },
+
+  // ========================================================================
+  // ch24 · Files & storage
+  // ========================================================================
+  {
+    id: "inode-max-size",
+    chapterId: "ch24",
+    title: "Maximum file size of an inode",
+    difficulty: "core",
+    tags: ["os", "files", "inode"],
+    prompt: `
+A classic Unix **inode** holds \`nDirect\` direct block pointers, plus one **single-**, one **double-**, and one **triple-indirect** pointer. Each block holds \`k = ⌊blockSize / pointerSize⌋\` pointers.
+
+Return the **largest file** (in bytes) the inode can address:
+
+\`\`\`
+max = (nDirect + k + k² + k³) · blockSize
+\`\`\`
+
+### Examples
+- \`inodeMaxSize(4096, 4, 12)\` → \`(12 + 1024 + 1024² + 1024³) · 4096\`  (just over 4 TiB)
+- \`inodeMaxSize(8, 4, 2)\` → \`128\`  (k = 2 → (2 + 2 + 4 + 8) · 8)
+`,
+    signature: `function inodeMaxSize(blockSize: number, pointerSize: number, nDirect: number): number`,
+    exportName: "inodeMaxSize",
+    starter: `function inodeMaxSize(blockSize, pointerSize, nDirect) {
+  // TODO: k = pointers per block; sum direct + single + double + triple, times blockSize.
+  return 0;
+}`,
+    solution: `function inodeMaxSize(blockSize, pointerSize, nDirect) {
+  const k = Math.floor(blockSize / pointerSize);
+  const blocks = nDirect + k + k * k + k * k * k;
+  return blocks * blockSize;
+}`,
+    tests: [
+      { name: "tiny config, k = 2 → 128", body: `assertEqual(inodeMaxSize(8, 4, 2), 128);` },
+      { name: "single-level fan-out counts once", body: `assertEqual(inodeMaxSize(16, 4, 1), (1 + 4 + 16 + 64) * 16);` },
+      { name: "classic 4 KiB / 4 B / 12 direct", body: `assertEqual(inodeMaxSize(4096, 4, 12), (12 + 1024 + 1024 * 1024 + 1024 * 1024 * 1024) * 4096);` },
+      { name: "triple-indirect dominates → over 4 TiB", body: `assert(inodeMaxSize(4096, 4, 12) > 4 * Math.pow(2, 40), "should exceed 4 TiB");` },
+      { name: "bigger pointers → smaller fan-out → smaller max", body: `assert(inodeMaxSize(4096, 8, 12) < inodeMaxSize(4096, 4, 12), "8-byte pointers halve k");` },
+    ],
+  },
+  {
+    id: "first-fit-alloc",
+    chapterId: "ch24",
+    title: "First-fit contiguous allocation",
+    difficulty: "core",
+    tags: ["os", "files", "allocation"],
+    prompt: `
+For **contiguous** allocation you need one run of adjacent free blocks. Given \`free\` (an array where \`1\` = free, \`0\` = used) and a \`length\`, return the **start index** of the first run of \`length\` consecutive free blocks, or \`-1\` if none exists.
+
+- Return \`-1\` for \`length <= 0\`.
+
+### Examples
+- \`firstFit([1,1,0,1,1,1,0], 3)\` → \`3\`
+- \`firstFit([1,1,0,1,1,1,0], 2)\` → \`0\`
+- \`firstFit([1,1,0,1,1,1,0], 4)\` → \`-1\`  (external fragmentation — no hole big enough)
+`,
+    signature: `function firstFit(free: number[], length: number): number`,
+    exportName: "firstFit",
+    starter: `function firstFit(free, length) {
+  // TODO: scan for the first run of \`length\` consecutive 1s; return its start, else -1.
+  return 0;
+}`,
+    solution: `function firstFit(free, length) {
+  if (length <= 0) return -1;
+  let run = 0;
+  for (let i = 0; i < free.length; i++) {
+    if (free[i] === 1) {
+      run++;
+      if (run === length) return i - length + 1;
+    } else {
+      run = 0;
+    }
+  }
+  return -1;
+}`,
+    tests: [
+      { name: "first hole of size 3", body: `assertEqual(firstFit([1, 1, 0, 1, 1, 1, 0], 3), 3);` },
+      { name: "earliest fit wins", body: `assertEqual(firstFit([1, 1, 0, 1, 1, 1, 0], 2), 0);` },
+      { name: "no hole big enough → -1", body: `assertEqual(firstFit([1, 1, 0, 1, 1, 1, 0], 4), -1);` },
+      { name: "full disk → -1", body: `assertEqual(firstFit([0, 0, 0], 1), -1);` },
+      { name: "whole disk is one run", body: `assertEqual(firstFit([1, 1, 1, 1], 4), 0);` },
+      { name: "length 0 is invalid → -1", body: `assertEqual(firstFit([1, 1, 1], 0), -1);` },
+    ],
+  },
+
+  // ========================================================================
+  // ch25 · Concurrency
+  // ========================================================================
+  {
+    id: "lock-order",
+    chapterId: "ch25",
+    title: "Deadlock-free lock ordering",
+    difficulty: "intro",
+    tags: ["os", "concurrency", "deadlock"],
+    prompt: `
+The simplest way to prevent the **circular wait** condition is to acquire locks in a fixed **global order**. Given a list of lock ids a thread needs, return them in the order it should acquire them: **ascending by id**.
+
+- Don't mutate the input; return a new sorted array.
+- Return \`[]\` for an empty list.
+
+### Examples
+- \`safeOrder([3, 1, 2])\` → \`[1, 2, 3]\`
+- \`safeOrder([5])\` → \`[5]\`
+
+If **every** thread acquires locks in this order, no cycle in the wait-for graph can ever form.
+`,
+    signature: `function safeOrder(ids: number[]): number[]`,
+    exportName: "safeOrder",
+    starter: `function safeOrder(ids) {
+  // TODO: return a new array of ids sorted ascending (a consistent global lock order).
+  return ids;
+}`,
+    solution: `function safeOrder(ids) {
+  return [...ids].sort((a, b) => a - b);
+}`,
+    tests: [
+      { name: "sorts ascending", body: `assertDeepEqual(safeOrder([3, 1, 2]), [1, 2, 3]);` },
+      { name: "already ordered is unchanged", body: `assertDeepEqual(safeOrder([1, 2, 3]), [1, 2, 3]);` },
+      { name: "single lock", body: `assertDeepEqual(safeOrder([5]), [5]);` },
+      { name: "empty list", body: `assertDeepEqual(safeOrder([]), []);` },
+      { name: "does not mutate the input", body: `const a = [2, 1]; safeOrder(a); assertDeepEqual(a, [2, 1]);` },
+    ],
+  },
+  {
+    id: "wait-for-cycle",
+    chapterId: "ch25",
+    title: "Detect deadlock: a cycle in the wait-for graph",
+    difficulty: "core",
+    tags: ["os", "concurrency", "deadlock", "graphs"],
+    prompt: `
+An OS detects deadlock by finding a **cycle in the wait-for graph**. Here each thread waits on at most one other, so the graph is given as \`waitsFor\`, where \`waitsFor[i]\` is the thread \`i\` is blocked on, or \`-1\` if \`i\` isn't waiting.
+
+Return \`true\` if the graph contains a **cycle** (a deadlock), else \`false\`.
+
+### Examples
+- \`hasCycle([1, 0])\` → \`true\`  (0 → 1 → 0)
+- \`hasCycle([1, 2, 0])\` → \`true\`  (0 → 1 → 2 → 0)
+- \`hasCycle([1, 2, -1])\` → \`false\`  (0 → 1 → 2 → stop)
+`,
+    signature: `function hasCycle(waitsFor: number[]): boolean`,
+    exportName: "hasCycle",
+    starter: `function hasCycle(waitsFor) {
+  // TODO: from each node, follow waits-for pointers; a walk that never hits -1 is a cycle.
+  return false;
+}`,
+    solution: `function hasCycle(waitsFor) {
+  const n = waitsFor.length;
+  for (let i = 0; i < n; i++) {
+    let cur = i;
+    let steps = 0;
+    while (cur !== -1 && steps <= n) {
+      cur = waitsFor[cur];
+      steps++;
+    }
+    if (cur !== -1) return true; // walked past n nodes without stopping ⇒ cycle
+  }
+  return false;
+}`,
+    tests: [
+      { name: "two-cycle", body: `assertEqual(hasCycle([1, 0]), true);` },
+      { name: "three-cycle", body: `assertEqual(hasCycle([1, 2, 0]), true);` },
+      { name: "a chain that terminates is not a cycle", body: `assertEqual(hasCycle([1, 2, -1]), false);` },
+      { name: "nobody waiting", body: `assertEqual(hasCycle([-1, -1, -1]), false);` },
+      { name: "self-loop is a cycle", body: `assertEqual(hasCycle([0]), true);` },
+      { name: "tail leading into a cycle still counts", body: `assertEqual(hasCycle([1, 2, 3, 1]), true);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

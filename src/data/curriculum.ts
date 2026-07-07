@@ -3750,6 +3750,302 @@ const ch23: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.24 — Files & storage  (P6 · Operating Systems, built in S12)
+// ---------------------------------------------------------------
+const ch24: Chapter = {
+  id: "ch24",
+  part: "p6",
+  order: 26,
+  title: "Files & storage",
+  tagline: "Above, a file is a clean, named, growable array of bytes; below, it's scattered blocks on a disk that can crash mid-write — and the OS keeps the story straight",
+  readMins: { foundations: 18, senior: 28 },
+  storyHook: {
+    md:
+      "1969, Bell Labs. **Ken Thompson** and **Dennis Ritchie** are building Unix on a cast-off PDP-7, and they make a decision whose elegance we still live inside: separate a file's *name* from a file's *bytes*. A directory is just a table mapping names to small integers; each integer points to an **index node** — an **inode** — that holds everything about the file except its name: its size, its permissions, and the list of disk blocks that actually hold its data. One file can then wear many names, a name can be re-pointed without moving a byte, and 'everything is a file' — devices, pipes, the terminal — becomes possible because they all hide behind the same inode-shaped door. This chapter is what lives behind that door: how a stream of bytes becomes blocks on a spinning platter or a flash chip, and how the OS keeps that mapping honest even when the power dies mid-write.",
+  },
+  assumes: [
+    { chapterId: "ch23", oneLiner: "Virtual memory faults cold pages in from disk. This chapter is the disk those pages come from — and the file system that organizes it." },
+    { chapterId: "ch6", oneLiner: "The memory hierarchy trades speed for size; storage is its slow, huge, persistent bottom floor — and unlike RAM, it survives a power cut." },
+  ],
+  mentalModel:
+    "A file is an abstraction: a named, byte-addressable, growable array. Underneath, storage is a flat array of fixed-size blocks, and the file system's job is the map between them. A directory maps human names to inode numbers; an inode is the per-file record holding metadata plus the block map. That block map can't be a flat list (files vary from bytes to terabytes), so the classic Unix inode uses a multi-level scheme: a handful of direct block pointers for small files, then single-, double-, and triple-indirect blocks whose fan-out (pointers per block = blockSize / pointerSize) lets a fixed-size inode address enormous files — at the cost of an extra disk read per level of indirection. Free space is tracked (bitmaps/free lists) and files are laid down by contiguous, linked, or indexed allocation, trading fragmentation against random-access cost. Because a single logical change touches several blocks and a crash can strike between them, the file system uses journaling (write-ahead logging: log → commit → checkpoint) so recovery is a decision, not a guess. And all of this rides on physical media with sharply different personalities: an HDD punished by seeks, an SSD that must erase a whole block before rewriting a page.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "In ch.23 a page fault quietly fetched a missing page **from disk**. This chapter is that disk — and the software that turns raw, persistent blocks into something you can actually use: **files** with names, sizes and permissions, arranged in directories. Two illusions are already behind us (many programs on one CPU, a private memory for each); this is the layer that makes data **outlive the process** that wrote it.\n" +
+        "The file system is the OS's on-disk data structure, and like any data structure its design is a set of trade-offs about layout, indexing and failure.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Name, then bytes: the inode\n" +
+        "A **file** is a named array of bytes that can grow. The name lives in a **directory** — itself just a file whose contents map names to **inode numbers**. The **inode** (index node) holds everything *about* the file except its name: size, owner, permissions, timestamps, and — the interesting part — the **map from logical file blocks to physical disk blocks**.\n" +
+        "Split name from inode and two things fall out for free: a file can have several names pointing at one inode (**hard links**, tracked by a link count), and a **symbolic link** is just a tiny file whose contents are a path to follow. Now: how does an inode of fixed size describe a file that might be 12 bytes or 12 terabytes?",
+    },
+    { kind: "sim", sim: "inode-explorer" },
+    {
+      kind: "prose",
+      md:
+        "## Direct, then indirect — one map for every size\n" +
+        "The classic Unix inode holds **12 direct** block pointers: for a small file, the blocks are named right there, one read each. When the file outgrows them, the inode's **single-indirect** pointer names a whole block *of pointers*; the **double-indirect** points to a block of single-indirect blocks; the **triple-indirect** adds one more level. The fan-out is the **pointers per block** = block size ÷ pointer size — so with 4 KiB blocks and 4-byte pointers, one indirect block holds 1024 pointers, and three levels reach past **4 TiB**. Small files stay cheap (one hop); huge files are payable (up to four reads to find a block). This is exactly the radix-tree idea from the page tables of ch.23, pointed at disk.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Laying blocks down — allocation\n" +
+        "Given the free blocks on a device, how do you assign them to a file? **Contiguous** allocation puts the file in one adjacent run: fast sequential *and* random access (block *i* is just start + *i*), but it needs a hole big enough and leaves **external fragmentation** as files come and go — eventually a big file won't fit even with plenty free. **Linked** allocation threads the file through any free blocks, each pointing to the next (FAT's approach): no external fragmentation and files grow freely, but random access must **walk the chain**. **Indexed** allocation keeps one **index block** listing all the data blocks — cheap random access, one block of overhead per file. That last one *is* the inode idea. Try to overflow a fragmented disk and watch contiguous allocation fail:",
+    },
+    { kind: "sim", sim: "disk-allocation" },
+    {
+      kind: "compare",
+      a: "Contiguous",
+      b: "Indexed",
+      rows: [
+        ["Layout", "one adjacent run of blocks", "scattered data blocks + one index block"],
+        ["Random access to block i", "1 read (start + i)", "2 reads (index, then data)"],
+        ["Grows easily?", "no — may need to relocate the whole file", "yes — just add an index entry"],
+        ["Fragmentation", "external (unusable gaps between files)", "none external; one block of overhead per file"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## When the power dies mid-write — crash consistency\n" +
+        "One logical change — append a block to a file — touches **several** on-disk structures: the data block, the free-space bitmap, and the inode (new size + pointer). The disk writes them one at a time, so a crash *between* those writes leaves the file system **inconsistent**: a block marked used but unreferenced (a leak), or referenced but marked free (a future double-allocation). The old fix was **fsck** — scan the entire disk on boot and repair — which is O(disk) and gets slower every year. The modern fix is **journaling**.",
+    },
+    { kind: "figure", fig: "journaling", caption: "Write-ahead logging. The change is first written to a log and made durable with a single atomic commit record; only then is it checkpointed to its real home. Recovery is decidable: a crash before the commit discards the transaction (file system untouched); a crash after replays it (writes are idempotent). The commit turns recovery from a guess into a decision." },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "What real file systems journal — and the copy-on-write alternative",
+      lens: "senior",
+      md:
+        "Journaling every data block doubles every write, so most systems journal **metadata only**. **ext3/ext4** offer three modes: *journal* (data + metadata — safest, slowest), *ordered* (the default: metadata journaled, but data forced to disk *before* the metadata that points to it, so you never expose stale blocks), and *writeback* (metadata only, no ordering — fastest, can reveal garbage after a crash). A different school avoids overwrite-in-place entirely: **copy-on-write** file systems (**ZFS**, **btrfs**, NetApp's WAFL) write new data to *free* space and then flip a single pointer at the top of the tree, so the old consistent state is intact until the atomic switch — the same 'commit is one atomic write' idea, structured as a tree. BSD's **soft updates** take yet another route: carefully order writes so the on-disk state is always recoverable without a log at all."
+    },
+    {
+      kind: "prose",
+      md:
+        "## The media underneath — HDD vs SSD\n" +
+        "The file system sits on physical media with very different personalities. A **hard disk** stores bits on spinning magnetic **platters**; a read must **seek** the arm to the right track (~milliseconds) and wait for the sector to rotate under the head. So on an HDD **sequential access crushes random access** — the whole point of laying files out contiguously. A **solid-state drive** has no moving parts: it reads and writes flash **pages** electronically, so random reads are nearly as fast as sequential. But flash has a quirk — you can't overwrite a page in place; you must **erase a whole block** (many pages) first.",
+    },
+    {
+      kind: "compare",
+      a: "HDD (magnetic)",
+      b: "SSD (NAND flash)",
+      rows: [
+        ["Access unit", "sector; arm must seek + platter must rotate", "page (read/write); block (erase)"],
+        ["Random vs sequential", "random far slower (seeks dominate)", "random ≈ sequential (no mechanical seek)"],
+        ["Write in place?", "yes — overwrite a sector directly", "no — must erase the whole block first"],
+        ["Wears out?", "mechanical failure over time", "each cell has limited erase cycles → wear leveling"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Inside the SSD — the FTL, wear leveling, TRIM and write amplification",
+      lens: "senior",
+      md:
+        "Because flash can't overwrite in place and cells wear out, an SSD hides a small computer — the **Flash Translation Layer (FTL)** — that maps logical block addresses to physical flash pages and moves data around underneath you. It writes updates to fresh pages and remaps the pointer (log-structured), does **wear leveling** so no cell erases far more often than its neighbors, and runs **garbage collection** to reclaim blocks full of stale pages. That GC causes **write amplification**: one logical write can trigger several physical writes as live pages are relocated to erase a block. The **TRIM** command lets the file system tell the SSD which blocks the user has deleted, so the FTL needn't preserve data nobody wants — which is also why 'deleted' data on an SSD is much harder to recover than on an HDD.",
+    },
+    { kind: "quiz", quiz: "files-predict" },
+    {
+      kind: "formal",
+      title: "Formal corner — maximum file size, and why fixed blocks",
+      md:
+        "Let block size be **B** bytes and pointer size **P** bytes, so **pointers per block** is **k = ⌊B / P⌋**. With **d** direct pointers plus single-, double- and triple-indirect, the largest file the inode can address is\n\n" +
+        "**max = (d + k + k² + k³) · B** bytes.\n\n" +
+        "For B = 4096, P = 4 (k = 1024) and d = 12: max = (12 + 1024 + 1024² + 1024³) · 4096 ≈ **4 TiB**, dominated utterly by the triple-indirect's k³ term.\n\n" +
+        "**Why fixed-size blocks?** Because every free block is interchangeable, allocation never suffers *external* fragmentation the way variable-size extents do; the price is **internal** fragmentation — the last block of a file is on average half empty (≤ B wasted per file). It is the same fixed-size-unit bargain that made paging beat segmentation in ch.23, one layer down.\n\n" +
+        "**Access cost.** A data block in the direct region costs 1 read; single-indirect costs 2, double 3, triple 4 — indirection depth + 1. Caching the indirect blocks (they're hot) is what keeps large-file access from paying that every time.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now turn a byte stream into blocks, address a file from twelve bytes to terabytes, keep the file system consistent across a crash, and reason about the media it all lands on. But everything so far assumed one thing happens at a time. **Chapter 25** drops that assumption: many flows of execution touching shared state *at once* — the races, locks, and the spectacular failure mode where everyone waits forever. **Deadlock**, and how to break it.",
+    },
+  ],
+  keyPoints: [
+    "A file is an abstraction — a named, growable byte array — while the disk is a flat array of fixed-size blocks; the file system is the map between them.",
+    "A directory maps names to inode numbers, and the inode holds everything about a file except its name — so one file can have many names (hard links) and a symlink is just a file holding a path.",
+    "The classic inode addresses any size with 12 direct pointers plus single/double/triple indirect blocks — small files cost one read, huge files a few, and the fan-out (block size ÷ pointer size) sets the maximum file size.",
+    "Block allocation trades off — contiguous is fast but fragments and needs a big hole, linked never fragments but walks a chain for random access, and indexed (the inode idea) gives cheap random access for one block of overhead.",
+    "External fragmentation is free space shattered into holes too small to use — so a large contiguous file can fail to fit even when total free space is plenty.",
+    "Journaling keeps a file system consistent across a crash — write the change to a log and commit it atomically before checkpointing to real locations, so recovery is a decision (no commit ⇒ discard, commit ⇒ replay), not an O(disk) fsck.",
+    "HDDs punish random access because a mechanical seek dominates, while SSDs read/write pages electronically but must erase a whole block before rewriting — hidden by an FTL that does wear leveling and causes write amplification.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking a file's bytes are stored contiguously",
+      body: "Only under contiguous allocation, which real general-purpose file systems avoid. With indexed/inode allocation a file's blocks are scattered across the disk and gathered through the inode's block map; 'the next byte' can be anywhere. Sequential reads are fast because the OS prefetches and (on HDD) allocators try for locality — not because the bytes are physically adjacent.",
+      lens: "both",
+    },
+    {
+      title: "Assuming enough free space means a file will fit",
+      body: "Under contiguous allocation, a file needs a single hole of the right size. A disk that is 40% free but shattered into tiny gaps (external fragmentation) can reject a large file outright. Total free space is necessary, not sufficient — the largest *contiguous* run is what matters.",
+      lens: "both",
+    },
+    {
+      title: "Believing journaling protects your data blocks by default",
+      body: "Most file systems journal metadata only (ext3/4's default 'ordered' mode). That guarantees the file system structure is consistent after a crash — no leaked or double-allocated blocks — but the file's most recent *data* can still be lost or partially written. Full data journaling exists but halves throughput; if you need data durability, fsync and design for it.",
+      lens: "senior",
+    },
+    {
+      title: "Treating an SSD like a faster hard disk",
+      body: "An SSD isn't just a quick HDD. It can't overwrite in place (erase-before-write at block granularity), it wears out per-cell, and an FTL constantly relocates data underneath you — so defragmenting an SSD is pointless wear, small random writes cause write amplification, and 'securely wiping' a file is unreliable because the FTL may have copied it elsewhere. Different media, different rules.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch24-1", "iv-ch24-2", "iv-ch24-3", "iv-ch24-4", "iv-ch24-5", "iv-ch24-6"],
+  kataIds: ["inode-max-size", "first-fit-alloc"],
+  seeAlso: ["ch23", "ch25", "ch6"],
+  sources: [
+    { title: "inode — the index node (Wikipedia)", url: "https://en.wikipedia.org/wiki/Inode" },
+    { title: "File system — allocation & directories (Wikipedia)", url: "https://en.wikipedia.org/wiki/File_system" },
+    { title: "Journaling file system — write-ahead logging (Wikipedia)", url: "https://en.wikipedia.org/wiki/Journaling_file_system" },
+    { title: "ext4 — journal modes (Wikipedia)", url: "https://en.wikipedia.org/wiki/Ext4" },
+    { title: "Solid-state drive — flash, FTL, wear leveling (Wikipedia)", url: "https://en.wikipedia.org/wiki/Solid-state_drive" },
+    { title: "Write amplification — SSD GC & TRIM (Wikipedia)", url: "https://en.wikipedia.org/wiki/Write_amplification" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.25 — Concurrency  (P6 · Operating Systems, built in S12; hosts the P6 boss)
+// ---------------------------------------------------------------
+const ch25: Chapter = {
+  id: "ch25",
+  part: "p6",
+  order: 27,
+  title: "Concurrency",
+  tagline: "The moment two flows of execution touch the same memory at once, 'obviously correct' code isn't — and the worst failure is everyone politely waiting for each other forever",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "1965. **Edsger Dijkstra** sets an exam problem to make a point about sharing scarce resources: five philosophers sit around a table, a bowl of spaghetti in front of each and a single fork between every pair of neighbors. A philosopher thinks, then to eat must pick up **both** the fork on its left and the one on its right. It sounds trivial — until every philosopher, at the same instant, picks up its left fork and reaches for its right. Now each holds one fork and waits, forever, for a neighbor who is doing exactly the same. Nobody drops a fork; nobody is 'wrong'; the table simply **freezes**. Dijkstra's little riddle is the whole of concurrency in miniature: the bugs aren't loud crashes but the emergent consequence of independent, correct-looking actors touching shared state — and the most elegant of those failures is **deadlock**.",
+  },
+  assumes: [
+    { chapterId: "ch22", oneLiner: "Threads share their process's address space, and the scheduler can preempt one between any two instructions. This chapter is what that interleaving does to shared data." },
+    { chapterId: "ch24", oneLiner: "A file system keeps shared on-disk state consistent across crashes; concurrency is keeping shared in-memory state consistent across interleavings." },
+  ],
+  mentalModel:
+    "Concurrency is many flows of execution making progress over overlapping time; the danger is shared mutable state. Because the scheduler can switch threads between any two machine instructions — and count++ alone is three (load, increment, store) — two threads interleaving on the same variable can lose updates: a race condition, where the result depends on timing. The fix is to make the critical section atomic with mutual exclusion: a lock (mutex) that only one thread holds at a time, or a counting semaphore, or higher-level monitors and condition variables. But locks introduce a new failure: deadlock, a set of threads each holding a resource and waiting for another that a peer in the set holds — a cycle in the wait-for graph. Deadlock needs all four Coffman conditions at once (mutual exclusion, hold-and-wait, no-preemption, circular wait), so removing any one prevents it: order your locks (kills circular wait), take all-or-nothing (kills hold-and-wait), allow release/rollback (kills no-preemption), or cap contention. Deadlock is the dramatic failure; its quieter cousins — livelock, starvation, and priority inversion — come from the same well.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Chapter 22 gave us threads: multiple flows of execution inside one process, **sharing its address space**, any of which the scheduler can pause between two instructions. That sharing is the point — it's how threads cooperate cheaply — and it is also where a whole new class of bug lives. This chapter is about what happens when two flows touch the **same memory at the same time**, and the machinery we build to keep that safe.\n" +
+        "The unsettling part: the code for each thread can be perfectly correct on its own. The bug is *emergent*, living in the interleaving.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The race: count++ is a lie\n" +
+        "`count++` looks atomic. It isn't. The CPU **loads** count into a register, **increments** the register, and **stores** it back — three steps (ch.7). If two threads run `count++` and the scheduler interleaves those steps, both can load the same value, both increment to the same result, and both store it: two increments, but count went up by **one**. An update was **lost**. This is a **race condition** — the outcome depends on timing no one controls. Interleave the two threads by hand and make an update disappear:",
+    },
+    { kind: "sim", sim: "race-lab" },
+    {
+      kind: "prose",
+      md:
+        "## Critical sections and mutual exclusion\n" +
+        "The stretch of code that touches shared state — the load-modify-store — is a **critical section**, and correctness requires **mutual exclusion**: at most one thread inside it at a time. The basic tool is a **lock (mutex)**: acquire it before the section, release it after; a thread that finds it held **blocks** until it's free. Dijkstra's **semaphore** generalizes this to a counter (allow *N* threads through, not just one), with its `wait`/`signal` (P/V) operations. Higher-level languages wrap these in **monitors** and **condition variables** (wait until a predicate holds), and modern hardware offers **atomic** instructions (compare-and-swap) that let careful code go **lock-free**. Turn the mutex on in the sim above and the lost update vanishes — the section is now indivisible.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The new failure: deadlock\n" +
+        "Locks fix races but introduce a fresh way to fail. Suppose thread A holds lock 1 and wants lock 2, while thread B holds lock 2 and wants lock 1. Each waits for the other; neither yields; both wait **forever**. That's **deadlock** — and the way an OS detects it is to build the **wait-for graph** (who is blocked waiting on whom) and look for a **cycle**. A cycle means a closed chain of waiting that can never break on its own.",
+    },
+    { kind: "figure", fig: "wait-for-graph", caption: "Detecting deadlock as a graph problem. Reduce 'who holds what and wants what' to a wait-for graph — an edge from each blocked thread to the one holding what it needs. A cycle in that graph is exactly a deadlock: every thread on the cycle waits for the next, forever. Break one edge and the cycle — and the deadlock — is gone." },
+    {
+      kind: "prose",
+      md:
+        "## The four conditions — and why they're the escape\n" +
+        "Deadlock is possible only when **all four** of Coffman's conditions hold at once: **mutual exclusion** (a resource is held by one thread at a time), **hold-and-wait** (a thread keeps what it has while waiting for more), **no-preemption** (a resource can't be forcibly taken — only its holder releases it), and **circular wait** (a closed chain of waiters). Because all four are *necessary*, removing **any one** makes deadlock impossible. That's the good news the dining philosophers make vivid — freeze the table on 'Naive', then break exactly one condition and watch all five eat:",
+    },
+    { kind: "sim", sim: "deadlock-lab" },
+    {
+      kind: "table",
+      caption: "The four fixes, each killing one Coffman condition. Mutual exclusion is the one you usually can't give up (a fork, a lock, is inherently exclusive), so the practical prevention strategies attack the other three.",
+      head: ["Strategy", "Kills condition", "How", "Cost / risk"],
+      rows: [
+        ["Resource ordering", "circular wait", "acquire locks in a fixed global order (lowest id first)", "must know all locks & their order up front"],
+        ["All-or-nothing / arbitrator", "hold-and-wait", "take every needed lock atomically, or none", "lower concurrency; must know the full set"],
+        ["Trylock + backoff", "no-preemption", "if you can't get the next lock, release what you hold and retry", "wasted work; can livelock without jitter"],
+        ["Bounded contention", "circular wait", "cap concurrent contenders below the resource count", "throttles throughput; not always applicable"],
+      ],
+    },
+    { kind: "quiz", quiz: "concurrency-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Prevention vs avoidance vs detection — and deadlock's quieter cousins",
+      lens: "senior",
+      md:
+        "There are four postures toward deadlock. **Prevention** structurally removes a Coffman condition (the fixes above). **Avoidance** stays in 'safe' states by checking each request against what could still complete — Dijkstra's **Banker's algorithm** — but it needs each process's maximum claims in advance, so it's rare outside embedded/RTOS work. **Detection + recovery** lets deadlock happen, finds the wait-for cycle, and breaks it by killing or rolling back a victim (databases do this constantly — a transaction gets 'chosen as deadlock victim'). And most general-purpose OSes use the **ostrich algorithm**: ignore it, because app-level lock deadlocks are the app's problem. Deadlock also has quieter siblings: **livelock** (threads keep acting but make no progress — two people sidestepping in a hallway), **starvation** (a thread never gets a resource others keep grabbing), and **priority inversion** (a low-priority thread holds a lock a high-priority thread needs — the bug that famously reset the **Mars Pathfinder** rover in 1997, fixed by enabling priority inheritance)."
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the Coffman conditions, and why ordering works",
+      md:
+        "**Coffman, Elphick & Shoshani (1971):** a deadlock can arise **iff** all four hold simultaneously — (1) mutual exclusion, (2) hold-and-wait, (3) no-preemption, (4) circular wait. They are jointly necessary, so negating any one is sufficient for prevention.\n\n" +
+        "**Detection = cycle-finding.** Model a wait-for graph G where thread *u* → *v* means *u* is blocked on a resource held by *v* (single-instance resources). A deadlock exists **iff** G contains a directed cycle — found in O(V + E) by DFS. (With multiple instances per resource type, the exact test is a reducibility/matrix argument, but the intuition is the same.)\n\n" +
+        "**Why resource ordering is deadlock-free.** Impose a total order on resources and require every thread to acquire in strictly increasing order. Suppose a cycle t₀ → t₁ → … → tₖ → t₀ existed. Edge tᵢ → tᵢ₊₁ means tᵢ holds some resource and waits for a higher-numbered one held by tᵢ₊₁ — so the resource numbers strictly increase around the cycle and must return to the start, which is impossible for a strict order. No cycle can form; circular wait is structurally unreachable.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That closes **Part 6**. Across four chapters the operating system built its illusions on one shared move — put a fast indirection in front of a scarce shared resource: the scheduler in front of the CPU (ch.22), the page table in front of memory (ch.23), the file system in front of the disk (ch.24), and locks in front of shared state (ch.25). **Part 7 leaves the single machine entirely.** How do two computers, with no shared memory and an unreliable wire between them, agree on anything at all? Networks — layers, packets, and the protocols that turn best-effort delivery into something you can trust.",
+    },
+  ],
+  keyPoints: [
+    "Concurrency's danger is shared mutable state — because the scheduler can switch threads between any two instructions, and even count++ is three (load, increment, store).",
+    "A race condition is when the result depends on timing — two threads interleaving a read-modify-write can both read the same value and lose an update.",
+    "Mutual exclusion fixes races — a lock/mutex lets only one thread into the critical section at a time; a semaphore generalizes it to N, and monitors/condition variables build on top.",
+    "Deadlock is a set of threads each holding a resource and waiting for one another in a cycle — detected as a cycle in the wait-for graph, and unlike a race it makes no progress at all.",
+    "Deadlock needs all four Coffman conditions at once — mutual exclusion, hold-and-wait, no-preemption, and circular wait — so removing any single one prevents it.",
+    "The classic fixes each kill one condition — lock ordering kills circular wait, all-or-nothing acquisition kills hold-and-wait, trylock+release kills no-preemption — while mutual exclusion is usually the one you can't drop.",
+    "Beyond prevention there are three more postures — avoidance (Banker's algorithm), detection and recovery (kill a victim, as databases do), and simply ignoring it (the ostrich algorithm most OSes use for app locks).",
+  ],
+  pitfalls: [
+    {
+      title: "Assuming a single statement is atomic",
+      body: "count++, x = x + 1, even a 64-bit read on some platforms — these compile to multiple instructions and can be interrupted mid-way. 'It's just one line' is about source syntax, not machine atomicity. If more than one thread touches it, you need a lock, an atomic type, or a proof that only one writer exists.",
+      lens: "both",
+    },
+    {
+      title: "Thinking more locking is always safer",
+      body: "Adding locks fixes races but manufactures deadlocks: the more locks a thread holds at once, and the less disciplined the acquisition order, the easier it is to build a cycle. Coarse locking also destroys the concurrency you wanted. The goal isn't maximum locking — it's the minimal, consistently-ordered locking that protects each invariant.",
+      lens: "both",
+    },
+    {
+      title: "Confusing deadlock with livelock or starvation",
+      body: "In deadlock the threads are blocked and idle — nothing runs. In livelock they're busy but make no progress (endlessly retrying and backing off in lockstep). In starvation a thread runs-able but never chosen. They look similar from outside ('it's stuck') but have different causes and fixes — a wait-for cycle vs. missing jitter vs. an unfair scheduler.",
+      lens: "senior",
+    },
+    {
+      title: "Reaching for the Banker's algorithm in general code",
+      body: "Deadlock avoidance sounds appealing but needs every process's maximum resource claims declared up front and a safety check on every request — impractical for general-purpose software. Real systems prevent (lock ordering), detect-and-recover (databases), or ostrich it. Knowing the Banker's algorithm is interview-useful; deploying it in an app usually isn't.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch25-1", "iv-ch25-2", "iv-ch25-3", "iv-ch25-4", "iv-ch25-5", "iv-ch25-6"],
+  kataIds: ["lock-order", "wait-for-cycle"],
+  seeAlso: ["ch22", "ch24", "ch30"],
+  sources: [
+    { title: "Race condition — critical sections (Wikipedia)", url: "https://en.wikipedia.org/wiki/Race_condition" },
+    { title: "Dining philosophers problem — Dijkstra, 1965 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Dining_philosophers_problem" },
+    { title: "Deadlock — the four Coffman conditions (Wikipedia)", url: "https://en.wikipedia.org/wiki/Deadlock_(computer_science)" },
+    { title: "Semaphore — Dijkstra's P/V (Wikipedia)", url: "https://en.wikipedia.org/wiki/Semaphore_(programming)" },
+    { title: "Banker's algorithm — deadlock avoidance (Wikipedia)", url: "https://en.wikipedia.org/wiki/Banker%27s_algorithm" },
+    { title: "Priority inversion — the Mars Pathfinder bug (Wikipedia)", url: "https://en.wikipedia.org/wiki/Priority_inversion" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -3783,8 +4079,8 @@ export const CHAPTERS: Chapter[] = [
   // P6 · Operating Systems (ch.22–23 built in S11)
   ch22,
   ch23,
-  stub("ch24", "p6", 26, "Files & storage", "File systems, inodes, journaling, HDD vs SSD", 12, { foundations: 18, senior: 28 }),
-  stub("ch25", "p6", 27, "Concurrency", "Races, mutexes, deadlock — and how to break it", 12, { foundations: 22, senior: 38 }),
+  ch24,
+  ch25,
   // P7 · Networks
   stub("ch26", "p7", 28, "How networks work", "Layers, switching, IP routing, DNS", 13, { foundations: 22, senior: 35 }),
   stub("ch27", "p7", 29, "TCP & UDP", "Handshakes, reliability, congestion control", 13, { foundations: 20, senior: 35 }),

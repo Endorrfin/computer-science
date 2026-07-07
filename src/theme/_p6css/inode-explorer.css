@@ -1,0 +1,188 @@
+/* inode-explorer (ch.24 HERO) — offset → block walk through an inode. */
+
+.ie-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+.ie-offset {
+  width: 9rem;
+}
+.ie-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ie-on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* diagram */
+.ie-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 4px;
+  font-family: var(--font-mono);
+}
+.ie-inode {
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  padding: 10px;
+}
+.ie-inode-title {
+  font-size: 0.75rem;
+  color: var(--tx3);
+  margin-bottom: 6px;
+}
+.ie-direct {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+}
+.ie-slot {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--tx3);
+  background: var(--surface);
+}
+.ie-slot--hot {
+  border-color: var(--sem-data);
+  color: var(--bg);
+  background: var(--sem-data);
+  font-weight: 700;
+}
+.ie-ptrs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ie-ptr {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--tx3);
+  border: 1px solid var(--line);
+}
+.ie-ptr--hot {
+  border-color: var(--sem-state);
+  color: var(--sem-state);
+  background: color-mix(in srgb, var(--sem-state) 14%, transparent);
+  font-weight: 700;
+}
+
+.ie-arrowbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ie-arrow {
+  color: var(--tx3);
+  font-size: 1.1rem;
+}
+.ie-indirect {
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 74px;
+}
+.ie-indirect--hot {
+  border-color: var(--sem-state);
+}
+.ie-ind-t {
+  font-size: 0.72rem;
+  color: var(--sem-state);
+  font-weight: 700;
+}
+.ie-ind-s {
+  font-size: 0.68rem;
+  color: var(--tx3);
+}
+.ie-data {
+  border: 1.5px solid var(--sem-ok);
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--sem-ok) 12%, var(--surface));
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ie-data-t {
+  font-size: 0.72rem;
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.ie-data-s {
+  font-size: 0.72rem;
+  color: var(--tx2);
+}
+.ie-data--bad {
+  border: 1.5px solid var(--sem-err);
+  color: var(--sem-err);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  background: color-mix(in srgb, var(--sem-err) 10%, var(--surface));
+}
+
+/* footer stats */
+.ie-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ie-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ie-stat {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 6px 12px;
+  background: var(--s2);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 92px;
+}
+.ie-stat-l {
+  font-size: 0.7rem;
+  color: var(--tx3);
+  font-family: var(--font-mono);
+}
+.ie-stat-v {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--tx);
+  font-family: var(--font-mono);
+}
+.ie-stat--accent .ie-stat-v { color: var(--sem-data); }
+.ie-stat--ok .ie-stat-v { color: var(--sem-ok); }
+.ie-stat--warn .ie-stat-v { color: var(--sem-control); }
+.ie-stat--err .ie-stat-v { color: var(--sem-err); }
+.ie-facts {
+  margin: 0;
+  font-size: 0.83rem;
+  color: var(--tx2);
+  line-height: 1.5;
+  font-family: var(--font-mono);
+}
+.ie-facts b {
+  color: var(--tx);
+}

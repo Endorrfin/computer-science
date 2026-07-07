@@ -62,6 +62,11 @@ export const SIM_KEYS = [
   "syscall-boundary", // ch.22 micro — user↔kernel mode crossing, stepped
   "address-translate", // ch.23 micro — virtual addr → page-table walk → TLB → physical, digit by digit
   "page-fault-lab", // ch.23 micro — FIFO/LRU/Optimal/Clock over a reference string; thrashing & Bélády
+  // P6 · Operating Systems (S12)
+  "inode-explorer", // ch.24 HERO — byte offset → direct/single/double/triple indirect → data block; max file size
+  "disk-allocation", // ch.24 micro — contiguous/linked/indexed allocation, first-fit, external fragmentation
+  "race-lab", // ch.25 micro — two threads race on a shared counter (load-inc-store); a mutex repairs the lost update
+  "deadlock-lab", // ch.25 HERO — dining philosophers + four fixes mapped to Coffman conditions + Deadlock Breaker boss
 ] as const;
 
 export const FIG_KEYS = [
@@ -100,6 +105,9 @@ export const FIG_KEYS = [
   // P6 · Operating Systems (S11)
   "process-states", // ch.22 — new→ready→running→blocked→terminated lifecycle, transitions animate
   "stack-vs-heap", // ch.23 — one process's address space: stack grows down, heap grows up, a leak ratchets
+  // P6 · Operating Systems (S12)
+  "journaling", // ch.24 — write-ahead log: log → commit → checkpoint; crash before/after commit → discard vs replay
+  "wait-for-graph", // ch.25 — resource-allocation → wait-for graph; a cycle IS a deadlock; break an edge to free it
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];
