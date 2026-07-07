@@ -2674,6 +2674,359 @@ const ch16: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.17 — Graphs  (built in S9)
+// ---------------------------------------------------------------
+const ch17: Chapter = {
+  id: "ch17",
+  part: "p4",
+  order: 19,
+  title: "Graphs",
+  tagline:
+    "Any node to any node: representations and their cost, the one traversal loop behind BFS/DFS/Dijkstra/A*, topological order, and minimum spanning trees",
+  readMins: { foundations: 25, senior: 40 },
+  storyHook: {
+    md:
+      "1736, Königsberg. The townsfolk have a favourite Sunday puzzle: can you walk a circuit that crosses each of the city's **seven bridges exactly once** and returns home? **Leonhard Euler** proves it's impossible — but the *way* he proves it is the real gift. He throws away the map, keeps only **landmasses as points and bridges as connections between them**, and reasons purely about how many bridges meet at each point. That abstraction — nodes and edges, nothing else — is the **first theorem of graph theory**, and it's still the whole idea 290 years later. This chapter is the model behind maps, the web, package dependencies and social networks — and the handful of searches that make it useful.",
+  },
+  assumes: [
+    {
+      chapterId: "ch14",
+      oneLiner: "A queue is FIFO, a stack is LIFO, and a hash map gives O(1) lookup — the exact containers that turn one traversal loop into four different algorithms.",
+    },
+    {
+      chapterId: "ch15",
+      oneLiner: "A heap is a priority queue that surfaces the smallest item in O(log n); a tree is just a connected graph with no cycles.",
+    },
+  ],
+  mentalModel:
+    "A graph is vertices plus edges — and a tree is only the special case with no cycles, so everything from ch.15 lives here. Two representations trade off: an adjacency matrix tests an edge in O(1) but eats V² space; an adjacency list stores V+E and walks neighbours in O(deg). Then the punchline: every traversal is ONE loop with a different container. A FIFO queue makes it BFS (shortest by hops). A LIFO stack makes it DFS (deep first, not shortest). A priority queue keyed by cumulative cost makes it Dijkstra (shortest on weighted edges). Add a heuristic to that key and it's A* (Dijkstra, aimed). Two more classics round it out: topological sort orders a DAG so every edge points forward, and a minimum spanning tree connects everything for the least total weight.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "ch.14's structures were **lines** and ch.15's were **hierarchies** — both are shapes where a node's connections are restricted. A **graph** removes the last restriction: any node may connect to any other. That one move models almost everything relational — road maps, the web's link structure, `import` dependencies, social follows, task prerequisites — which is why Euler's 1736 abstraction of **nodes and edges** is the quiet foundation under most of applied CS. A **tree** (ch.15) is now revealed as just a graph that happens to be connected and acyclic.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What a graph is — and how you store it\n" +
+        "A graph is a set of **vertices** and a set of **edges** joining them. Edges can be **directed** (a→b, like a one-way street or a `follows`) or **undirected** (a road), and **weighted** (a distance, a cost) or not. There are two standard ways to store one. An **adjacency matrix** is a V×V grid where cell (u,v) is 1 if there's an edge: an edge test is one O(1) cell read, but it always costs **V² space**. An **adjacency list** keeps, per vertex, a list of its neighbours: it stores only **V+E**, lists a vertex's neighbours in O(deg), but an edge test has to scan the list. Sparse graphs (E ≪ V²) — which is most real ones — favour the list.",
+    },
+    { kind: "sim", sim: "repr-switcher" },
+    {
+      kind: "prose",
+      md:
+        "## Traversal: one loop, different containers\n" +
+        "To visit every reachable node you keep a **frontier** of discovered-but-not-yet-expanded nodes and a **visited set** so you never process one twice (without it, a cycle loops forever). Pull a node, mark it, push its unvisited neighbours, repeat. The *only* thing that changes between the two classic traversals is the frontier's **container**: a **FIFO queue** expands the nearest nodes first — **breadth-first search**, which discovers nodes in rings of increasing hop-distance and is therefore **shortest by hop count**. A **LIFO stack** expands the most recent node — **depth-first search**, which dives down one path before backing up and is *not* shortest, but is how you detect cycles, find connected components and topologically sort.",
+    },
+    {
+      kind: "code",
+      lang: "ts",
+      note: "BFS and DFS are the same six lines — swap the container. The visited set is what makes it O(V + E) instead of exponential on a cyclic graph.",
+      code:
+        "function traverse(start: Node, mode: \"bfs\" | \"dfs\") {\n" +
+        "  const seen = new Set<Node>([start]);\n" +
+        "  const frontier: Node[] = [start];\n" +
+        "  const order: Node[] = [];\n" +
+        "  while (frontier.length) {\n" +
+        "    // BFS pulls the OLDEST (queue); DFS pulls the NEWEST (stack)\n" +
+        "    const node = mode === \"bfs\" ? frontier.shift()! : frontier.pop()!;\n" +
+        "    order.push(node);\n" +
+        "    for (const next of node.neighbours) {\n" +
+        "      if (seen.has(next)) continue;   // the line that prevents infinite loops\n" +
+        "      seen.add(next);\n" +
+        "      frontier.push(next);\n" +
+        "    }\n" +
+        "  }\n" +
+        "  return order;\n" +
+        "}",
+    },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "The shortest path, designed in twenty minutes",
+      md:
+        "In **1956** Edsger Dijkstra, out shopping in Amsterdam with his fiancée, sat down for coffee and — in about **twenty minutes**, with no pencil and paper — worked out how to compute the **shortest route between two cities**. He needed a demo that ordinary people could understand to show off the **ARMAC** computer, so he picked *'what is the shortest way to travel from Rotterdam to Groningen?'* over a simplified map of 64 Dutch cities. He didn't publish it until **1959**, in a three-page note in *Numerische Mathematik* — and it now routes your GPS, your packets, and your game AI. His own verdict: doing it without pencil and paper forced him to avoid all avoidable complexity.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Weight changes everything: Dijkstra and A*\n" +
+        "BFS is shortest only when every edge costs the same. Put **weights** on the edges — kilometres, latency, terrain — and 'fewest hops' is no longer 'cheapest'. **Dijkstra's algorithm** fixes this with a single swap: make the frontier a **priority queue keyed by cumulative cost from the start**, and always expand the cheapest-so-far node. Because it never revisits a node once closed, it's provably shortest — *as long as edges are non-negative*. **A\\*** (Hart, Nilsson & Raphael, **1968**, built for the robot **Shakey** at Stanford) makes it smarter: it keys the queue by **f = g + h**, where g is the cost so far and **h is a heuristic estimate of the cost remaining** to the goal. That h *aims* the search at the target instead of flooding in all directions.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The heuristic is a dial\n" +
+        "A\\*'s heuristic weight is a **morph knob** between two extremes. At weight **0**, h contributes nothing and f = g — you're back to **Dijkstra**: blind, but optimal. At weight **1** with an **admissible** h (one that never *overestimates* the true remaining cost — straight-line or Manhattan distance on a grid), A\\* is both **optimal and informed**, expanding far fewer nodes. Turn the weight **up past 1** and h dominates: the search becomes **greedy best-first**, racing at the goal and expanding almost nothing — but it can now be **fooled into a longer path**. Speed for guarantees. Drive the dial yourself:",
+    },
+    { kind: "sim", sim: "pathfinder" },
+    {
+      kind: "prose",
+      md:
+        "## Reading the four searches\n" +
+        "Run them on the same grid and the personalities are unmistakable. **BFS** floods in even rings — every cell at distance k is reached before any at k+1 — so its path is hop-optimal but it visits a lot. **DFS** commits to one corridor and only backs up at a dead end, so it can reach the goal having wandered the long way round. **Dijkstra** floods too, but weighted by cost, so it bends around heavy terrain that BFS would march straight through. **A\\*** with an admissible heuristic finds the same optimal path as Dijkstra while expanding a fraction of the nodes — the free lunch of a good estimate.",
+    },
+    {
+      kind: "table",
+      caption: "The four searches, all one loop with a different frontier. V = vertices, E = edges. 'Optimal' = returns a shortest path.",
+      head: ["Search", "Frontier", "Uses weights?", "Optimal?", "Time"],
+      rows: [
+        ["BFS", "FIFO queue", "no (hop count)", "yes, by hops", "O(V + E)"],
+        ["DFS", "LIFO stack", "no", "no", "O(V + E)"],
+        ["Dijkstra", "priority queue by g", "yes (≥ 0)", "yes", "O((V + E) log V)"],
+        ["A*", "priority queue by g + h", "yes (≥ 0)", "yes, if h admissible", "O((V + E) log V), fewer expansions"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Ordering a DAG: topological sort\n" +
+        "Some directed graphs are **acyclic** (a **DAG**) — build steps, course prerequisites, spreadsheet cells, `import` graphs. For these you often want a **topological order**: a linear sequence in which every edge points **forward**, so nothing runs before its dependencies. **Kahn's algorithm** (1962) is beautifully concrete: repeatedly take any node with **in-degree 0** (nothing left pointing at it — it's ready), remove it, and decrement its successors. The order you remove them in is a valid schedule. And it doubles as a **cycle detector**: if you ever get stuck with nodes remaining but none at in-degree 0, those nodes are tangled in a cycle — a graph topologically sorts **iff** it's a DAG.",
+    },
+    { kind: "sim", sim: "topo-stepper" },
+    {
+      kind: "prose",
+      md:
+        "## Connecting everything cheaply: the MST\n" +
+        "Last classic: given a weighted, connected graph, find the **minimum spanning tree** — the cheapest set of edges that keeps everything connected with no redundant loop (think laying cable to link every town for the least wire). The first algorithm is **Otakar Borůvka's, from 1926**, invented for exactly that: electrifying Moravia. Two greedy methods dominate teaching. **Kruskal** is **edge-first and global**: sort all edges, add the cheapest one that doesn't form a cycle (a union-find structure checks that fast). **Prim** is **vertex-first and local**: grow one tree outward, always adding the cheapest edge that reaches a new vertex. Different orders, provably the **same minimum tree**:",
+    },
+    { kind: "figure", fig: "mst-grow", caption: "Kruskal (edge-first, global) grabs the globally cheapest edge first even when it's a lone fragment; Prim (vertex-first, local) grows from a root and reaches that same edge last. Same 4-edge tree, weight 10." },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "What the interview really probes",
+      lens: "senior",
+      md:
+        "Three depth points. **(1) Dijkstra's complexity is about the priority queue**: a binary heap gives O((V+E) log V); a Fibonacci heap improves the theoretical bound to O(E + V log V), though constants make it rarely worth it. **(2) Real map routing isn't plain Dijkstra** — planet-scale routers precompute **contraction hierarchies** or landmark heuristics (ALT) so a query touches thousands of nodes, not hundreds of millions; A\\* with a good heuristic is the conceptual bridge. **(3) Negative edges break Dijkstra** (see the Formal corner). Reach for **Bellman–Ford** — O(V·E), and it *detects negative cycles* — when weights can be negative, as in currency arbitrage or with reduced costs in min-cost-flow.",
+    },
+    { kind: "quiz", quiz: "graph-predict" },
+    {
+      kind: "formal",
+      title: "Formal corner — why Dijkstra needs non-negative edges",
+      md:
+        "Dijkstra's correctness rests on one invariant: **when a node is removed from the priority queue, its recorded distance is final**. The argument: the node u being closed has the smallest tentative distance in the frontier; any *other* path to u must go through some node still in the frontier, whose distance is ≥ u's, and adding **non-negative** edges can only increase it — so no cheaper path to u can exist. A single **negative edge** voids this: a later, longer-looking path could drop below u's supposedly-final distance, but u is already closed and never reconsidered. That's why negative weights need **Bellman–Ford**, which relaxes every edge V−1 times and makes no finality assumption — and a V-th round that still relaxes proves a **negative cycle** (where 'shortest path' is undefined).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "Notice the pattern you just met four times: Dijkstra, Prim and Kruskal all make a **locally cheapest choice and never undo it** — they're *greedy* — while topological order and grid shortest-paths can be phrased as filling a table of subproblems — that's *dynamic programming*. ch.18 names these strategies outright: **divide & conquer, dynamic programming, greedy and backtracking** — the four templates that most clever algorithms are instances of, including the ones you just ran.",
+    },
+  ],
+  keyPoints: [
+    "A graph is vertices plus edges — the model behind maps, the web, dependencies and social networks — and a tree is just the special case that is connected and acyclic, so ch.15's structures all live inside this chapter.",
+    "The two representations trade off — an adjacency matrix tests an edge in O(1) but costs V² space, while an adjacency list stores only V+E and walks neighbours in O(deg) but must scan to test an edge; sparse real graphs favour the list.",
+    "Every traversal is one loop with a different frontier — a FIFO queue gives BFS (shortest by hops), a LIFO stack gives DFS (deep first, not shortest) — and the visited set is what keeps it O(V+E) instead of looping forever on a cycle.",
+    "Dijkstra is that loop with a priority queue keyed by cumulative cost — shortest on non-negative weighted edges — and A* keys the queue by f = g + h, adding a heuristic estimate h of the remaining cost to aim the search at the goal.",
+    "A*'s heuristic weight is a dial — weight 0 is Dijkstra (blind, optimal), weight 1 with an admissible h is informed and still optimal, and higher weights become greedy best-first: much faster but able to return a longer path.",
+    "Topological sort orders a DAG so every edge points forward — Kahn's algorithm peels in-degree-0 nodes one at a time — and getting stuck with nodes remaining is exactly how it proves the graph has a cycle.",
+    "A minimum spanning tree connects all vertices for the least total weight — Kruskal adds the cheapest cycle-free edge (edge-first, global, via union-find), Prim grows from one vertex (vertex-first, local) — both are greedy and both are provably optimal.",
+  ],
+  pitfalls: [
+    {
+      title: "Running Dijkstra on a graph with negative edges",
+      body: "Dijkstra assumes a node's distance is final the moment it's closed, which a later negative edge can violate — so it silently returns wrong distances. Use Bellman–Ford (O(V·E)) when weights can be negative; it also detects negative cycles, where 'shortest path' has no meaning.",
+      lens: "senior",
+    },
+    {
+      title: "Expecting a shortest path from an inadmissible A* heuristic",
+      body: "If h ever overestimates the true remaining cost, A* can close the goal on a suboptimal path and miss the shorter one. Straight-line and Manhattan distances are admissible on maps/grids; a weighted (greedy) heuristic is deliberately inadmissible — it trades the optimality guarantee for speed.",
+      lens: "both",
+    },
+    {
+      title: "Traversing without a visited set",
+      body: "BFS/DFS on a cyclic graph without marking seen nodes revisit endlessly and can blow up exponentially. The visited set is not an optimization — it's what makes traversal terminate and run in O(V+E).",
+      lens: "both",
+    },
+    {
+      title: "Using BFS for shortest paths on a weighted graph",
+      body: "BFS minimizes the number of edges, not their total weight, so on weighted graphs it can return a path that is short in hops but expensive in cost. The moment edges carry weights, you need Dijkstra (or A*).",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch17-1", "iv-ch17-2", "iv-ch17-3", "iv-ch17-4", "iv-ch17-5", "iv-ch17-6"],
+  kataIds: ["bfs-shortest-path", "topo-order"],
+  seeAlso: ["ch14", "ch15", "ch16", "ch18"],
+  sources: [
+    { title: "Dijkstra's algorithm — conceived 1956, published 1959 in Numerische Mathematik (Wikipedia)", url: "https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm" },
+    { title: "A* search algorithm — Hart, Nilsson & Raphael, 1968, for Shakey the robot (Wikipedia)", url: "https://en.wikipedia.org/wiki/A*_search_algorithm" },
+    { title: "Seven Bridges of Königsberg — Euler 1736, the first theorem of graph theory (Wikipedia)", url: "https://en.wikipedia.org/wiki/Seven_Bridges_of_K%C3%B6nigsberg" },
+    { title: "Minimum spanning tree — Borůvka 1926, Kruskal 1956, Prim 1957 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Minimum_spanning_tree" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.18 — Design paradigms  (built in S9)
+// ---------------------------------------------------------------
+const ch18: Chapter = {
+  id: "ch18",
+  part: "p4",
+  order: 20,
+  title: "Design paradigms",
+  tagline:
+    "The four templates most clever algorithms are instances of — divide & conquer, dynamic programming, greedy, backtracking — and how to tell which a problem wants",
+  readMins: { foundations: 25, senior: 40 },
+  storyHook: {
+    md:
+      "Early 1950s, the RAND Corporation. **Richard Bellman** has a powerful method for optimising decisions made in stages — but a naming problem. His boss's boss is the Secretary of Defense, **Charles Wilson**, who (Bellman recalls) had *'a pathological fear and hatred of the word research.'* Do mathematics under that roof and your budget vanishes. So Bellman picks a name no politician could object to: **'dynamic'** — for the time-varying, multistage nature of the problems, and because it sounded impressive — and **'programming'** — meaning finding an optimal *program* in the sense of a schedule, not code. **Dynamic programming.** (Historians note the story can't be *quite* right — his first paper using the term predates Wilson's appointment — but the name stuck, and the technique became one of the four great algorithm templates in this chapter.)",
+  },
+  assumes: [
+    {
+      chapterId: "ch16",
+      oneLiner: "Merge sort and quicksort split a problem into independent halves and combine — the divide-and-conquer template this chapter starts from.",
+    },
+    {
+      chapterId: "ch17",
+      oneLiner: "Dijkstra, Prim and Kruskal are greedy; grid shortest-paths and DAG orders are dynamic programming — you've already used two of these paradigms.",
+    },
+  ],
+  mentalModel:
+    "Four ways to attack a hard problem, chosen by the problem's structure. Divide & conquer splits into INDEPENDENT subproblems and combines them (merge sort). Dynamic programming is for OVERLAPPING subproblems — solve each once, store it (memoize top-down or tabulate bottom-up), and exponential collapses to polynomial. Greedy makes the locally-best choice and never revisits — blazing fast, but correct only when the problem has the greedy-choice property (MST, Huffman), and provably wrong otherwise (coin change on odd systems). Backtracking is exhaustive DFS over partial solutions that prunes a branch the moment it can't work (N-queens). Read the structure — independent vs overlapping subproblems, whether a local choice is safe, whether you must search a constrained space — and the technique follows.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Four templates, not a hundred tricks\n" +
+        "Most 'clever' algorithms aren't ad-hoc — they're instances of **four design paradigms**, and naming them turns a wall of puzzles into a small set of recognisable shapes. **Divide & conquer** splits a problem into independent pieces. **Dynamic programming** handles pieces that *overlap*. **Greedy** commits to the locally-best choice. **Backtracking** searches a space of partial solutions, pruning dead ends. You've already met all four in disguise — merge sort, grid shortest-paths, Kruskal's MST, and DFS. This chapter makes the templates explicit so you can *reach* for the right one.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## From divide & conquer to DP\n" +
+        "**Divide & conquer** (ch.16's merge sort) splits into subproblems, solves them **independently**, and combines — efficient precisely because the halves don't share work. But some recursions split into subproblems that **overlap**: computing the *longest common subsequence* of two strings, `lcs(i,j)` calls `lcs(i−1,j)` and `lcs(i,j−1)`, and the *same* `(i,j)` gets recomputed all over the tree — an **exponential** blow-up of duplicated work. **Dynamic programming** is the fix: recognise the overlap and **solve each subproblem once**, storing the answer. Watch the naive recursion explode next to the table that fills each cell exactly once:",
+    },
+    { kind: "sim", sim: "dp-table-filler" },
+    {
+      kind: "prose",
+      md:
+        "## The two faces of DP\n" +
+        "Dynamic programming works when a problem has **optimal substructure** (an optimal solution is built from optimal solutions to its subproblems — Bellman's **principle of optimality**, 1957) *and* **overlapping subproblems** (the same sub-answers recur). Given both, you have two styles. **Top-down memoization** keeps the natural recursion but caches each result, so a repeat call is a lookup. **Bottom-up tabulation** fills a table in dependency order with a loop — no recursion, and it often lets you keep only the last row or two for big space savings. Same recurrence, opposite directions:",
+    },
+    {
+      kind: "code",
+      lang: "ts",
+      note: "Fibonacci is the tiniest DP: naive recursion recomputes fib(k) exponentially often; one cache line makes it linear. This is the whole idea of memoization.",
+      code:
+        "// exponential: fib(n) recomputes the same values O(φⁿ) times\n" +
+        "function fibNaive(n: number): number {\n" +
+        "  return n < 2 ? n : fibNaive(n - 1) + fibNaive(n - 2);\n" +
+        "}\n\n" +
+        "// linear: memoize — each subproblem solved once, then looked up\n" +
+        "function fib(n: number, memo = new Map<number, number>()): number {\n" +
+        "  if (n < 2) return n;\n" +
+        "  const hit = memo.get(n);\n" +
+        "  if (hit !== undefined) return hit;\n" +
+        "  const v = fib(n - 1, memo) + fib(n - 2, memo);\n" +
+        "  memo.set(n, v);\n" +
+        "  return v;\n" +
+        "}",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "DP is shortest-path on a DAG",
+      lens: "senior",
+      md:
+        "The unifying senior view: a DP is a **shortest- (or longest-) path problem on a directed acyclic graph of subproblems**. Each state is a node; each recurrence choice is an edge; the base cases are sources; the answer is the best path to the goal state. That's why ch.17's grid shortest-path *is* a DP, and why the fill order is exactly a **topological order** of the state graph. It also tells you the cost immediately: **DP time = (number of states) × (work per state)** — LCS is m·n states × O(1); 0/1 knapsack is n·W states × O(1) (the famous **pseudo-polynomial** cost, since W is a value, not an input length). Recognise the state graph and both the recurrence and the complexity fall out.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Greedy: fast, and sometimes wrong\n" +
+        "A **greedy** algorithm makes the choice that looks best **right now** and never reconsiders — no table, no backtracking, usually O(n log n) or better. When it works it's unbeatable for simplicity: **Kruskal** and **Prim** (ch.17), **Huffman coding** (ch.3), and Dijkstra are all greedy. The catch is that a locally-best choice is only globally optimal when the problem has the **greedy-choice property**, and *proving* that is the real work (an **exchange argument**, or showing the structure is a **matroid**). Skip the proof and greedy quietly fails. The cleanest counterexample is making change: with coins {1, 3, 4}, greedy makes 6 as 4+1+1 (three coins) when 3+3 (two) is better. Hunt for the failure yourself:",
+    },
+    { kind: "sim", sim: "greedy-fails" },
+    {
+      kind: "prose",
+      md:
+        "## Backtracking: search, but prune\n" +
+        "When you must **search** a space of configurations under constraints — placements, assignments, partitions — **backtracking** is DFS over *partial* solutions with one crucial move: the instant a partial solution violates a constraint, **abandon the whole subtree** rather than completing it. The template is **choose → explore → un-choose**. The classic is the **N-queens** puzzle — place N queens on an N×N board with none attacking — first posed for N=8 by **Max Bezzel in 1848** and fully solved (all **92** solutions) by **Franz Nauck in 1850**. Brute force would test Nⁿ full boards; backtracking tests a tiny fraction because one conflict prunes an entire branch:",
+    },
+    { kind: "sim", sim: "nqueens-backtracker" },
+    {
+      kind: "table",
+      caption: "The four paradigms and the structural signal that picks each one.",
+      head: ["Paradigm", "Subproblems", "Reach for it when…", "Archetypes"],
+      rows: [
+        ["Divide & conquer", "independent", "the problem splits cleanly and pieces don't share work", "merge sort, quicksort, FFT"],
+        ["Dynamic programming", "overlapping", "the same subproblems recur; optimal substructure holds", "LCS, knapsack, edit distance"],
+        ["Greedy", "one local choice", "a locally-best choice is provably globally safe", "MST, Huffman, Dijkstra"],
+        ["Backtracking", "a search tree", "you must explore constrained configurations", "N-queens, Sudoku, subsets"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Choosing the paradigm\n" +
+        "The decision is about **structure**, and the questions are quick. Do the subproblems **overlap**? If no, divide & conquer; if yes, dynamic programming. Is there a **local choice you can prove is safe**? Then greedy — otherwise fall back to DP. Are you **searching** a space of configurations under constraints? Backtracking, tightened to **branch & bound** when you can compute optimistic bounds. Real algorithms often **combine** them: quickselect is divide & conquer with a greedy pivot; branch & bound is backtracking guided by a DP-style bound. Try to classify a few problems before the reveal:",
+    },
+    { kind: "quiz", quiz: "pick-the-paradigm" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Where each template goes next",
+      lens: "senior",
+      md:
+        "**DP → space.** Because a state usually depends on only the last row or two, you can often drop an O(n·m) table to a **rolling O(m)** array — the standard follow-up after you give the O(n·m) answer. **Greedy → proofs.** Interviewers press on *why* greedy is correct: give an **exchange argument** (any optimal solution can be transformed into the greedy one without getting worse) or cite the **matroid** structure. **Backtracking → branch & bound**, the workhorse behind integer programming and SAT solvers: prune not just on infeasibility but whenever a partial solution's **optimistic bound** can't beat the best found. **D&C → parallelism**: independent subproblems map straight onto multiple cores (ch.9).",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — optimal substructure vs the greedy-choice property",
+      md:
+        "Two properties are easy to confuse. **Optimal substructure** (needed by DP *and* greedy) says an optimal solution contains optimal solutions to subproblems — e.g. a shortest path's prefix is itself shortest. **Overlapping subproblems** (needed for DP to *pay off*) says those subproblems recur, so caching helps; without overlap, plain divide & conquer is already efficient. **Greedy** needs strictly more than DP: the **greedy-choice property** — that a globally optimal solution can be reached by making the locally optimal choice at each step, *without* solving subproblems first. When that holds (formally, when the feasible sets form a **matroid**, per Edmonds), the greedy algorithm is optimal; when it doesn't (0/1 knapsack, general coin change), greedy can be arbitrarily bad and you must use DP. So: overlap decides D&C vs DP; the greedy-choice property decides DP vs greedy.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That closes **Part 4** — you can now reason about cost (ch.13), the classic structures (ch.14–15), sorting and searching (ch.16), graphs (ch.17), and the paradigms behind the clever solutions. **Part 4's boss, Pathmaster, lives in the pathfinder** back in ch.17: one revealed maze, one visited-node budget — pick the algorithm and heuristic that beat it. Then **Part 5 · Theory** asks the opposite question: not *how fast* can we solve a problem, but whether some problems can be solved **at all** — automata, Turing machines, the halting problem, and P vs NP.",
+    },
+  ],
+  keyPoints: [
+    "Most clever algorithms are instances of four paradigms — divide & conquer, dynamic programming, greedy, and backtracking — so recognising a problem's structure, not memorising tricks, is what picks the method.",
+    "Divide & conquer splits into independent subproblems and combines them — merge sort and quicksort are the archetypes — and it's efficient precisely because the pieces don't share work.",
+    "Dynamic programming is for overlapping subproblems — solve each once and store it, top-down by memoization or bottom-up by tabulation — turning the exponential recursion of LCS or knapsack into polynomial time.",
+    "DP needs optimal substructure and overlapping subproblems — Bellman's principle of optimality — and its cost is simply the number of states times the work per state, which is why it reads as shortest-path on a DAG of subproblems.",
+    "Greedy makes the locally-best choice and never revisits it — optimal only when the greedy-choice property holds (MST, Huffman, Dijkstra) and provably wrong otherwise, as coin change with {1,3,4} shows at amount 6.",
+    "Backtracking is exhaustive DFS over partial solutions that abandons a branch the moment a constraint is violated — choose, explore, un-choose — so N-queens tests a tiny fraction of the Nⁿ brute-force space.",
+    "The choice is structural — independent vs overlapping subproblems separates D&C from DP, a provably safe local choice unlocks greedy, and searching a constrained space calls for backtracking, tightened to branch & bound.",
+  ],
+  pitfalls: [
+    {
+      title: "Using greedy without proving the greedy-choice property",
+      body: "Greedy is seductive because it's simple and fast, but it's wrong on many problems — general coin change, 0/1 knapsack — and the failure is silent. Prove correctness with an exchange argument or a matroid structure, or fall back to DP.",
+      lens: "both",
+    },
+    {
+      title: "Writing exponential recursion when subproblems overlap",
+      body: "Naive recursion for Fibonacci, LCS or knapsack recomputes the same subproblems astronomically often. If the recursion tree repeats states, add memoization (often a single cache line) or tabulate — exponential collapses to polynomial.",
+      lens: "both",
+    },
+    {
+      title: "Backtracking without early pruning",
+      body: "Checking constraints only once a candidate is complete explores the entire Nⁿ space and defeats the purpose. Test feasibility as soon as a partial solution is extended, so an invalid prefix prunes its whole subtree — that pruning is the algorithm.",
+      lens: "both",
+    },
+    {
+      title: "Deep top-down memoization overflowing the stack",
+      body: "Top-down DP recurses to the depth of the problem, which can overflow the call stack (ch.10) on large inputs. Bottom-up tabulation is iterative and, because a state usually needs only the last row or two, often drops to O(n) space with a rolling array.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch18-1", "iv-ch18-2", "iv-ch18-3", "iv-ch18-4", "iv-ch18-5"],
+  kataIds: ["lcs-length", "coin-change-min"],
+  seeAlso: ["ch13", "ch16", "ch17", "ch19"],
+  sources: [
+    { title: "Dynamic programming — Bellman, principle of optimality, and the name's origin (Wikipedia)", url: "https://en.wikipedia.org/wiki/Dynamic_programming" },
+    { title: "Eight queens puzzle — Bezzel 1848, Nauck 1850, all 92 solutions (Wikipedia)", url: "https://en.wikipedia.org/wiki/Eight_queens_puzzle" },
+    { title: "Greedy algorithm — the greedy-choice property and matroids (Wikipedia)", url: "https://en.wikipedia.org/wiki/Greedy_algorithm" },
+    { title: "R. Bellman, 'Eye of the Hurricane' — the birth of dynamic programming (Dreyfus retrospective, PDF)", url: "https://www.cs.uni.edu/~wallingf/teaching/cs3530/sessions/session27/bellman-dynamic-programming.pdf" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -2698,8 +3051,8 @@ export const CHAPTERS: Chapter[] = [
   ch14,
   ch15,
   ch16,
-  stub("ch17", "p4", 19, "Graphs", "BFS/DFS, Dijkstra, A*, MST, topological sort", 9, { foundations: 25, senior: 40 }),
-  stub("ch18", "p4", 20, "Design paradigms", "Divide & conquer, greedy, DP, backtracking", 9, { foundations: 25, senior: 40 }),
+  ch17,
+  ch18,
   // P5 · Theory
   stub("ch19", "p5", 21, "Automata & regular languages", "FSMs, regex↔NFA/DFA, the Chomsky hierarchy", 10, { foundations: 20, senior: 32 }),
   stub("ch20", "p5", 22, "Computability", "Turing machines, universality, the halting problem", 10, { foundations: 22, senior: 35 }),

@@ -468,6 +468,81 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "graph-predict",
+    chapterId: "ch17",
+    questions: [
+      {
+        prompt: "You run **BFS** from S to find the cheapest route on a graph whose edges have **different weights**. What does BFS actually minimize?",
+        options: ["Total edge weight", "The number of edges (hops), ignoring weight", "Nothing — BFS crashes on weighted graphs", "The number of nodes visited"],
+        answer: 1,
+        explain:
+          "BFS explores in rings of equal **hop count**, so it returns the path with the **fewest edges** — which is only the cheapest path when every edge costs the same. With real weights you need **Dijkstra** (a priority queue keyed by cumulative cost). BFS runs fine; it just answers the wrong question.",
+      },
+      {
+        prompt: "In **A\\***, you crank the heuristic weight far above 1, so h(n) dominates g(n). What happens?",
+        options: ["Slower, but still guaranteed shortest", "Much faster, but the path may no longer be the shortest", "It silently becomes Dijkstra", "It fails to find any path"],
+        answer: 1,
+        explain:
+          "Over-weighting h turns A\\* into **greedy best-first search**: it races toward the goal and expands almost nothing, but the heuristic can now **overestimate** and lure it onto a longer route. That's the trade — you buy speed with the optimality guarantee. Weight 0 = Dijkstra (optimal, blind); weight 1 with an admissible h = optimal and informed.",
+      },
+      {
+        prompt: "A graph has one edge with a **negative** weight. You run Dijkstra. The result is…",
+        options: ["Correct shortest paths", "Possibly wrong — a node closed early is never reconsidered", "An infinite loop", "Correct, just slower"],
+        answer: 1,
+        explain:
+          "Dijkstra's correctness rests on the invariant that a node's distance is **final when it's closed** — true only if adding an edge can never *lower* a cost, i.e. weights are non-negative. A negative edge can create a cheaper path to an already-closed node, which Dijkstra never revisits. Use **Bellman–Ford** for negative weights.",
+      },
+      {
+        prompt: "Kahn's topological sort halts with **3 nodes still remaining, none at in-degree 0**. What does that tell you?",
+        options: ["A bug in the algorithm", "Those 3 nodes are tangled in a cycle", "The graph is disconnected", "You ran out of memory"],
+        answer: 1,
+        explain:
+          "If every remaining node still has an incoming edge, none is 'ready', and the peel stalls — which is precisely a **cycle**. A directed graph topologically sorts **iff** it's acyclic, so Kahn's algorithm doubles as a cycle detector: the leftover nodes are the ones trapped in the cycle.",
+      },
+    ],
+  },
+  {
+    id: "pick-the-paradigm",
+    chapterId: "ch18",
+    questions: [
+      {
+        prompt: "**Count the number of ways** to make amount N from unlimited coins of given denominations. Which paradigm?",
+        options: ["Greedy", "Dynamic programming", "Divide & conquer", "Backtracking"],
+        answer: 1,
+        explain:
+          "The count for amount N reuses the counts for smaller amounts over and over — **overlapping subproblems** with optimal substructure — so it's **dynamic programming**: fill a table `ways[0..N]`. Greedy can't count, and plain recursion recomputes the same amounts exponentially.",
+      },
+      {
+        prompt: "Sort a large array as fast as possible in the **average** case.",
+        options: ["Divide & conquer", "Dynamic programming", "Greedy", "Backtracking"],
+        answer: 0,
+        explain:
+          "Split, sort the halves **independently**, combine — that's **divide & conquer** (quicksort partitions; merge sort merges). The subproblems don't overlap, so there's nothing to memoize; DP would be pointless here.",
+      },
+      {
+        prompt: "Lay cable to connect **every** building for the **least total length** (a minimum spanning tree).",
+        options: ["Backtracking", "Greedy", "Dynamic programming", "Divide & conquer"],
+        answer: 1,
+        explain:
+          "MST has the **greedy-choice property**: repeatedly adding the cheapest safe edge (Kruskal) or growing from a vertex (Prim) is provably optimal. No table, no search — **greedy**, and its correctness is a real theorem (matroid structure), not a lucky guess.",
+      },
+      {
+        prompt: "Find **all** ways to place N non-attacking queens on an N×N board.",
+        options: ["Backtracking", "Greedy", "Divide & conquer", "Dynamic programming"],
+        answer: 0,
+        explain:
+          "You're **searching** a constrained configuration space, so it's **backtracking**: place a queen, and the instant it conflicts, abandon that whole branch instead of finishing the board. Pruning is what makes it beat the Nⁿ brute force.",
+      },
+      {
+        prompt: "Make an amount with the **fewest coins** on an **arbitrary** coin system (e.g. {1, 3, 4}).",
+        options: ["Greedy — always take the biggest coin that fits", "Dynamic programming", "Divide & conquer", "Backtracking"],
+        answer: 1,
+        explain:
+          "Greedy is optimal only on **canonical** systems; on {1, 3, 4} it makes 6 as 4+1+1 (three coins) when 3+3 (two) is better. The minimum needs **dynamic programming** over every amount up to the target — the only method that's correct for *any* coin set.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

@@ -46,6 +46,12 @@ const sims: Record<SimKey, LazyComp> = {
   "trie-autocomplete": lazy(() => import("../components/sims/trie-autocomplete/TrieAutocomplete.tsx")),
   "sorting-race": lazy(() => import("../components/sims/sorting-race/SortingRace.tsx")),
   "binary-search": lazy(() => import("../components/sims/binary-search/BinarySearch.tsx")),
+  "pathfinder": lazy(() => import("../components/sims/pathfinder/Pathfinder.tsx")),
+  "repr-switcher": lazy(() => import("../components/sims/repr-switcher/ReprSwitcher.tsx")),
+  "topo-stepper": lazy(() => import("../components/sims/topo-stepper/TopoStepper.tsx")),
+  "dp-table-filler": lazy(() => import("../components/sims/dp-table-filler/DpTableFiller.tsx")),
+  "nqueens-backtracker": lazy(() => import("../components/sims/nqueens-backtracker/NQueensBacktracker.tsx")),
+  "greedy-fails": lazy(() => import("../components/sims/greedy-fails/GreedyFails.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -71,6 +77,7 @@ const figs: Record<FigKey, LazyComp> = {
   "rb-intuition": lazy(() => import("../components/figures/RbIntuition.tsx")),
   "merge-recursion": lazy(() => import("../components/figures/MergeRecursion.tsx")),
   "sort-stability": lazy(() => import("../components/figures/SortStability.tsx")),
+  "mst-grow": lazy(() => import("../components/figures/MstGrow.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

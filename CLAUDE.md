@@ -844,3 +844,63 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   **S8 CLOSED pending user commit. Next: S9 — P4 · A&DS III: ch.17 (Graphs — `pathfinder`
   HERO, repr-switcher, topo-stepper) + ch.18 (Design paradigms — dp-table-filler,
   n-queens) + P4 boss (Pathmaster).**
+- **2026-07-07 · S9 (P4 · Algorithms & Data Structures III)** — ch.17–18 built to the golden
+  bar; **Part 4 is complete** (cost → structures → sorting/searching → graphs → paradigms),
+  and the **P4 boss `Pathmaster` went live** inside the pathfinder. **Kickoff (3 AskUserQuestion):**
+  user chose (1) **whole S9 in one pass**, (2) **full INTERACTIVES.md inventory** (not the
+  mandate-core subset), (3) **branch + commit** (`feat/s9-p4-ads-iii-graphs-design`). **ch.17
+  Graphs** (story: **Euler's 1736 Königsberg bridges** — the first theorem of graph theory;
+  Senior story callout: **Dijkstra's 1956** 20-minute café conception on the **ARMAC**,
+  Rotterdam→Groningen, publ. **1959 Numerische Mathematik**, all web-verified): representations
+  (matrix O(1) edge-test/V² space vs list V+E/O(deg)); the **one-loop-different-container**
+  insight (queue=BFS, stack=DFS) with a unified TS snippet; **Dijkstra** (priority queue by cost)
+  and **A\*** (**Hart/Nilsson/Raphael 1968**, Shakey/SRI, web-verified) with the **heuristic-weight
+  dial** (0=Dijkstra, 1=admissible, ≫1=greedy); a 4-search table; **Kahn topological sort**
+  (**1962 CACM**) + cycle detection; **MST** (**Borůvka 1926**, Kruskal/Prim) with `mst-grow`;
+  Senior callout (heap complexity, contraction hierarchies, Bellman–Ford) + a **negative-edge
+  formal corner**. 4 pitfalls, 7 keyPoints, 4 sources. **ch.18 Design paradigms** (story:
+  **Bellman naming "dynamic programming"** at RAND to dodge Wilson's hatred of "research" — with
+  the **Russell–Norvig caveat** that the tale can't be strictly true; web-verified): D&C→DP via
+  overlapping subproblems; memo vs tabulation (+ Fibonacci snippet); **"DP is shortest-path on a
+  DAG"** Senior callout; **greedy** + the greedy-choice/matroid caveat; **backtracking** +
+  N-queens (**Bezzel 1848 / Nauck 1850 / 92 solutions**, web-verified); a 4-paradigm table; a
+  decision guide; Senior callout (rolling-array, branch & bound) + an **optimal-substructure vs
+  greedy-choice formal corner**. 4 pitfalls, 7 keyPoints, 4 sources. **1 HERO + 5 micro sims** —
+  `pathfinder` (framework-free BFS/DFS/Dijkstra/A\* engine → deterministic expansion+frontier
+  trace; paintable walls & heavy terrain; A\* heuristic slider; **boss mode** loads the revealed
+  maze + visited-node budget → `markChallengeDone("boss-p4")` = *Pathmaster*), `repr-switcher`,
+  `topo-stepper`, `dp-table-filler` (exploding-recursion motif next to the memo table filling
+  cell-by-cell), `nqueens-backtracker` (place/reject/backtrack trace with board snapshots per
+  event; first/all toggle), `greedy-fails` (greedy vs DP-optimal + counterexample hunter). **1
+  fig** `mst-grow` (Kruskal vs Prim side-by-side, same tree weight 10). **2 quizzes**
+  (`graph-predict`, `pick-the-paradigm`) + **11 interview Qs** (iv-ch17 ×6, iv-ch18 ×5, mid→staff)
+  + **4 katas** (`bfs-shortest-path`, `topo-order` [ch17]; `lcs-length`, `coin-change-min` [ch18])
+  → batch now **24** (125 cases); `test-katas` chapterId set extended to ch17/ch18. **6 pure
+  engines** (`pathfinder/repr-switcher/topo-stepper/dp-table-filler/nqueens-backtracker/greedy-fails
+  /model.ts`) + **`scripts/test-ch17.ts`** (BFS hop-optimal; Dijkstra == A\*(1) cost; A\*(1) expands
+  ≤ Dijkstra; hw=0 ≡ Dijkstra order; DFS ≥ BFS + an adversarial maze where DFS is strictly longer;
+  walls block; the boss maze is a real challenge — BFS blows the budget, A\*(1) beats it; matrix/list
+  costs; Kahn order + cycle) and **`scripts/test-ch18.ts`** (LCS lengths + recursion≫cells; N-queens
+  counts **1,0,0,2,10,4,40,92** + validity + pruning; greedy canonical vs {1,3,4}@6) — both wired
+  into `npm test`. **Fail-first caught 3 issues BEFORE any UI:** a wrong edge-count expectation
+  (demoGraph is 7 edges, not 6), and a grid-dependent DFS-vs-BFS claim that only holds on a crafted
+  maze (relaxed to the true ≥ invariant + a purpose-built trap) — engines were correct; tests were.
+  Strict-TS gotcha fixed early: `Record<number,number>` index vs `undefined` (TS2367) → the pathfinder
+  engine uses `Map`s internally, converts at the boundary. registryKeys/registry → **39 sims, 19
+  figs**; new **P4·S9 CSS block** in `global.css` (~330 lines: pathfinder grid/legend, repr matrix+
+  lists, topo graph, dp tree+table, nqueens board, greedy cards; reduced-motion-gated transition).
+  **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (18 live chapters; 39 sims · 19 figs ·
+  18 quizzes · 89 interview Qs · 24 katas · 10 bosses; mandate holds) · test ✓ (15 suites; +test-ch17,
+  +test-ch18, +4 katas → 125 kata cases) · build ✓** (fresh `dist-s9`: Pathfinder 9.5 KB · SortingRace
+  10.9 · react-vendor 190 KB · index 458 KB/167 gzip — data modules still in the main bundle, S18/S19
+  lazy-load note stands). `dist-s9` gitignored (`dist-*`); the pre-existing `dist/` is un-`unlink`able
+  on the sandbox mount (`EPERM`, harmless — real `npm run build` clears it via the usual `rm -rf dist`).
+  **INTERACTIVES.md** updated (ch.17/18 → shipped keys + `graph-predict` + the 4 katas). NOT
+  sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (pathfinder: paint
+  walls + heavy terrain, run all four algorithms, drive the A\* slider 0→3 and watch visited-count vs
+  path-cost, enter boss → beat the budget with A\*(1) → Pathmaster badge lights; repr-switcher: toggle
+  op/u/v and read the matrix-vs-list counters; topo-stepper: step the peel, flip "add cycle" → stuck;
+  dp-table-filler: watch the table fill + the LCS backtrace, edit the strings; nqueens: N=6 first→all,
+  tries counter; greedy-fails: preset {1,3,4} + "jump to failure"; mst-grow auto-plays). **S9 CLOSED
+  pending user commit. Next: S10 — P5 · Theory: ch.19 (Automata — fsm-builder) + ch.20 (Computability —
+  turing-machine HERO) + ch.21 (Complexity — P vs NP) + P5 boss (Halting Oracle).**

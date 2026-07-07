@@ -729,6 +729,105 @@ export const INTERVIEW: InterviewQ[] = [
       "Because **real data is rarely random** — it's full of already-sorted stretches (appended logs, partially-updated lists). Timsort exploits that: it finds ascending/descending **runs**, extends short ones with insertion sort, and merges runs with a smart balancing rule — so partly-ordered input approaches **O(n)**, and it's still O(n log n) worst case.\n" +
       "It's also **stable**, which Java requires for object sorts (so multi-key sorts compose) — quicksort isn't stable, ruling it out there. Primitive arrays in Java *do* use a dual-pivot quicksort (stability is meaningless for primitives, and in-place is cheaper). The staff-level point: library sorts are chosen around **stability guarantees + real-world data shape + memory**, not textbook average-case Big-O.",
   },
+  {
+    id: "iv-ch17-1",
+    chapterId: "ch17",
+    level: "mid",
+    q: "When would you store a graph as an adjacency matrix instead of an adjacency list?",
+    a:
+      "Use a **matrix** when the graph is **dense** (E approaches V²), when you do many **edge-existence tests** (matrix is O(1); a list scans), or when V is small and cache-friendly contiguity matters. Its cost is fixed **V² space**, which is wasteful for sparse graphs.\n" +
+      "Use a **list** for the common case of **sparse** graphs: it stores only **V+E**, and iterating a vertex's neighbours is O(deg), which is what BFS/DFS/Dijkstra actually do. Rule of thumb: lists for most real graphs (roads, the web, social); matrix for tiny or near-complete graphs, or algorithms phrased in matrix terms (e.g. Floyd–Warshall).",
+  },
+  {
+    id: "iv-ch17-2",
+    chapterId: "ch17",
+    level: "mid",
+    q: "How do BFS and DFS differ, and when is each the right traversal?",
+    a:
+      "They're the same loop with a different frontier: **BFS** uses a FIFO **queue** and visits nodes in order of hop-distance; **DFS** uses a LIFO **stack** (or recursion) and dives down one path before backtracking. Both are O(V+E).\n" +
+      "**BFS** when distance/levels matter: shortest path by hops, level-order, bipartite-ness check, nearest-thing search. **DFS** when structure matters: cycle detection, topological sort, connected/strongly-connected components, path existence, and anything naturally recursive (flood fill, tree walks). If the graph is deep, prefer an explicit stack over recursion to avoid overflowing the call stack.",
+  },
+  {
+    id: "iv-ch17-3",
+    chapterId: "ch17",
+    level: "senior",
+    q: "Why does Dijkstra require non-negative edge weights, and what do you use when weights can be negative?",
+    a:
+      "Dijkstra closes the frontier's minimum-cost node and treats its distance as **final**. That's valid only if no future path can be cheaper — which holds when edges are **non-negative** (extending a path can't lower its cost). A negative edge can make a later, longer-looking path undercut an already-closed node, which Dijkstra never revisits, so it returns wrong distances.\n" +
+      "For negative weights use **Bellman–Ford**: relax all E edges V−1 times, O(V·E), making no finality assumption. A V-th pass that still relaxes an edge proves a **negative cycle** (where shortest paths are undefined). For all-pairs with negatives, **Johnson's algorithm** reweights with Bellman–Ford, then runs Dijkstra per source.",
+  },
+  {
+    id: "iv-ch17-4",
+    chapterId: "ch17",
+    level: "senior",
+    q: "What makes an A* heuristic admissible, and what's the stronger property of consistency?",
+    a:
+      "**Admissible** means h(n) **never overestimates** the true remaining cost to the goal. With an admissible h, A* is **optimal** — it can't close the goal on a worse-than-shortest path. Straight-line (Euclidean) and Manhattan distances are admissible on maps/grids because they under-count real travel.\n" +
+      "**Consistent (monotone)** is stronger: h(n) ≤ cost(n, n′) + h(n′) for every edge — the estimate never drops faster than the real cost. Consistency implies admissibility and guarantees that once a node is closed its g-value is final, so **A* never re-expands a node** (no need for a re-open check). Inconsistent-but-admissible heuristics stay optimal but may re-expand nodes.",
+  },
+  {
+    id: "iv-ch17-5",
+    chapterId: "ch17",
+    level: "senior",
+    q: "Contrast Kruskal and Prim for building a minimum spanning tree — data structures and when each wins.",
+    a:
+      "**Kruskal** is edge-first: sort all edges, then add the cheapest that doesn't create a cycle, using a **union-find (disjoint-set)** structure to test connectivity in near-O(1). Cost is dominated by the sort: **O(E log E)**. It shines on **sparse** graphs and when edges are already sorted or given as a stream.\n" +
+      "**Prim** is vertex-first: grow one tree, repeatedly adding the cheapest edge leaving it, via a **priority queue**. With a binary heap it's **O(E log V)**; with an array/Fibonacci heap it's O(V²)/O(E + V log V), which beats Kruskal on **dense** graphs. Both are greedy and both yield a provably minimum tree — the choice is about density and the data structures you already have.",
+  },
+  {
+    id: "iv-ch17-6",
+    chapterId: "ch17",
+    level: "staff",
+    q: "You must answer millions of shortest-path queries on a continent-scale road network. Plain Dijkstra is too slow. What do you do?",
+    a:
+      "Trade **preprocessing for query speed**. Practical options: **A\\*** with a good heuristic (great-circle distance) and **bidirectional** search to shrink the explored frontier; **ALT** (A\\* + Landmarks + Triangle inequality) precomputes distances to a few landmarks for a sharp heuristic; **Contraction Hierarchies** precompute shortcut edges so a query touches thousands of nodes instead of hundreds of millions; **Hub Labeling** pushes queries to microseconds at higher memory cost.\n" +
+      "The staff-level framing: pick the point on the **preprocessing-time / space / query-time** curve that fits the workload — road topology is static, so heavy one-time preprocessing amortizes across billions of queries. Mention correctness (shortcuts preserve exact distances) and updates (traffic ⇒ customizable CH / dynamic techniques).",
+  },
+  {
+    id: "iv-ch18-1",
+    chapterId: "ch18",
+    level: "mid",
+    q: "What two properties must a problem have for dynamic programming to apply?",
+    a:
+      "**Optimal substructure** — an optimal solution is composed of optimal solutions to subproblems (a shortest path's prefix is itself shortest) — and **overlapping subproblems** — the same subproblems recur, so caching pays off.\n" +
+      "If subproblems are independent (no overlap), plain **divide & conquer** is already efficient and there's nothing to memoize. If a provably-safe local choice exists, **greedy** may beat DP. DP is the tool when you have optimal substructure *and* the recursion tree revisits the same states.",
+  },
+  {
+    id: "iv-ch18-2",
+    chapterId: "ch18",
+    level: "mid",
+    q: "Memoization vs tabulation — what are the trade-offs?",
+    a:
+      "**Memoization** (top-down) keeps the natural recursion and caches each result; it's easy to write and computes **only the states you actually need** (good for sparse state spaces), but it recurses — risking **stack overflow** on deep inputs and paying call overhead.\n" +
+      "**Tabulation** (bottom-up) fills a table in dependency order with loops: no recursion, predictable performance, and it often lets you keep only the **last row or two** (rolling array) for big space savings. The cost is that you compute every state whether needed or not, and you must work out the fill order explicitly. Same recurrence, opposite direction.",
+  },
+  {
+    id: "iv-ch18-3",
+    chapterId: "ch18",
+    level: "senior",
+    q: "How do you prove a greedy algorithm is correct?",
+    a:
+      "Two standard techniques. An **exchange argument**: take any optimal solution and show you can transform it, step by step, into the greedy one without ever making it worse — so greedy is at least as good as optimal. Or show the problem's independent sets form a **matroid**, in which the greedy algorithm is guaranteed optimal (Edmonds).\n" +
+      "The discipline matters because greedy **looks** right far more often than it **is** right — general coin change and 0/1 knapsack are classic traps where a locally-best choice fails globally. If you can't produce the exchange/matroid argument, fall back to DP. In interviews, always pair a greedy claim with its justification.",
+  },
+  {
+    id: "iv-ch18-4",
+    chapterId: "ch18",
+    level: "senior",
+    q: "Give the DP recurrence for 0/1 knapsack and its complexity. Why is it called pseudo-polynomial?",
+    a:
+      "State `dp[i][w]` = best value using the first i items within capacity w. Recurrence: `dp[i][w] = max(dp[i−1][w], value[i] + dp[i−1][w − weight[i]])` when `weight[i] ≤ w`, else `dp[i−1][w]`. Time and space **O(n·W)** (space droppable to O(W) with a reverse-order rolling array).\n" +
+      "It's **pseudo-polynomial** because the run-time is polynomial in the **numeric value** W, not in the **input size**. W takes only log₂W bits to write down, so O(n·W) is exponential in the length of the input — which is why 0/1 knapsack is NP-hard yet has this 'fast for small W' table.",
+  },
+  {
+    id: "iv-ch18-5",
+    chapterId: "ch18",
+    level: "staff",
+    q: "When does backtracking become branch & bound, and where is it used in practice?",
+    a:
+      "**Backtracking** prunes a branch only when a partial solution becomes **infeasible**. **Branch & bound** adds an **optimistic bound**: compute the best value any completion of the current partial solution could reach, and prune the branch whenever that bound can't beat the best solution found so far. It's backtracking guided by a DP-/relaxation-style estimate.\n" +
+      "It's the backbone of exact **integer/linear programming** (LP-relaxation bounds), **SAT/CSP** solvers (with clause learning and constraint propagation), and exact **TSP**. The staff point: the quality of the bound and the branching/variable-ordering heuristics decide whether the search is tractable — a tight bound prunes exponentially more of the tree.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {
