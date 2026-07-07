@@ -5406,3 +5406,805 @@ code {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============ P4 · Algorithms & Data Structures — ch.15–16 (S8) ============ */
+/* Five more P4 sims, all with var(--accent) = #34D399 (--p4) set on their root
+   by SimShell (BstBuilder / HeapOperations / TrieAutocomplete / SortingRace [HERO]
+   / BinarySearch). Same house look as the S7 block above: surface cards, 1px
+   --line borders, ~8-10px radius, color-mix accent tints, mono for every
+   value/index/count readout. Semantic palette per §7 is used identically here:
+   node / structure = the part accent (--p4); active / current / probe / mid =
+   orange (--sem-control); word-ends / found / done = green (--sem-ok); the
+   discarded half of a binary search = muted (--tx3). Reduced motion is handled
+   by the global @media block near the top; the one keyframe below is still
+   guarded with prefers-reduced-motion: no-preference to match convention. */
+
+/* ---------- BstBuilder (grow a BST / watch AVL rebalance) ---------- */
+.bst-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.bst-input {
+  width: 74px;
+}
+.bst-tree {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.bst-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  padding: 20px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-s);
+  text-align: center;
+  background: var(--bg);
+}
+.bst-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.bst-traversal {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* the sorted/BFS output — a monospace readout that can wrap */
+.bst-seq {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--sem-data);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px 12px;
+  word-break: break-word;
+}
+.bst-legend {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.bst-legrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tx2);
+}
+.bst-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid var(--tx3);
+  background: var(--surface);
+  flex: none;
+}
+/* a tree node → the part accent ring */
+.bst-swatch--node {
+  border-color: var(--p4);
+}
+/* the node the current step is about → orange */
+.bst-swatch--focus {
+  border-color: var(--sem-control);
+}
+.bst-bf {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+/* ---------- HeapOperations (the tree that is really an array) ---------- */
+.heap-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.heap-input {
+  width: 74px;
+}
+/* two synced views side by side; they stack on narrow screens */
+.heap-stage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: stretch;
+}
+.heap-pane {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+/* the tree pane holds the wider SVG → let it take more room */
+.heap-pane--tree {
+  flex: 2 1 320px;
+}
+.heap-pane-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx3);
+}
+.heap-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  padding: 14px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-s);
+  text-align: center;
+}
+.heap-tree {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+/* the flat array as indexed cells */
+.heap-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.heap-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 40px;
+  padding: 5px 4px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+/* the node(s) this compare/swap touches → orange (active) with a soft glow */
+.heap-cell.heap-cell--active {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 14%, var(--s2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sem-control) 55%, transparent);
+}
+/* index 0 = the minimum → the part accent */
+.heap-cell.heap-cell--root {
+  border-color: var(--p4);
+  background: color-mix(in srgb, var(--p4) 12%, var(--s2));
+}
+.heap-cell-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.heap-cell--active .heap-cell-val {
+  color: var(--sem-control);
+}
+.heap-cell--root .heap-cell-val {
+  color: var(--p4);
+}
+.heap-cell-idx {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--tx3);
+}
+/* the index-arithmetic teaching line */
+.heap-arith {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  border-left: 3px solid var(--sem-control);
+  padding: 2px 12px;
+  flex: 1 1 300px;
+  min-width: 0;
+  word-break: break-word;
+}
+.heap-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.heap-legend {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.heap-legrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tx2);
+}
+.heap-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.heap-swatch--node {
+  background: var(--p4);
+  border-color: var(--p4);
+}
+.heap-swatch--active {
+  background: var(--sem-control);
+  border-color: var(--sem-control);
+}
+.heap-swatch--root {
+  background: var(--sem-ok);
+  border-color: var(--sem-ok);
+}
+
+/* ---------- TrieAutocomplete (spend the key one letter at a time) ---------- */
+.trie-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.trie-input {
+  width: 150px;
+}
+.trie-tree {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.trie-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.trie-suggest {
+  flex: 1 1 300px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trie-suggest-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--tx);
+}
+.trie-suggest-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--tx3);
+}
+.trie-nomatch {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--tx3);
+}
+.trie-suggest-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+/* a clickable completion → cyan (data) pill */
+.trie-chip {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-data) 40%, var(--line));
+  border-radius: 999px;
+  padding: 3px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.trie-chip:hover {
+  border-color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 18%, var(--surface));
+}
+/* the matched-prefix part of the chip is dim; the completion tail is bright */
+.trie-chip-pre {
+  color: var(--tx3);
+}
+.trie-legend {
+  flex: 1 1 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.trie-legrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tx2);
+}
+.trie-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  flex: none;
+}
+.trie-swatch--node {
+  background: var(--s2);
+  border-color: var(--line);
+}
+/* prefix path = orange, word-ends = green, freshly created = the part accent */
+.trie-swatch--path {
+  background: var(--sem-control);
+  border-color: var(--sem-control);
+}
+.trie-swatch--word {
+  background: var(--surface);
+  border-color: var(--sem-ok);
+  border-width: 2px;
+}
+.trie-swatch--fresh {
+  background: var(--p4);
+  border-color: var(--p4);
+}
+
+/* ---------- SortingRace HERO (seven sorts, one fair access clock) ---------- */
+.sort-ctl {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+/* --- the responsive lane grid --- */
+.sort-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.sort-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 10px 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+/* a lane that has finished sorting → the part accent frame */
+.sort-lane.done {
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 45%, var(--line));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent, var(--p4)) 10%, transparent);
+}
+.sort-lane-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sort-lane-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* the worst-case tag; .nc = "no compares" gets the green payoff colour */
+.sort-kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx3);
+  flex: none;
+}
+.sort-kind.nc {
+  color: var(--sem-ok);
+}
+.sort-done-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sem-ok);
+  flex: none;
+}
+/* --- the bars: thin verticals, heights set inline (do NOT override) --- */
+.sort-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 70px;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.sort-bar {
+  flex: 1;
+  min-width: 0;
+  background: var(--tx3);
+  border-radius: 1px 1px 0 0;
+  transition: background 0.12s;
+}
+/* the element(s) this step is comparing/moving → orange */
+.sort-bar.active {
+  background: var(--sem-control);
+}
+/* an element settled into its final sorted position → green */
+.sort-bar.settled {
+  background: var(--sem-ok);
+}
+/* --- per-lane meters --- */
+.sort-meters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.sort-meter {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+/* zero comparisons = the counting/radix punchline → green */
+.sort-meter.zero {
+  color: var(--sem-ok);
+}
+.sort-meter-v {
+  font-weight: 700;
+  color: var(--tx);
+}
+.sort-meter.zero .sort-meter-v {
+  color: var(--sem-ok);
+}
+/* --- the ranking readout in the footer --- */
+.sort-rank {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sort-rank-head {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tx3);
+  margin-bottom: 2px;
+}
+.sort-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-s);
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+/* a finished sort → the part accent tint, so the podium fills in as they land */
+.sort-rank-row.done {
+  border-color: color-mix(in srgb, var(--accent, var(--p4)) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--p4)) 8%, var(--s2));
+  color: var(--tx);
+}
+.sort-rank-pos {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  width: 18px;
+  text-align: right;
+  flex: none;
+}
+.sort-rank-row.done .sort-rank-pos {
+  color: var(--accent, var(--p4));
+  font-weight: 700;
+}
+.sort-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
+.sort-rank-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sort-rank-acc {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--tx);
+}
+.sort-rank-cmp {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  min-width: 66px;
+  text-align: right;
+}
+/* zero comparisons in the ranking → green payoff */
+.sort-rank-cmp.zero {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+
+/* ---------- BinarySearch (each probe halves the window) ---------- */
+.bsearch-ctl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.bsearch-input {
+  width: 84px;
+}
+.bsearch-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* the sorted array as a row of cells */
+.bsearch-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.bsearch-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 40px;
+  padding: 4px 4px 5px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s, color 0.15s;
+}
+/* discarded half → dim & muted */
+.bsearch-cell.is-gone {
+  opacity: 0.4;
+  border-color: var(--line);
+  background: var(--surface);
+}
+/* still inside the live [lo, hi] window → the part accent */
+.bsearch-cell.is-live {
+  border-color: color-mix(in srgb, var(--p4) 50%, var(--line));
+  background: color-mix(in srgb, var(--p4) 10%, var(--s2));
+}
+/* the current probe (the middle of the window) → orange, prominent */
+.bsearch-cell.is-mid {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 16%, var(--s2));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sem-control) 55%, transparent);
+  opacity: 1;
+}
+/* the answer cell (found / insertion point) → green */
+.bsearch-cell.is-hit {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 16%, var(--s2));
+  opacity: 1;
+}
+.bsearch-val {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tx2);
+  line-height: 1.1;
+}
+.bsearch-cell.is-live .bsearch-val {
+  color: var(--tx);
+}
+.bsearch-cell.is-mid .bsearch-val {
+  color: var(--sem-control);
+}
+.bsearch-cell.is-hit .bsearch-val {
+  color: var(--sem-ok);
+}
+.bsearch-idx {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--tx3);
+}
+/* lo/hi window brackets sit above each cell */
+.bsearch-brackets {
+  display: flex;
+  gap: 4px;
+  min-height: 12px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+.bsearch-lo,
+.bsearch-hi {
+  color: var(--p4);
+}
+.bsearch-mid-tag {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--sem-control);
+}
+/* insertion-point caret for lower-bound mode */
+.bsearch-ins {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+  border-left: 3px solid var(--sem-ok);
+  padding: 2px 12px;
+}
+.bsearch-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+/* the probes-used meter */
+.bsearch-meter {
+  flex: 1 1 240px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bsearch-meter-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tx3);
+}
+.bsearch-meter-val {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx2);
+}
+.bsearch-meter-val b {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent, var(--p4));
+}
+/* thin row of dots: filled = a probe already spent, empty = budget remaining */
+.bsearch-meter-bar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.bsearch-pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--s2);
+  flex: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.bsearch-pip.used {
+  background: var(--accent, var(--p4));
+  border-color: var(--accent, var(--p4));
+}
+.bsearch-legend {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.bsearch-legrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--tx2);
+}
+.bsearch-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  flex: none;
+}
+/* live = accent, mid = orange, discarded = muted, hit = green */
+.bsearch-swatch--live {
+  border-color: color-mix(in srgb, var(--p4) 55%, var(--line));
+  background: color-mix(in srgb, var(--p4) 22%, var(--surface));
+}
+.bsearch-swatch--mid {
+  border-color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 26%, var(--surface));
+}
+.bsearch-swatch--gone {
+  border-color: var(--line);
+  background: var(--s2);
+  opacity: 0.5;
+}
+.bsearch-swatch--hit {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 26%, var(--surface));
+}
+
+/* S8 responsive: stack the heap panes, shrink the lane grid, wrap controls */
+@media (max-width: 640px) {
+  .heap-stage {
+    flex-direction: column;
+  }
+  .heap-pane,
+  .heap-pane--tree {
+    flex: 1 1 auto;
+  }
+  .sort-grid {
+    grid-template-columns: repeat(auto-fill, minmax(116px, 1fr));
+  }
+  .bst-ctl,
+  .heap-ctl,
+  .trie-ctl,
+  .sort-ctl,
+  .bsearch-ctl {
+    gap: 8px;
+  }
+}
+
+/* the settled-position bar pop, guarded to match the S7 convention */
+@media (prefers-reduced-motion: no-preference) {
+  .sort-bar.settled {
+    animation: sort-settle 0.3s ease;
+  }
+  @keyframes sort-settle {
+    from {
+      background: var(--sem-control);
+    }
+    to {
+      background: var(--sem-ok);
+    }
+  }
+}

@@ -122,16 +122,20 @@
 - [fig] `memory-hierarchy` *(reused from ch.6)* — array locality vs pointer-chasing framed as travel time
 - [quiz] `where-it-lands` — predict the bucket / the probe sequence
 
-### ch.15 — Trees & heaps
-- [micro] `bst-builder` — insert/search/delete animated; insert sorted input → degenerate list; one click: AVL rotations rebalance it (the "why balance" aha)
-- [micro] `heap-ops` — insert/extract-min; bubble-up/down animated in both tree and array views simultaneously
-- [micro] `trie-autocomplete` — type a prefix; path lights up; suggestions spill from the subtree
-- [fig] `btree-teaser` — why disks like fat nodes (→ ch.29)
+### ch.15 — Trees & heaps *(built S8)*
+- [micro] `bst-builder` — insert/find/delete animated on a step trace; plain-BST mode degenerates on sorted input; **Senior AVL mode** animates LL/RR/LR/RL rotations with live balance factors (the "why balance" aha); traversal readout (in/pre/post/level-order)
+- [micro] `heap-operations` — min-heap shown in BOTH the array and the complete-tree views at once; push=sift-up, pop=sift-down, heapify (Floyd build-heap); active indices highlighted in both panes
+- [micro] `trie-autocomplete` — type a prefix; the path lights up; suggestions spill from the subtree; Insert flags the newly-created nodes; node-count shows prefix sharing
+- [fig] `tree-rotation` — the AVL single right rotation that fixes the left-left case, step by step
+- [fig] `rb-intuition` — red-black rules as intuition: no red-red + equal black-heights → O(log n)
+- [quiz] `tree-predict` — degenerate BST shape, where the heap max lives, prefix sharing
 
-### ch.16 — Sorting & searching
-- [HERO] `sorting-race` — bar-array visualizer; bubble/insertion/merge/quick/heap race side-by-side on the *same* data; presets: random / nearly-sorted / reversed / few-uniques; step mode with compare & swap counters; stability demo via colored duplicates
-- [micro] `binary-search-stepper` — lo/mid/hi pointers walk; classic off-by-one traps flagged
-- [quiz] `race-predict` — which algorithm wins on nearly-sorted data?
+### ch.16 — Sorting & searching *(built S8)*
+- [HERO] `sorting-race` — seven sorts (insertion/selection/merge/quick/heap/counting/radix) race on the *same* data on a **fair shared access clock** (reads+writes); data shapes: random / sorted / reversed / few-unique; comparisons shown as a second column so counting/radix's hard **zero** is the payoff; per-lane bars + ranking
+- [micro] `binary-search` — lo/mid/hi window halves each probe, discarded half greyed out; exact-search AND lower-bound modes; probes-vs-⌊log₂n⌋+1 meter
+- [fig] `merge-recursion` — merge sort's divide-and-merge tree: split to singletons, merge up sorted
+- [fig] `sort-stability` — what "stable" means (equal keys keep input order) — the one thing the number-only race can't show
+- [quiz] `sort-predict` — quicksort's O(n²) worst case, counting's zero comparisons, stability for multi-key sorts
 
 ### ch.17 — Graphs
 - [HERO] `pathfinder` — grid world: paint walls & weight terrain; run BFS/DFS/Dijkstra/A\* — frontier flood animated, visited count vs path cost; A\* heuristic-weight slider (greedy↔Dijkstra morph)
@@ -284,6 +288,16 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 - `two-sum` — indices that sum to target, one pass with a map *(ch.14)*
 - `reverse-list` — reverse a singly linked list in place *(ch.14)*
 - `lru-cache` — O(1) LRU cache (map + recency order) *(ch.14)*
+- `bst-insert` — insert into a BST, in-order stays sorted *(ch.15)*
+- `validate-bst` — is it a valid BST? (the range-bound trap) *(ch.15)*
+- `bst-level-order` — breadth-first traversal with a queue *(ch.15)*
+- `min-heap` — a priority queue: push/pop/peek/size *(ch.15)*
+- `heapify` — Floyd bottom-up build-heap, O(n) *(ch.15)*
+- `trie-autocomplete` — trie with search/startsWith/autocomplete *(ch.15)*
+- `binary-search-lower-bound` — first index ≥ target (insertion point) *(ch.16)*
+- `merge-two-sorted` — the merge step, two-pointer O(n+m) *(ch.16)*
+- `quickselect` — k-th smallest in expected O(n), partition-based *(ch.16)*
+- `counting-sort` — non-comparison sort of small non-negative ints *(ch.16)*
 
 ## Shared framework (built once at S1, reused ~90 times)
 
@@ -302,7 +316,9 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 ## Inventory census (S0 baseline)
 
 **17 HERO** (incl. stack-map + grand-traversal; P4 carries 3, P1/P2/P6 carry 2 each) ·
-**65 micro** · **36 fig** (+complexity-ladder, +hash-anatomy at S7) · **10 boss** (each with
-a badge) · **kata runner** (10 katas at v1, S7) · quizzes in every chapter
-≈ **126+ touchables**. Census re-run on every change; `npm run qa` enforces per-chapter
-minimums (see CLAUDE.md §6 mandate).
+**65 micro** · **36 fig** (+complexity-ladder, +hash-anatomy at S7; +tree-rotation,
++rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
+**kata runner** (10 katas at v1, S7 → **20 katas** after S8's +10 tree/heap/sort batch) ·
+quizzes in every chapter ≈ **126+ touchables**. As of S8 the live build carries **33 sims,
+18 figures, 16 quizzes, 78 interview Qs, 20 katas** across 16 live chapters (`npm run qa`
+prints the running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate).

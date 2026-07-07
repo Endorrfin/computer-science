@@ -414,6 +414,60 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "tree-predict",
+    chapterId: "ch15",
+    questions: [
+      {
+        prompt: "You insert **10, 20, 30, 40, 50** in that order into a **plain** BST (no balancing). What shape results, and what is search now?",
+        options: ["A balanced tree, O(log n)", "A right-leaning stick of height 5, O(n)", "A heap, O(1) min", "It refuses duplicate-free sorted input"],
+        answer: 1,
+        explain:
+          "Each key is larger than everything before it, so it hangs off the right again and again — a **linked list in tree costume**, height 5. Search is O(n). This is exactly the case AVL/red-black trees exist to prevent; flip the sim to AVL mode and the same inserts rotate into a bush.",
+      },
+      {
+        prompt: "In a **min-heap** stored as an array, where is the **largest** element guaranteed to be?",
+        options: ["At the root (index 0)", "At the last array index", "Somewhere in a leaf", "At index n/2"],
+        answer: 2,
+        explain:
+          "A heap only guarantees parent ≤ children, so the **min** is the root — but the max has no fixed home except that it must be a **leaf** (it can't be a parent, or its child would be larger). Leaves occupy the back half of the array, so the max is somewhere in indices ⌊n/2⌋…n−1, not at any single fixed slot.",
+      },
+      {
+        prompt: "A trie holds **\"car\", \"card\", \"care\"**. How many nodes store the shared prefix **c-a-r**?",
+        options: ["Three sets of three (nine)", "One set of three, reused by all", "None — prefixes aren't stored", "Depends on insertion order"],
+        answer: 1,
+        explain:
+          "The whole point of a trie: the prefix **c-a-r is stored once** and the three words branch below it (a word marker on 'r', then edges to 'd' and 'e'). That sharing is why autocomplete for 'car' is just 'collect the subtree under c-a-r'.",
+      },
+    ],
+  },
+  {
+    id: "sort-predict",
+    chapterId: "ch16",
+    questions: [
+      {
+        prompt: "You run **quicksort with a last-element pivot** on an array that is **already sorted**. Time complexity?",
+        options: ["O(n) — it's already done", "O(n log n) — best case", "O(n²) — worst case", "O(log n)"],
+        answer: 2,
+        explain:
+          "Every partition picks the largest element as pivot, splitting into a side of n−1 and a side of 0 — maximally unbalanced, n levels deep. That's **O(n²)** time and O(n) stack, quicksort's worst case, triggered by its *best-looking* input. Real quicksorts randomize the pivot to avoid exactly this.",
+      },
+      {
+        prompt: "**Counting sort** on 1,000 elements whose keys are all in the range **0–9**. How many element-to-element **comparisons**?",
+        options: ["About 1,000", "About 10,000 (n log n)", "Zero", "About 500,000 (n²/2)"],
+        answer: 2,
+        explain:
+          "**Zero.** Counting sort never asks 'is a < b?' — it tallies keys into 10 buckets and places by running totals. That's how it beats the Ω(n log n) comparison bound: it isn't a comparison sort at all. It runs in O(n + k) = O(1000 + 10) here.",
+      },
+      {
+        prompt: "You **stably** sort a table by *date*, then **stably** sort the result by *name*. Within one name, what order are the rows in?",
+        options: ["Random", "By date (preserved)", "Reversed date", "Undefined"],
+        answer: 1,
+        explain:
+          "A **stable** sort preserves the relative order of equal keys — so among rows with the same name, the earlier date-ordering survives. This 'sort by secondary, then stably by primary' trick is the standard way to do multi-key sorts, and it only works if the sort is stable.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
