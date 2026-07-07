@@ -41,6 +41,11 @@ const sims: Record<SimKey, LazyComp> = {
   "array-vs-list-memory": lazy(() => import("../components/sims/array-vs-list-memory/ArrayVsListMemory.tsx")),
   "hash-collision-lab": lazy(() => import("../components/sims/hash-collision-lab/HashCollisionLab.tsx")),
   "stack-queue-stepper": lazy(() => import("../components/sims/stack-queue-stepper/StackQueueStepper.tsx")),
+  "bst-builder": lazy(() => import("../components/sims/bst-builder/BstBuilder.tsx")),
+  "heap-operations": lazy(() => import("../components/sims/heap-operations/HeapOperations.tsx")),
+  "trie-autocomplete": lazy(() => import("../components/sims/trie-autocomplete/TrieAutocomplete.tsx")),
+  "sorting-race": lazy(() => import("../components/sims/sorting-race/SortingRace.tsx")),
+  "binary-search": lazy(() => import("../components/sims/binary-search/BinarySearch.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -62,6 +67,10 @@ const figs: Record<FigKey, LazyComp> = {
   // P4 · Algorithms & Data Structures
   "complexity-ladder": lazy(() => import("../components/figures/ComplexityLadder.tsx")),
   "hash-anatomy": lazy(() => import("../components/figures/HashAnatomy.tsx")),
+  "tree-rotation": lazy(() => import("../components/figures/TreeRotation.tsx")),
+  "rb-intuition": lazy(() => import("../components/figures/RbIntuition.tsx")),
+  "merge-recursion": lazy(() => import("../components/figures/MergeRecursion.tsx")),
+  "sort-stability": lazy(() => import("../components/figures/SortStability.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

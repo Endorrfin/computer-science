@@ -2337,6 +2337,343 @@ const ch14: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.15 — Trees & heaps  (built in S8)
+// ---------------------------------------------------------------
+const ch15: Chapter = {
+  id: "ch15",
+  part: "p4",
+  order: 17,
+  title: "Trees & heaps",
+  tagline:
+    "Bending the line into a hierarchy — search trees that stay balanced under adversarial input, heaps that always surface the smallest, and tries that share prefixes",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "1962, Moscow. Two Soviet mathematicians — **Georgy Adelson-Velsky** and **Evgenii Landis** — publish a four-page paper, *An algorithm for the organization of information*. In it is the first data structure that keeps a search tree **short on purpose**: after every insertion it checks whether any node has grown lopsided and, if so, performs a tiny local **rotation** to even it out. Their initials name it — the **AVL tree** — and it settles a problem that had quietly haunted the young field: a binary search tree is beautifully fast *until* you feed it sorted keys, at which point it collapses into a slow list. Two years later J. W. J. Williams would pack a different tree into a flat array to build the **heap** (1964); Edward Fredkin had already spent a key one letter at a time in the **trie** (1960, from re**trie**val). This chapter is those three shapes, made touchable.",
+  },
+  assumes: [
+    {
+      chapterId: "ch14",
+      oneLiner: "A node is a value plus pointers to other nodes; arrays are contiguous and index in O(1). Trees are nodes wired into a branching shape.",
+    },
+    {
+      chapterId: "ch13",
+      oneLiner: "O(log n) is exponentially better than O(n): doubling n adds one step, not double the steps. Keeping a tree's height at log n is the whole game.",
+    },
+  ],
+  mentalModel:
+    "A binary search tree pours a total order into a branching shape: every node's left subtree is all-smaller and its right subtree all-larger, so search, insert and delete each follow ONE root-to-leaf path — cost O(height). The entire art is keeping height near log n. A balanced tree (AVL, red-black) rotates after each change to guarantee it; a naive tree fed sorted keys degenerates into a linked list and every operation slumps to O(n). A heap gives up full ordering for just 'parent ≤ children', which keeps the minimum at the root and lets the whole tree live in a flat array with no pointers. A trie spends the key one character per level, so keys that share a prefix share nodes.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "ch.14 gave you **linear** containers — arrays, lists, stacks, queues, hash tables. They're superb at what they do, but a straight line can't answer *ordered* questions cheaply: give me the next-biggest key, everything between 10 and 20, the current minimum, every word starting with 'car'. For those you bend the line into a **tree** — a branching hierarchy where the right structure keeps those questions at O(log n) instead of O(n).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The binary search tree\n" +
+        "A **binary search tree (BST)** stores one key per node under a single invariant: **every key in the left subtree is smaller, every key in the right subtree is larger**. That invariant turns search into a decision at each node — go left for smaller, right for larger — so a lookup walks **one root-to-leaf path**, doing O(**height**) comparisons. Insert works the same way, attaching a new leaf where the search falls off the tree. And the payoff that a hash table can't match: an **in-order traversal** (left, node, right) visits the keys **in sorted order**, for free. Build one and watch every operation trace its path:",
+    },
+    { kind: "sim", sim: "bst-builder" },
+    {
+      kind: "prose",
+      md:
+        "## The catch: balance is not automatic\n" +
+        "That O(height) is only good news if the height is small. Insert keys in **sorted order** — 10, 20, 30, 40 — and each new key is larger than everything, so it hangs off the right again and again. The 'tree' becomes a **linked list wearing a tree costume**: height n, every operation O(n). This isn't a rare edge case; sorted or nearly-sorted input is *common*. A BST that doesn't defend against it is a performance trap. The fix is to **rebalance** after each change — and the key move is a **rotation**, which reshapes three nodes while preserving the search invariant:",
+    },
+    { kind: "figure", fig: "tree-rotation", caption: "A rotation lifts a child above its parent and re-hangs the middle subtree — O(1) pointer surgery that lowers the tall side without breaking the left-smaller / right-larger order." },
+    {
+      kind: "prose",
+      md:
+        "## Self-balancing: the AVL tree\n" +
+        "An **AVL tree** is a BST that never lets any node get lopsided. Each node tracks its **balance factor** — the height of its left subtree minus its right. The invariant is simply **|balance factor| ≤ 1** everywhere. The instant an insert or delete pushes some node to ±2, the tree performs the one rotation (or pair of rotations) that fixes it, in **O(1)**. There are exactly four cases by where the offending node landed — **LL** and **RR** need a single rotation, **LR** and **RL** need a double — and that's the whole algorithm. The guarantee: height stays below **~1.44·log₂n**, so every operation is O(log n) *forever*, even under the sorted-input attack. Flip the sim above into **AVL mode** and insert 1, 2, 3, 4, 5 in order — instead of a stick, you get a bush that rotates itself level.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Red-black trees are what your standard library actually ships",
+      lens: "senior",
+      md:
+        "AVL is the cleanest balancing story, but most libraries use a cousin: the **red-black tree**. It colors nodes red or black and balances on two rules — no red node has a red child, and every root-to-leaf path crosses the same number of black nodes. That's a **looser** balance than AVL (a red-black tree can be up to 2× the shortest path tall, vs AVL's tighter bound), which means **fewer rotations per write** — a better trade when writes are frequent. So AVL wins on lookup-heavy workloads (shorter trees), red-black wins on write-heavy ones. `std::map`, Java's `TreeMap`, and the Linux kernel's process scheduler all run on red-black trees.",
+    },
+    { kind: "figure", fig: "rb-intuition", caption: "Red-black rules as intuition: 'no two reds in a row' plus 'equal black-height on every path' together force the longest path to be at most twice the shortest — which is exactly O(log n) height." },
+    {
+      kind: "compare",
+      a: "AVL tree",
+      b: "Red-black tree",
+      rows: [
+        ["Balance discipline", "Strict: |balance factor| ≤ 1", "Loose: longest path ≤ 2× shortest"],
+        ["Height", "Shorter (≤ ~1.44 log n)", "Taller (≤ ~2 log n)"],
+        ["Rotations per write", "More (keeps it tight)", "Fewer (cheaper writes)"],
+        ["Best for", "Lookup-heavy workloads", "Write-heavy workloads (library default)"],
+      ],
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — why AVL height stays logarithmic",
+      md:
+        "Let N(h) be the **minimum** number of nodes in an AVL tree of height h. A shortest AVL tree of height h has a root, one subtree of height h−1, and — since balance allows a difference of 1 — the other of height h−2. So **N(h) = 1 + N(h−1) + N(h−2)**, with N(0)=0, N(1)=1. That's the Fibonacci recurrence shifted by a constant: N(h) = F(h+2) − 1. Because Fibonacci grows like φʰ (φ ≈ 1.618), a tree with n nodes has height **h ≤ log_φ(n) ≈ 1.4404·log₂n**. The strict balance factor buys a provable logarithmic height — no input can make an AVL tree tall.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Heaps: always the smallest, and no pointers at all\n" +
+        "A **heap** relaxes the BST's demand. Instead of a full left-smaller/right-larger order, it asks only that **every parent is ≤ its children** (a min-heap). That's weak enough that the **minimum is always the root** — O(1) to peek — yet strong enough to be useful, and it's the structure behind every **priority queue**. The magic is the storage: a heap is a **complete** tree (every level full, last level filled left-to-right), and a complete tree needs **no pointers** — it packs into a plain array where `parent(i) = ⌊(i−1)/2⌋` and the children of i are `2i+1` and `2i+2`. The tree is just an *indexing convention* over a contiguous array (ch.14), which is why heaps are so cache-friendly:",
+    },
+    { kind: "sim", sim: "heap-operations" },
+    {
+      kind: "prose",
+      md:
+        "## Two O(log n) moves, and an O(n) surprise\n" +
+        "Both updates restore the invariant by walking **one path**. **push**: drop the new value at the end (keeping the tree complete), then **sift up** — swap with the parent while it's smaller. **pop-min**: take the root, move the last element up to fill the hole, then **sift down** — swap with the *smaller* child while it's larger. Each is O(log n). But **building** a heap from a raw array is the pleasant surprise: sifting down every internal node from the bottom up (Floyd's method, 1964) is **O(n)**, not O(n log n) — because most nodes are near the leaves and barely move.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — why build-heap is O(n), not O(n log n)",
+      md:
+        "Naively, building a heap by n insertions costs O(n log n). Floyd's bottom-up build-heap does better. A node at height h can sift down at most h levels, and a complete tree of n nodes has about **n / 2^(h+1)** nodes at height h. Total work is Σ h·(n / 2^(h+1)) = n · Σ h/2^(h+1). The sum Σ h/2^h converges to **2** (a constant), so the total is **O(n)**. The intuition: half the nodes are leaves that do zero work, a quarter sift down at most once, an eighth at most twice — the expensive nodes near the root are too few to matter. Heapsort then pops n times at O(log n) each for its O(n log n) total (ch.16), but the *build* is linear.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Tries: spend the key one character at a time\n" +
+        "A last shape for a special job: matching by **prefix**. A **trie** (from re**trie**val) makes each **edge a character**, so the path from the root spells a prefix and a flagged node means 'a word ends here'. Two consequences fall out. First, lookup and insert cost **O(key length)** — *independent of how many keys the trie holds*, because you never compare against other keys, you just walk letters. Second, words that share a prefix **share the nodes** for it, so the subtree under any prefix is exactly its set of completions — which makes **autocomplete** trivial: walk to the prefix, then collect everything below. Type into one:",
+    },
+    { kind: "sim", sim: "trie-autocomplete" },
+    { kind: "quiz", quiz: "tree-predict" },
+    {
+      kind: "table",
+      caption: "Pick the structure by the operations you need — not out of habit. (n = number of keys; L = key length; balanced = AVL/red-black.)",
+      head: ["Structure", "Search by key", "Min / ordered iteration", "Prefix / range"],
+      rows: [
+        ["Sorted array", "O(log n) — binary search", "O(1) min · O(n) iterate", "Range: O(log n + k)"],
+        ["Hash table", "O(1) average", "No order — O(n) scan", "No — hashing destroys order"],
+        ["Balanced BST", "O(log n)", "O(log n) min · O(n) in-order", "Range: O(log n + k)"],
+        ["Binary heap", "O(n) — not searchable", "O(1) peek-min · O(log n) pop", "No"],
+        ["Trie", "O(L)", "O(n) ordered walk", "Prefix: O(L + matches)"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "One more tree is coming: when the data is too big for RAM and lives on disk, the winner is the **B-tree** — a shallow, high-fan-out tree tuned so each node is one disk page, keeping the number of slow disk reads tiny. That's the heart of every database index, and ch.29 builds one. But first, ch.16 turns to the operations these structures assume you can do — **sorting** a pile of keys, and **searching** a sorted one — and to the surprising limits on how fast sorting can possibly be.",
+    },
+  ],
+  keyPoints: [
+    "A binary search tree pours a total order into a branching shape — left subtree all-smaller, right all-larger — so search, insert and delete each follow one root-to-leaf path at O(height), and an in-order traversal yields the keys already sorted.",
+    "Height is the whole game — a balanced tree is O(log n) per operation, but a plain BST fed sorted keys degenerates into a linked list where every operation is O(n).",
+    "Self-balancing trees rotate to stay short — an AVL tree keeps every node's balance factor in {−1,0,1} using O(1) rotations (LL/RR single, LR/RL double), guaranteeing height ≤ ~1.44·log₂n against any input.",
+    "Red-black trees are the library default — looser balance than AVL means fewer rotations per write (and a slightly taller tree), which is why std::map, Java's TreeMap and the Linux scheduler use them.",
+    "A heap is a complete tree with the heap-order property (parent ≤ children) — the minimum is always the root (O(1) peek), and it lives in a flat array with parent = ⌊(i−1)/2⌋ and children 2i+1, 2i+2, no pointers needed.",
+    "Heap push and pop are O(log n) via sift-up / sift-down, but build-heap is O(n) — Floyd's bottom-up construction beats n separate insertions because most nodes sit near the leaves and barely move.",
+    "A trie spends the key one character per level — lookup and insert are O(key length) regardless of how many keys are stored, and shared prefixes share nodes, so autocomplete is just collecting the subtree under a prefix.",
+    "Match the structure to the operation — a hash table wins pure key lookup, but only an ordered structure (balanced BST, heap, trie) supports min-extraction, ordered iteration, range queries or prefix search.",
+  ],
+  pitfalls: [
+    {
+      title: "Assuming a plain BST is O(log n)",
+      body: "It's O(log n) only if it stays balanced, and nothing balances it for you. Sorted, reverse-sorted, or adversarial insertions make it O(n) per operation — a linked list in disguise. Use a self-balancing tree (AVL / red-black) or your language's ordered map, which is one already.",
+      lens: "both",
+    },
+    {
+      title: "Treating a heap like a sorted structure",
+      body: "A heap is only partially ordered: the root is the min, but siblings and cousins are in no particular order. You cannot binary-search a heap, an in-order walk is NOT sorted, and finding an arbitrary key is O(n). A heap gives you the min fast and nothing else fast — reach for it only when min-extraction is what you need.",
+      lens: "both",
+    },
+    {
+      title: "Off-by-one in the heap index arithmetic",
+      body: "With 0-based arrays the parent of i is ⌊(i−1)/2⌋ and the children are 2i+1 and 2i+2. Copying the 1-based textbook formulas (parent = i/2, children 2i, 2i+1) onto a 0-based array silently corrupts the heap. Pick a convention and pin it with a test — the sim and scripts/test-ch15.ts both use 0-based.",
+      lens: "both",
+    },
+    {
+      title: "Using a trie for sparse or non-string keys",
+      body: "A trie shines when keys are strings that share prefixes. Give each node a full 256-slot array for arbitrary bytes, or store random high-entropy keys, and it explodes in memory for little benefit. Use a map per node, a compressed (radix) trie, or just a hash table when there's no prefix structure to exploit.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch15-1", "iv-ch15-2", "iv-ch15-3", "iv-ch15-4", "iv-ch15-5"],
+  kataIds: ["bst-insert", "validate-bst", "bst-level-order", "min-heap", "heapify", "trie-autocomplete"],
+  seeAlso: ["ch13", "ch14", "ch16", "ch29"],
+  sources: [
+    { title: "AVL tree — Adelson-Velsky & Landis (1962), the first self-balancing BST (Wikipedia)", url: "https://en.wikipedia.org/wiki/AVL_tree" },
+    { title: "Red-black tree — looser balance, the library default (Wikipedia)", url: "https://en.wikipedia.org/wiki/Red%E2%80%93black_tree" },
+    { title: "Binary heap — J. W. J. Williams (1964), Floyd's O(n) build-heap (Wikipedia)", url: "https://en.wikipedia.org/wiki/Binary_heap" },
+    { title: "Trie — prefix tree, coined by Fredkin from 're-trie-val' (Wikipedia)", url: "https://en.wikipedia.org/wiki/Trie" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.16 — Sorting & searching  (built in S8)
+// ---------------------------------------------------------------
+const ch16: Chapter = {
+  id: "ch16",
+  part: "p4",
+  order: 18,
+  title: "Sorting & searching",
+  tagline:
+    "Binary search's O(log n) reward for keeping data sorted, the classic sorts and how to race them fairly, stability, and why comparison sorts can't beat n log n — but counting and radix can",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "1959, Moscow State University. A 25-year-old British exchange student named **Tony Hoare** is set a problem in machine translation: translate Russian sentences into English by looking each word up in a dictionary stored on **magnetic tape**. Tape is agonizingly slow to seek, so Hoare realizes he should **sort the words of each sentence first**, then sweep the tape once. Casting about for a fast way to sort in memory, he invents **quicksort** — pick a pivot, partition everything smaller to one side and larger to the other, recurse. He can't yet write it down elegantly (ALGOL didn't have recursion he could reach), and it waits until 1961 to appear as *Algorithm 64* in the *Communications of the ACM*. Sixty-five years later it's still, in tuned form, the sort in your standard library. This chapter is the family it belongs to — and the wall none of them can climb past.",
+  },
+  assumes: [
+    {
+      chapterId: "ch13",
+      oneLiner: "Cost is counted work, and algorithms have best / average / worst cases; O(n log n) sits between linear and quadratic.",
+    },
+    {
+      chapterId: "ch15",
+      oneLiner: "A heap surfaces the minimum in O(log n) — heapsort is just 'build a heap, then pop n times'. Balanced order is what search exploits.",
+    },
+  ],
+  mentalModel:
+    "Sorting is the investment; searching is the payoff. Keep data sorted and binary search finds anything in O(log n) by halving the window each probe. The comparison sorts differ only in HOW they divide the work — insertion grows a sorted prefix, selection repeatedly extracts the minimum, merge divides and merges, quick partitions around a pivot, heap drains a heap — but none can beat Ω(n log n) comparisons in the worst case, because sorting by yes/no comparisons is a decision tree with n! leaves. The only escape is to stop comparing: counting and radix use the keys themselves as array indices to sort in O(n + k), trading generality for linear speed when the keys are small integers.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "ch.15's structures *maintain* order as data arrives. This chapter is about the two operations that *impose* and *exploit* it: **sorting** an unordered pile, and **searching** a sorted one. They're a pair — sorting is worth the effort largely *because* a sorted array unlocks O(log n) search, dedup, grouping and range queries. We start with the payoff, because it's the simplest and the most bug-prone.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Binary search: the payoff of sorted\n" +
+        "Given a **sorted** array, you never scan. Look at the **middle** element: if it's your target, done; if it's too big, the answer is in the **left half**; too small, the **right half**. Each probe **halves** the live window, so you find anything in **⌊log₂n⌋+1** probes — about **20 for a million** elements, 30 for a billion. The idea is ancient and the mechanics are treacherous: the whole difficulty is the **boundary math** (is the window inclusive? does `hi` move to `mid` or `mid−1`?), where a single off-by-one either skips the answer or loops forever. Step one and watch the window collapse:",
+    },
+    { kind: "sim", sim: "binary-search" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The bug that hid in (lo + hi) / 2 for two decades",
+      lens: "senior",
+      md:
+        "In 2006 Joshua Bloch — who wrote the JDK's binary search — published *Nearly All Binary Searches and Mergesorts are Broken*. The culprit: `int mid = (lo + hi) / 2`. When `lo + hi` exceeds the maximum `int` (about 2.1 billion), the sum **overflows to a negative number** and `mid` goes out of bounds. The version in Jon Bentley's *Programming Pearls* — *proven correct* and taught for twenty years — had it too; it just never mattered until arrays got past ~2³⁰ elements. The fix is to compute the offset instead of the sum: **`mid = lo + (hi − lo) / 2`**. A reminder that 'proven correct' is only as good as its model of the machine (ch.1's fixed-width integers).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The comparison sorts\n" +
+        "Now the pile. Five classics, each a different strategy for the same job. **Insertion** grows a sorted prefix, sliding each new element back into place — brilliant on nearly-sorted data. **Selection** repeatedly finds the minimum and swaps it forward — always the same n²/2 comparisons, but the fewest writes. **Merge** splits the array in half, sorts each, and merges the two sorted runs — a guaranteed O(n log n). **Quick** partitions around a pivot and recurses — fast and cache-friendly on average, but fragile. **Heap** builds a heap (ch.15) and pops the max n times — worst-case O(n log n) and in place.",
+    },
+    { kind: "figure", fig: "merge-recursion", caption: "Merge sort's divide-and-conquer: split to single elements (already sorted), then merge sorted runs pairwise back up. Each level does O(n) work across log n levels → O(n log n), guaranteed." },
+    {
+      kind: "prose",
+      md:
+        "## Race them — fairly\n" +
+        "Which is fastest? The honest answer is *it depends*, so the sim races all seven at once — including two we haven't met — on **one dataset**, advancing by a single fair metric: **array accesses** (reads + writes), the count of times each algorithm touches memory. Comparisons are shown too, as a second column, because they hold the punchline. Change the **data shape** and the winner changes: on **already-sorted** input, insertion nearly walks it in one pass while naive quicksort **collapses to O(n²)**; on **few-unique** keys, two green newcomers run away from the pack.",
+    },
+    { kind: "sim", sim: "sorting-race" },
+    {
+      kind: "prose",
+      md:
+        "## Reading the race\n" +
+        "Three lessons jump out. **Data shape matters more than the name**: insertion sort is O(n²) in general but near-O(n) when the array is almost sorted — which is why it's the base case inside industrial sorts. **Quicksort's worst case is real**: a last-element pivot on already-sorted data partitions into 0 and n−1 every time, giving n²/2 comparisons and O(n) stack depth — the reason real quicksorts randomize or use median-of-three. And **selection sort's writes are minimal** (≤ n−1 swaps) even though its comparisons are always maximal — occasionally the right pick when a write is far more expensive than a compare (e.g. sorting on flash memory).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Stability\n" +
+        "One property the bars can't show, because it's about *equal* keys. A sort is **stable** if elements with equal keys keep their **original relative order**. It sounds academic until you sort by two keys: sort a table by date, then *stably* by name, and you get names alphabetical with each person's rows still in date order. **Insertion, merge, counting and radix are stable; selection, quick and heap are not** (they fling equal elements past each other). When you sort records by a secondary key, stability is the difference between right and subtly wrong:",
+    },
+    { kind: "figure", fig: "sort-stability", caption: "Three equal keys (tagged a, b, c by color): a stable sort preserves a-b-c; an unstable one may emit a-c-b. Identical values, different provenance — stability is whether that provenance survives." },
+    {
+      kind: "table",
+      caption: "The comparison sorts plus the two non-comparison sorts. n = elements, k = key range, d = digits, b = radix base. 'In place' = O(1) extra space beyond the input.",
+      head: ["Sort", "Best / Average / Worst", "Stable?", "In place?"],
+      rows: [
+        ["Insertion", "n / n² / n²", "yes", "yes"],
+        ["Selection", "n² / n² / n²", "no", "yes"],
+        ["Merge", "n log n / n log n / n log n", "yes", "no — O(n)"],
+        ["Quick", "n log n / n log n / n²", "no", "yes (O(log n) stack)"],
+        ["Heap", "n log n / n log n / n log n", "no", "yes"],
+        ["Counting", "n + k / n + k / n + k", "yes", "no — O(n + k)"],
+        ["Radix (LSD)", "d(n + b) / d(n + b) / d(n + b)", "yes", "no — O(n + b)"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## The Ω(n log n) wall\n" +
+        "Notice that no comparison sort in that table beats **n log n** in the worst case. That's not a failure of imagination — it's a **theorem**. Any sort that orders elements purely by asking 'is a < b?' is really navigating a **decision tree**: each comparison is a yes/no branch, and each of the **n!** possible input orderings must reach its own leaf. A binary tree with n! leaves has depth at least **log₂(n!) ≈ n log₂n** (Stirling). So *some* input always forces ~n log n comparisons. Comparison sorting cannot, even in principle, be linear.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the comparison lower bound",
+      md:
+        "Model a comparison sort as a binary **decision tree**: internal nodes are comparisons (a<b?), leaves are the sorted permutations. To sort correctly, the tree must have a distinct leaf for each of the **n!** input permutations, so it has ≥ n! leaves. A binary tree with L leaves has height ≥ **⌈log₂ L⌉**. Therefore worst-case comparisons ≥ log₂(n!) . By Stirling, log₂(n!) = n log₂n − n log₂e + O(log n) = **Θ(n log n)**. This bounds *comparisons*, which is why it doesn't apply to counting/radix — they never compare two elements, so they aren't nodes in this tree at all.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Counting & radix: stop comparing\n" +
+        "The only way under the wall is to **not compare**. **Counting sort** works when keys are small integers: tally how many of each key, turn the tallies into starting positions, and place each element directly — **O(n + k)** for key range k, with **zero comparisons**. **Radix sort** extends that to bigger keys by counting-sorting **one digit at a time**, least-significant first (stability across passes is what makes it work) — **O(d·(n + b))** for d digits. In the race, set the data to **few-unique** and watch counting and radix pull ahead: their comparison column is a hard **0**. The catch, and the reason they aren't the default: when the key range k is huge or keys aren't small integers, the k term dominates and a good comparison sort wins — plus they need O(n + k) scratch memory.",
+    },
+    { kind: "quiz", quiz: "sort-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "What real libraries actually ship",
+      lens: "senior",
+      md:
+        "Nobody ships a textbook quicksort. Production sorts are **hybrids** tuned around these exact trade-offs. **Timsort** (Tim Peters, 2002 — Python's `sorted`, Java's `Arrays.sort` for objects) is a **stable** merge sort that finds already-sorted 'runs' and merges them, so real-world partly-ordered data sorts in near-O(n). **Introsort** (C++ `std::sort`) runs quicksort for speed but **watches its recursion depth** and switches to heapsort if a bad pivot threatens the O(n²) cliff — getting quicksort's average with heapsort's worst-case guarantee. Both fall back to **insertion sort** on small subarrays, where its low overhead wins. The lesson: the 'best sort' is an engineering blend of the ones in this chapter.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You now have the toolkit for linear data and hierarchies, and the algorithms that order and search them. ch.17 removes the last restriction — that structure is a line or a tree — and lets any node connect to any other. That's a **graph**, the model behind maps, social networks, dependencies and the web, and it comes with its own signature searches (BFS, DFS, Dijkstra, A*) — the subject of Part 4's boss.",
+    },
+  ],
+  keyPoints: [
+    "Keep data sorted and binary search finds anything in O(log n) — each probe halves the live window; the classic bugs are the boundary math (≤ vs <, mid±1) and the (lo+hi)/2 integer overflow, fixed by lo + (hi−lo)/2.",
+    "lower_bound is the workhorse variant — the first index whose value is ≥ target (the insertion point) — which finds the first of duplicate keys and powers range queries.",
+    "The comparison sorts trade differently — insertion is O(n) on nearly-sorted data, selection is always n²/2 comparisons but minimal writes, merge is a guaranteed n log n at O(n) space, quicksort averages n log n but degrades to n² on a bad pivot, heapsort is worst-case n log n in place.",
+    "'Fastest sort' depends on the data and the metric — racing on array accesses is fair to every sort, and the winner changes with input shape: insertion wins nearly-sorted, naive quicksort collapses on already-sorted.",
+    "No comparison sort beats Ω(n log n) in the worst case — sorting by yes/no comparisons is a decision tree with n! leaves, and a binary tree with n! leaves has depth ≥ log₂(n!) ≈ n log n.",
+    "Counting and radix escape the wall by not comparing — using keys as array indices they run in O(n + k) and O(d·(n + b)) with zero comparisons, winning when keys are small integers but wasting time and memory when the key range is large.",
+    "Stability means equal keys keep their input order — insertion, merge, counting and radix are stable; selection, quick and heap are not — and it is what lets you correctly sort by one key and then another.",
+    "Sorting is an investment that pays off in search — a sorted array unlocks O(log n) lookup, dedup, grouping and range queries, which is why 'sort first' is a default opening move in algorithm design.",
+  ],
+  pitfalls: [
+    {
+      title: "Binary searching an array that isn't sorted",
+      body: "Binary search's entire contract is a sorted input; on unsorted data it doesn't error, it silently returns wrong answers. If you binary-search repeatedly, the sort must happen first (and stay valid on every mutation) — otherwise use a hash table for O(1) membership instead.",
+      lens: "both",
+    },
+    {
+      title: "Assuming quicksort is always O(n log n)",
+      body: "A naive fixed pivot (first/last element) hits O(n²) time and O(n) stack depth on already-sorted or adversarial input — a real denial-of-service vector. Production quicksorts randomize the pivot or use median-of-three, and cap recursion depth by falling back to heapsort (introsort).",
+      lens: "senior",
+    },
+    {
+      title: "Reaching for counting or radix by default",
+      body: "They're linear only when the key range k (or digit count d) is small relative to n. On 64-bit keys, floats, strings, or a sparse range, the k term dominates and they lose to a good comparison sort — while still paying O(n + k) extra memory. They're specialists, not the default.",
+      lens: "both",
+    },
+    {
+      title: "Ignoring stability when sorting records",
+      body: "Sorting rows by a secondary key with an unstable sort scrambles the primary order you set up earlier. When you sort by A then B and expect ties in B to stay ordered by A, you must use a stable sort (or encode the tiebreak into the key). This bites hardest in multi-column table sorts.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch16-1", "iv-ch16-2", "iv-ch16-3", "iv-ch16-4", "iv-ch16-5"],
+  kataIds: ["binary-search-lower-bound", "merge-two-sorted", "quickselect", "counting-sort"],
+  seeAlso: ["ch1", "ch13", "ch15", "ch17"],
+  sources: [
+    { title: "Quicksort — Hoare (1959, publ. CACM 1961 as Algorithm 64) (Wikipedia)", url: "https://en.wikipedia.org/wiki/Quicksort" },
+    { title: "Comparison sort — the Ω(n log n) decision-tree lower bound (Wikipedia)", url: "https://en.wikipedia.org/wiki/Comparison_sort" },
+    { title: "Binary search algorithm — variants and the boundary pitfalls (Wikipedia)", url: "https://en.wikipedia.org/wiki/Binary_search_algorithm" },
+    { title: "J. Bloch, 'Nearly All Binary Searches and Mergesorts are Broken' (Google Research, 2006)", url: "https://research.google/blog/extra-extra-read-all-about-it-nearly-all-binary-searches-and-mergesorts-are-broken/" },
+    { title: "Radix sort — non-comparison, LSD/MSD, O(d·(n+b)) (Wikipedia)", url: "https://en.wikipedia.org/wiki/Radix_sort" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -2359,8 +2696,8 @@ export const CHAPTERS: Chapter[] = [
   // P4 · Algorithms & Data Structures (ch.13–14 built in S7)
   ch13,
   ch14,
-  stub("ch15", "p4", 17, "Trees & heaps", "BSTs, balancing, heaps, tries", 8, { foundations: 22, senior: 35 }),
-  stub("ch16", "p4", 18, "Sorting & searching", "Binary search and the sorting-race classics", 8, { foundations: 22, senior: 35 }),
+  ch15,
+  ch16,
   stub("ch17", "p4", 19, "Graphs", "BFS/DFS, Dijkstra, A*, MST, topological sort", 9, { foundations: 25, senior: 40 }),
   stub("ch18", "p4", 20, "Design paradigms", "Divide & conquer, greedy, DP, backtracking", 9, { foundations: 25, senior: 40 }),
   // P5 · Theory

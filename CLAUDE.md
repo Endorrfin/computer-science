@@ -770,3 +770,77 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   per-test pass/fail, timeout on an infinite loop, solved ✓ persists; complexity-ladder + hash-anatomy
   auto-play). **S7 CLOSED pending user commit. Next: S8 — P4 · A&DS II: ch.15 (Trees & heaps — bst-builder,
   heap-ops, trie-autocomplete) + ch.16 (Sorting & searching — sorting-race HERO) + grow the kata batch.**
+- **2026-07-07 · S8 (P4 · Algorithms & Data Structures II)** — ch.15–16 built to the golden
+  bar; Part 4 now has structures (trees/heaps/tries) *and* the algorithms that order and
+  search them. **Kickoff decisions (user asked for the best-practice recommendation on the
+  first, chose the other two):** (1) **balancing = AVL mode inside `bst-builder`** (the
+  recommended path — makes rebalancing *touchable* per the §6 mandate; red-black stays a
+  Senior callout + `rb-intuition` fig + an AVL/RB compare). (2) **all seven sorts in one
+  race** (user pick) — granted *honestly* by racing on a **fair unified metric: array
+  accesses (reads + writes)**, with comparisons as a second column so counting/radix's hard
+  **zero** becomes the teaching payoff rather than an apples-to-oranges (racing all seven on
+  "comparisons" would have been dishonest since two make none). (3) **+10 katas** (user pick).
+  **ch.15 Trees & heaps** (story: **Adelson-Velsky & Landis, 1962** — the first self-balancing
+  BST; heap = **Williams 1964**, trie = **Fredkin 1960**, all web-verified): the BST invariant
+  + O(height); the degenerate-stick failure on sorted input; **AVL** rotations (LL/RR/LR/RL,
+  |bf| ≤ 1, height ≤ ~1.44 log₂n) with a **Fibonacci-recurrence formal corner**; a red-black
+  Senior callout (looser balance → fewer writes; std::map/TreeMap/Linux scheduler); **heaps**
+  as a complete tree packed into an array (parent ⌊(i−1)/2⌋, children 2i+1/2i+2) with a
+  **Floyd O(n) build-heap formal corner** (Σ h/2ʰ = 2); **tries** (O(L), prefix sharing,
+  autocomplete = collect-the-subtree); a structure-selection table; B-tree teaser → ch.29.
+  4 pitfalls, 8 keyPoints, 4 sources. **ch.16 Sorting & searching** (story: **Hoare's
+  quicksort, 1959 Moscow State** — sort words before a magnetic-tape dictionary lookup;
+  publ. **CACM 1961, Algorithm 64**, web-verified): binary search + **lower-bound**, the
+  **`(lo+hi)/2` overflow** Senior callout (**Bloch, 2006**, web-verified); the five comparison
+  sorts; the **`sorting-race` HERO**; reading the race (data-dependence, quicksort's n² on
+  sorted, selection's minimal writes); **stability** (+ `sort-stability` fig — the one thing
+  the number-only race can't show); a 7-sort complexity table; the **Ω(n log n)
+  decision-tree formal corner** (n! leaves, log₂(n!) ≈ n log n); counting/radix as the escape;
+  a **Timsort/introsort** Senior callout (web-verified); → ch.17. 4 pitfalls, 8 keyPoints,
+  5 sources. **1 HERO + 4 micro sims** — `sorting-race` (seven instrumented sorts on a shared
+  access clock, data-shape presets, per-lane bars + ranking), `bst-builder` (immutable BST/AVL
+  engine with a step trace; AVL rotations animate; traversal readout), `heap-operations`
+  (min-heap shown in the array **and** the complete-tree at once; push/pop/heapify), `trie-
+  autocomplete` (type to walk/insert; suggestions from the subtree), `binary-search`
+  (window-halving stepper, exact + lower-bound). **4 figs** — `tree-rotation`, `rb-intuition`,
+  `merge-recursion`, `sort-stability`. **2 quizzes** (`tree-predict`, `sort-predict`) + **10
+  interview Qs** (iv-ch15/16, mid→staff). **+10 katas** — bst-insert, validate-bst,
+  bst-level-order, min-heap, heapify, trie-autocomplete [ch15]; binary-search-lower-bound,
+  merge-two-sorted, quickselect, counting-sort [ch16] — kata batch now **20** (106 test cases).
+  **5 pure engines** (`bst-builder`, `heap-operations`, `trie-autocomplete`, `sorting-race`,
+  `binary-search` `/model.ts`) + **`scripts/test-ch15.ts`** (BST/AVL invariants incl. the four
+  rotation cases and sorted-1..15 → height 4, heap validity/drain/Floyd, trie prefix-sharing)
+  and **`scripts/test-ch16.ts`** (all 7 sorts correct on random/sorted/reversed/few-unique ×
+  n∈{0,1,2,17,40}; counting/radix = 0 comparisons; selection/insertion/quick comparison
+  signatures; binary-search + lower-bound edges) — both wired into `npm test`; `test-katas`
+  chapterId set extended to ch15/ch16. **Bug caught by the fail-fast engine tests BEFORE any
+  UI:** insertion sort compared `a[j]` against `a[j+1]`, but the shift overwrites `a[j+1]` —
+  it must compare against the *saved key value*; added `cmpVal` and fixed (test-ch16 went red
+  first, as intended). registryKeys/registry → **33 sims, 18 figs**; new **P4·S8 CSS block**
+  (~800 lines, delegated to a subagent then reviewed — no `.bst/heap/trie/sort/bsearch-`
+  namespace collisions, braces balanced). One lint cleanup: `trie-autocomplete` used a
+  mutable-ref-plus-`version` pattern that tripped `react-hooks/exhaustive-deps` → switched to
+  a `useReducer` force-update + direct (un-memoized) compute; 0 warnings restored.
+  **Adversarial review** (subagent: independent `/tmp` probes on all five engines with
+  adversarial inputs + web-verified every dated fact + recomputed all six quiz indices +
+  hand-checked the four figures and ten kata solutions): **zero blocking, zero factual errors,
+  zero wrong quiz answers, every engine invariant holds** (200-key AVL stays valid+balanced;
+  counting/radix genuinely stable and zero-comparison; lower-bound is the exact insertion
+  point). **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (16 live chapters;
+  33 sims · 18 figs · 16 quizzes · 78 interview Qs · 20 katas; mandate holds) · test ✓ (13
+  suites; +test-ch15, +test-ch16, +10 katas → 106 kata cases) · build ✓** (fresh `dist-s8`:
+  SortingRace 10.9 KB · BstBuilder 10.4 · HeapOperations 8.6 · TrieAutocomplete 6.8 ·
+  BinarySearch 6.1 · the 4 figs 6.4–6.9 · react-vendor 190 KB · index 405 KB/148 gzip — the
+  data modules still sit in the main index bundle, so the S18/S19 lazy-load-the-data note
+  stands). `dist-s8` gitignored (`dist-*`); sandbox `unlink` still blocked (harmless).
+  **INTERACTIVES.md** updated (ch.15/16 sections rewritten to shipped keys + the 10 katas +
+  census). NOT sandbox-testable: real-browser interaction pass — **5-min manual QA after
+  deploy** (bst-builder: insert 1..5 in BST mode → stick, flip to AVL → it rotates level, watch
+  balance factors + LL/RR/LR/RL captions, delete + traversals; heap-operations: push/pop/heapify
+  highlight the same index in both the array and the tree; trie: type a prefix → path lights +
+  suggestions, Insert flags new nodes; sorting-race: set few-unique → counting/radix pull ahead
+  with a 0 in the compares column, set sorted → quicksort blows up, step the access clock;
+  binary-search: window halves, lower-bound lands on the first duplicate; figures auto-play).
+  **S8 CLOSED pending user commit. Next: S9 — P4 · A&DS III: ch.17 (Graphs — `pathfinder`
+  HERO, repr-switcher, topo-stepper) + ch.18 (Design paradigms — dp-table-filler,
+  n-queens) + P4 boss (Pathmaster).**

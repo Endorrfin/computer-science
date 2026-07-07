@@ -38,6 +38,12 @@ export const SIM_KEYS = [
   "array-vs-list-memory", // ch.14 micro — contiguous strides vs pointer-chasing on the RAM grid (reuses ch.6/8 visual)
   "hash-collision-lab", // ch.14 micro — chaining vs open addressing; bad/good hash; load-factor slider → clustering → rehash
   "stack-queue-stepper", // ch.14 micro — push/pop/enqueue/dequeue with pointer arrows
+  // P4 · Algorithms & Data Structures (S8)
+  "bst-builder", // ch.15 micro — grow a BST; Senior AVL mode animates LL/RR/LR/RL rotations + balance factors
+  "heap-operations", // ch.15 micro — min-heap as array AND complete tree; push=sift-up, pop=sift-down, build-heap
+  "trie-autocomplete", // ch.15 micro — type to walk/insert; shared prefixes; autocomplete = collect the subtree
+  "sorting-race", // ch.16 HERO — seven sorts race on a fair access clock; counting/radix show zero comparisons
+  "binary-search", // ch.16 micro — lo/mid/hi window halves each probe; exact search + lower-bound
 ] as const;
 
 export const FIG_KEYS = [
@@ -62,6 +68,11 @@ export const FIG_KEYS = [
   // P4 · Algorithms & Data Structures (S7)
   "complexity-ladder", // ch.13 — the ranked ladder O(1)→O(n!), each rung revealed with a concrete cost at n
   "hash-anatomy", // ch.14 — one lookup stepped: key → hash → index → bucket (chain walk / probe)
+  // P4 · Algorithms & Data Structures (S8)
+  "tree-rotation", // ch.15 — the AVL single right rotation that fixes the left-left case, step by step
+  "rb-intuition", // ch.15 — red-black rules as intuition: no red-red, equal black-heights → O(log n)
+  "merge-recursion", // ch.16 — merge sort's divide-and-merge tree, split to singletons then merge up sorted
+  "sort-stability", // ch.16 — what "stable" means: equal keys keep their input order (the race can't show this)
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

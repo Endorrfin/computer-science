@@ -635,6 +635,100 @@ export const INTERVIEW: InterviewQ[] = [
       "**get(k)**: map-lookup the node, splice it to the head, return its value — all O(1). **put(k,v)**: insert/refresh at the head; if size exceeds capacity, evict the **tail** (least-recently-used) and delete its key from the map — O(1). It must be *doubly* linked because moving or evicting an arbitrary node in O(1) needs its predecessor pointer.\n" +
       "This is the whole chapter in one design: the array/list/hash trade-offs composed so every operation is O(1). (It's also a kata — build it.)",
   },
+
+  // ---- ch.15 · Trees & heaps ----
+  {
+    id: "iv-ch15-1",
+    chapterId: "ch15",
+    level: "mid",
+    q: "When would you choose a balanced BST over a hash table, given the hash table's O(1) lookup?",
+    a:
+      "When you need **order**, which hashing destroys. A balanced BST (or your language's ordered map) gives O(log n) lookup *plus* sorted iteration, min/max, predecessor/successor, and **range queries** (everything between 10 and 20) — none of which a hash table can do without an O(n) scan.\n" +
+      "So: hash table for pure membership/lookup by key; balanced tree when you'll also ask ordered or range questions. Bonus: trees have no worst-case-O(n) collision cliff and no rehash pauses.",
+  },
+  {
+    id: "iv-ch15-2",
+    chapterId: "ch15",
+    level: "senior",
+    q: "An AVL tree and a red-black tree both give O(log n). Why do standard libraries almost always pick red-black?",
+    a:
+      "Because red-black balances **more loosely**, so it rotates **less on writes**. AVL keeps every balance factor in {−1,0,1} (height ≤ ~1.44 log n) — shorter trees, faster lookups, but more rebalancing work per insert/delete. Red-black allows the longest path to be up to 2× the shortest (height ≤ ~2 log n) in exchange for O(1) *amortized* rotations per update.\n" +
+      "For a general-purpose container facing mixed read/write workloads (std::map, TreeMap, the Linux scheduler), cheaper writes win. If the workload were overwhelmingly lookups, AVL's shorter tree could edge ahead — it's a read-vs-write trade, not a 'better/worse'.",
+  },
+  {
+    id: "iv-ch15-3",
+    chapterId: "ch15",
+    level: "senior",
+    q: "Building a heap from n elements: why is bottom-up build-heap O(n) when n insertions would be O(n log n)?",
+    a:
+      "Because the cost is dominated by the **many cheap nodes**, not the few expensive ones. Sifting down a node at height h costs O(h), and a complete tree has ~n/2^(h+1) nodes at height h. Total = Σ h·n/2^(h+1) = n·Σ h/2^(h+1), and Σ h/2^h converges to 2 — a **constant** — so the sum is O(n).\n" +
+      "Intuitively: half the nodes are leaves (zero work), a quarter sift down ≤1, an eighth ≤2 — the O(log n) nodes near the root are too rare to matter. Inserting one at a time is O(n log n) because it processes nodes top-down, where the expensive positions are hit repeatedly. If you have all the data up front, always build-heap.",
+  },
+  {
+    id: "iv-ch15-4",
+    chapterId: "ch15",
+    level: "mid",
+    q: "How would you find the k-th smallest element in a stream, keeping only k items in memory?",
+    a:
+      "Keep a **max-heap of size k**. Push the first k elements; then for each new element, if it's smaller than the heap's max, pop the max and push it. After processing, the heap holds the k smallest seen, and its **root is the k-th smallest**.\n" +
+      "Cost: O(n log k) time, O(k) space — far better than sorting the whole stream (O(n log n), O(n) space) when k ≪ n. The counter-intuitive bit interviewers probe: you use a **max**-heap to track the **smallest** k, because you need cheap access to the *largest of your keepers* to decide what to evict.",
+  },
+  {
+    id: "iv-ch15-5",
+    chapterId: "ch15",
+    level: "staff",
+    q: "Autocomplete over millions of terms: trie, sorted array, or hash table — and what breaks at scale?",
+    a:
+      "For prefix queries, a **trie** is the natural fit — walk the prefix in O(L), then the subtree is the candidate set — and a **sorted array + binary search** for the prefix range is a strong, cache-friendly alternative (two lower-bound queries bracket all completions). A **hash table can't do prefixes at all** (hashing destroys order).\n" +
+      "What breaks: a naive pointer-per-child trie **wastes enormous memory** on millions of terms — fix with compressed/radix tries (collapse single-child chains), a DAWG (share suffixes too), or ternary search trees. And ranking matters: real autocomplete stores a **top-k by frequency** at each node so you return the *best* completions, not just any — otherwise the subtree collect is too large to sort per keystroke.",
+  },
+
+  // ---- ch.16 · Sorting & searching ----
+  {
+    id: "iv-ch16-1",
+    chapterId: "ch16",
+    level: "mid",
+    q: "Write the invariant for a correct binary search, and name the two classic bugs.",
+    a:
+      "Invariant: the target, if present, is always **within the current window** [lo, hi]; each step shrinks the window and preserves that. With an inclusive window: loop while `lo <= hi`, `mid = lo + (hi − lo)/2`, and on a miss move the far bound **past** mid (`lo = mid+1` or `hi = mid−1`) so the window strictly shrinks.\n" +
+      "Bug 1: the **boundary** — using `<` instead of `<=`, or moving to `mid` instead of `mid±1`, which skips the answer or loops forever. Bug 2: the **overflow** — `(lo+hi)/2` overflows for large indices; use `lo + (hi−lo)/2`.",
+  },
+  {
+    id: "iv-ch16-2",
+    chapterId: "ch16",
+    level: "senior",
+    q: "Merge sort and heapsort are both worst-case O(n log n). When do you pick each, and why isn't merge sort the default?",
+    a:
+      "**Heapsort** sorts **in place** (O(1) extra) with a hard O(n log n) worst case — good when memory is tight or you need a guarantee. But its access pattern is **cache-hostile** (sift-down jumps around the array), so it's often slower in wall-clock than quicksort/merge despite equal Big-O.\n" +
+      "**Merge sort** has beautiful **sequential** access (cache-friendly) and is **stable**, but needs **O(n) scratch** memory — the reason it isn't the in-memory default. Where it shines: **external sorting** (data bigger than RAM — merge sorted runs off disk) and **linked lists** (merge needs no random access, so it's the natural list sort). Stability also makes it the base of Timsort.",
+  },
+  {
+    id: "iv-ch16-3",
+    chapterId: "ch16",
+    level: "senior",
+    q: "Prove no comparison sort can do better than O(n log n) in the worst case.",
+    a:
+      "Model any comparison sort as a **decision tree**: internal nodes are comparisons (a<b?), each with a yes/no branch; leaves are the final orderings. To sort every possible input correctly, there must be a **distinct leaf for each of the n! permutations** — so ≥ n! leaves.\n" +
+      "A binary tree with L leaves has height ≥ ⌈log₂ L⌉. The height is the worst-case number of comparisons on some path, so worst-case comparisons ≥ **log₂(n!)**. By Stirling, log₂(n!) = Θ(n log n). Hence some input always forces ~n log n comparisons. Counting/radix dodge this only by never comparing elements — they aren't decision trees over comparisons.",
+  },
+  {
+    id: "iv-ch16-4",
+    chapterId: "ch16",
+    level: "senior",
+    q: "You need the k-th smallest of an unsorted array in expected O(n), not O(n log n). How?",
+    a:
+      "**Quickselect** — quicksort's partition, but recurse into **only one side**. Partition around a pivot; the pivot lands at its final sorted index p. If p == k you're done; if k < p recurse left, else recurse right. Because you discard half the work each time (on average), the recurrence is T(n) = T(n/2) + O(n) = **O(n)** expected, versus sorting's O(n log n).\n" +
+      "Worst case is O(n²) with a bad pivot (same as quicksort); **median-of-medians** gives a guaranteed O(n) pivot if you need the worst-case bound. This is the `nth_element` in C++ and the core of the 'k smallest' kata.",
+  },
+  {
+    id: "iv-ch16-5",
+    chapterId: "ch16",
+    level: "staff",
+    q: "Why does Python's sorted / Java's Arrays.sort use Timsort instead of plain quicksort or merge sort?",
+    a:
+      "Because **real data is rarely random** — it's full of already-sorted stretches (appended logs, partially-updated lists). Timsort exploits that: it finds ascending/descending **runs**, extends short ones with insertion sort, and merges runs with a smart balancing rule — so partly-ordered input approaches **O(n)**, and it's still O(n log n) worst case.\n" +
+      "It's also **stable**, which Java requires for object sorts (so multi-key sorts compose) — quicksort isn't stable, ruling it out there. Primitive arrays in Java *do* use a dual-pivot quicksort (stability is meaningless for primitives, and in-place is cheaper). The staff-level point: library sorts are chosen around **stability guarantees + real-world data shape + memory**, not textbook average-case Big-O.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

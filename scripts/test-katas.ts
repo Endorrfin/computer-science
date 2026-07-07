@@ -33,8 +33,8 @@ console.log("integrity");
   ok("at least 10 katas", KATAS.length >= 10, `count = ${KATAS.length}`);
   for (const k of KATAS) {
     ok(
-      `${k.id}: chapterId in {ch13, ch14}`,
-      k.chapterId === "ch13" || k.chapterId === "ch14",
+      `${k.id}: chapterId in {ch13, ch14, ch15, ch16}`,
+      k.chapterId === "ch13" || k.chapterId === "ch14" || k.chapterId === "ch15" || k.chapterId === "ch16",
       `got ${k.chapterId}`,
     );
     ok(`${k.id}: non-empty exportName`, k.exportName.trim().length > 0);

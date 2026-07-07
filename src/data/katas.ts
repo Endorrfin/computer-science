@@ -972,6 +972,565 @@ assertEqual(c.get(2), 2);`,
       },
     ],
   },
+
+  // ========================================================================
+  // ch15 · Trees & heaps
+  // ========================================================================
+  {
+    id: "bst-insert",
+    chapterId: "ch15",
+    title: "BST insert",
+    difficulty: "core",
+    tags: ["trees", "bst", "recursion"],
+    prompt: `
+Insert \`value\` into a **binary search tree** and return the (possibly new) root.
+
+A node is \`{ value, left, right }\`. Walk down comparing: go **left** for smaller, **right** for larger, and attach a new leaf where you fall off. Duplicates are ignored (this tree holds a set).
+
+- Time: **O(height)**. An in-order walk of a BST yields the keys **sorted**.
+`,
+    signature: `type BSTNode = { value: number; left: BSTNode | null; right: BSTNode | null };
+function bstInsert(root: BSTNode | null, value: number): BSTNode`,
+    exportName: "bstInsert",
+    starter: `function bstInsert(root, value) {
+  // TODO: if root is null, create the node; else recurse left/right by comparison.
+  return root;
+}`,
+    solution: `function bstInsert(root, value) {
+  if (root === null) return { value, left: null, right: null };
+  if (value < root.value) root.left = bstInsert(root.left, value);
+  else if (value > root.value) root.right = bstInsert(root.right, value);
+  return root;
+}`,
+    tests: [
+      { name: "inserting into an empty tree makes a single node", body: `assertDeepEqual(bstInsert(null, 5), { value: 5, left: null, right: null });` },
+      {
+        name: "an in-order walk of the built tree is sorted",
+        body: `function inorder(n){ return n ? [...inorder(n.left), n.value, ...inorder(n.right)] : []; }
+let r = null; for (const v of [5,3,8,1,4,7,9,2]) r = bstInsert(r, v);
+assertDeepEqual(inorder(r), [1,2,3,4,5,7,8,9]);`,
+      },
+      {
+        name: "structure follows the comparisons",
+        body: `let r = null; for (const v of [5,3,8]) r = bstInsert(r, v);
+assertEqual(r.value, 5); assertEqual(r.left.value, 3); assertEqual(r.right.value, 8);`,
+      },
+      {
+        name: "duplicates are ignored",
+        body: `let r = null; for (const v of [5,3,5,3,5]) r = bstInsert(r, v);
+function count(n){ return n ? 1 + count(n.left) + count(n.right) : 0; }
+assertEqual(count(r), 2);`,
+      },
+    ],
+  },
+  {
+    id: "validate-bst",
+    chapterId: "ch15",
+    title: "Validate a BST",
+    difficulty: "core",
+    tags: ["trees", "bst", "invariants"],
+    prompt: `
+Return \`true\` if a binary tree is a **valid binary search tree**: every node's value is greater than **all** values in its left subtree and less than **all** in its right subtree.
+
+The classic wrong answer only checks each node against its *immediate* children — that misses a grandchild that violates an ancestor's bound. Thread a \`(low, high)\` range down instead.
+
+- A node is \`{ value, left, right }\`. Empty and single-node trees are valid.
+`,
+    signature: `function isValidBST(root: BSTNode | null): boolean`,
+    exportName: "isValidBST",
+    starter: `function isValidBST(root) {
+  // NOTE: this only checks immediate children — it wrongly accepts a deep violation.
+  // TODO: thread a (low, high) bound down the recursion instead.
+  if (root === null) return true;
+  if (root.left && root.left.value >= root.value) return false;
+  if (root.right && root.right.value <= root.value) return false;
+  return isValidBST(root.left) && isValidBST(root.right);
+}`,
+    solution: `function isValidBST(root) {
+  function check(n, lo, hi) {
+    if (n === null) return true;
+    if (n.value <= lo || n.value >= hi) return false;
+    return check(n.left, lo, n.value) && check(n.right, n.value, hi);
+  }
+  return check(root, -Infinity, Infinity);
+}`,
+    tests: [
+      {
+        name: "accepts a valid BST",
+        body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+assert(isValidBST(node(10, node(5, node(1), node(7)), node(15))) === true, "should be valid");`,
+      },
+      { name: "empty and single-node trees are valid", body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+assert(isValidBST(null) === true); assert(isValidBST(node(42)) === true);` },
+      {
+        name: "catches a DEEP violation an ancestor bound would reject",
+        body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+// 12 is in 10's LEFT subtree but exceeds 10 — invalid, though it is a valid child of 5
+assert(isValidBST(node(10, node(5, node(1), node(12)), node(15))) === false, "deep violation must be caught");`,
+      },
+      {
+        name: "rejects an out-of-order immediate child",
+        body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+assert(isValidBST(node(10, node(5), node(8))) === false, "right child < root");`,
+      },
+    ],
+  },
+  {
+    id: "bst-level-order",
+    chapterId: "ch15",
+    title: "Level-order traversal",
+    difficulty: "core",
+    tags: ["trees", "bfs", "queue"],
+    prompt: `
+Return the node values in **level order** (breadth-first): root first, then every node at depth 1 left-to-right, then depth 2, and so on.
+
+Use a **queue** (ch.14): dequeue a node, record it, enqueue its children. This is the tree version of BFS you'll meet again on graphs (ch.17).
+
+- A node is \`{ value, left, right }\`. Return \`[]\` for an empty tree.
+`,
+    signature: `function levelOrder(root: BSTNode | null): number[]`,
+    exportName: "levelOrder",
+    starter: `function levelOrder(root) {
+  // TODO: use a queue — dequeue a node, push its value, enqueue its children.
+  return [];
+}`,
+    solution: `function levelOrder(root) {
+  const out = [];
+  const q = root ? [root] : [];
+  while (q.length > 0) {
+    const n = q.shift();
+    out.push(n.value);
+    if (n.left) q.push(n.left);
+    if (n.right) q.push(n.right);
+  }
+  return out;
+}`,
+    tests: [
+      {
+        name: "visits level by level, left to right",
+        body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+const t = node(1, node(2, node(4), node(5)), node(3, null, node(6)));
+assertDeepEqual(levelOrder(t), [1,2,3,4,5,6]);`,
+      },
+      { name: "empty tree is empty", body: `assertDeepEqual(levelOrder(null), []);` },
+      { name: "single node", body: `function node(v,l,r){ return { value:v, left:l||null, right:r||null }; }
+assertDeepEqual(levelOrder(node(7)), [7]);` },
+    ],
+  },
+  {
+    id: "min-heap",
+    chapterId: "ch15",
+    title: "Min-heap (priority queue)",
+    difficulty: "stretch",
+    tags: ["heap", "priority-queue", "array"],
+    prompt: `
+Implement a **binary min-heap** backed by an array. Expose:
+- \`push(v)\` — add a value (sift it **up** while smaller than its parent).
+- \`pop()\` — remove and return the **minimum** (move the last element to the root and sift it **down**); return \`undefined\` when empty.
+- \`peek()\` — the current minimum without removing it.
+- \`size\` — how many values are stored.
+
+Index math (0-based): parent of \`i\` is \`(i-1)>>1\`; children are \`2i+1\` and \`2i+2\`. Push and pop are **O(log n)**.
+`,
+    signature: `class MinHeap {
+  size: number;
+  push(v: number): void;
+  pop(): number | undefined;
+  peek(): number | undefined;
+}`,
+    exportName: "MinHeap",
+    starter: `class MinHeap {
+  constructor() { this.a = []; }
+  get size() { return this.a.length; }
+  peek() { return this.a[0]; }
+  push(v) { this.a.push(v); }        // TODO: sift up to restore heap order
+  pop() { return this.a.pop(); }     // TODO: remove the MIN (root), not the last element
+}`,
+    solution: `class MinHeap {
+  constructor() { this.a = []; }
+  get size() { return this.a.length; }
+  peek() { return this.a.length ? this.a[0] : undefined; }
+  push(v) {
+    const a = this.a; a.push(v); let i = a.length - 1;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (a[i] < a[p]) { const t = a[i]; a[i] = a[p]; a[p] = t; i = p; } else break;
+    }
+  }
+  pop() {
+    const a = this.a; if (a.length === 0) return undefined;
+    const min = a[0]; const last = a.pop();
+    if (a.length > 0) {
+      a[0] = last; let i = 0; const n = a.length;
+      for (;;) {
+        let s = i; const l = 2 * i + 1; const r = 2 * i + 2;
+        if (l < n && a[l] < a[s]) s = l;
+        if (r < n && a[r] < a[s]) s = r;
+        if (s === i) break;
+        const t = a[i]; a[i] = a[s]; a[s] = t; i = s;
+      }
+    }
+    return min;
+  }
+}`,
+    tests: [
+      {
+        name: "pops in ascending order (it is a priority queue)",
+        body: `const h = new MinHeap();
+for (const v of [5,3,8,1,9,2]) h.push(v);
+assertEqual(h.size, 6);
+assertEqual(h.peek(), 1);
+const out = []; while (h.size > 0) out.push(h.pop());
+assertDeepEqual(out, [1,2,3,5,8,9]);`,
+      },
+      {
+        name: "a new global minimum climbs to the root",
+        body: `const h = new MinHeap();
+for (const v of [4,6,8,10]) h.push(v);
+h.push(1);
+assertEqual(h.peek(), 1);`,
+      },
+      { name: "pop on empty returns undefined", body: `const h = new MinHeap(); assertEqual(h.pop(), undefined);` },
+      {
+        name: "handles duplicates",
+        body: `const h = new MinHeap();
+for (const v of [2,1,2,1,2]) h.push(v);
+const out = []; while (h.size > 0) out.push(h.pop());
+assertDeepEqual(out, [1,1,2,2,2]);`,
+      },
+    ],
+  },
+  {
+    id: "heapify",
+    chapterId: "ch15",
+    title: "Build-heap in O(n)",
+    difficulty: "stretch",
+    tags: ["heap", "floyd", "in-place"],
+    prompt: `
+Turn an arbitrary array into a **min-heap in place** using Floyd's bottom-up method, and return it.
+
+Sift **down** every internal node, starting from the **last** one (index \`⌊n/2⌋−1\`) back to the root. Leaves are already trivial heaps, so you skip them — which is why this is **O(n)**, not O(n log n).
+
+- After \`heapify\`, every parent ≤ its children, and \`arr[0]\` is the minimum.
+`,
+    signature: `function heapify(arr: number[]): number[]`,
+    exportName: "heapify",
+    starter: `function heapify(arr) {
+  // TODO: sift down each internal node from ⌊n/2⌋−1 back to 0.
+  return arr;
+}`,
+    solution: `function heapify(arr) {
+  const n = arr.length;
+  function siftDown(i) {
+    for (;;) {
+      let s = i; const l = 2 * i + 1; const r = 2 * i + 2;
+      if (l < n && arr[l] < arr[s]) s = l;
+      if (r < n && arr[r] < arr[s]) s = r;
+      if (s === i) break;
+      const t = arr[i]; arr[i] = arr[s]; arr[s] = t; i = s;
+    }
+  }
+  for (let i = (n >> 1) - 1; i >= 0; i--) siftDown(i);
+  return arr;
+}`,
+    tests: [
+      {
+        name: "produces a valid min-heap",
+        body: `function isMinHeap(a){ for (let i=1;i<a.length;i++){ if (a[i] < a[(i-1)>>1]) return false; } return true; }
+const h = heapify([9,4,7,1,8,3,6,2,5,0]);
+assert(isMinHeap(h), "every parent <= its children");
+assertEqual(h[0], 0);`,
+      },
+      {
+        name: "preserves the multiset of values",
+        body: `const src = [9,4,7,1,8,3,6,2,5,0];
+assertDeepEqual([...heapify(src.slice())].sort((a,b)=>a-b), [0,1,2,3,4,5,6,7,8,9]);`,
+      },
+      {
+        name: "fixes a small out-of-order array",
+        body: `function isMinHeap(a){ for (let i=1;i<a.length;i++){ if (a[i] < a[(i-1)>>1]) return false; } return true; }
+assert(isMinHeap(heapify([3,1,2])), "small case");
+assert(isMinHeap(heapify([5,4,3,2,1])), "reversed");`,
+      },
+    ],
+  },
+  {
+    id: "trie-autocomplete",
+    chapterId: "ch15",
+    title: "Trie with autocomplete",
+    difficulty: "stretch",
+    tags: ["trie", "strings", "prefix"],
+    prompt: `
+Build a **trie** (prefix tree) exposing:
+- \`insert(word)\` — store a word, one character per edge.
+- \`search(word)\` — is this exact word stored? (A path existing is **not** enough — a word needs an end-marker.)
+- \`startsWith(prefix)\` — does any stored word begin with this prefix?
+- \`autocomplete(prefix)\` — all stored words beginning with the prefix, **sorted**.
+
+Lookups are **O(word length)**, independent of how many words are stored; shared prefixes share nodes.
+`,
+    signature: `class Trie {
+  insert(word: string): void;
+  search(word: string): boolean;
+  startsWith(prefix: string): boolean;
+  autocomplete(prefix: string): string[];
+}`,
+    exportName: "Trie",
+    starter: `class Trie {
+  constructor() { this.root = { children: {}, end: false }; }
+  insert(word) {
+    let n = this.root;
+    for (const c of word) { if (!n.children[c]) n.children[c] = { children: {}, end: false }; n = n.children[c]; }
+    n.end = true;
+  }
+  _walk(prefix) { let n = this.root; for (const c of prefix) { if (!n.children[c]) return null; n = n.children[c]; } return n; }
+  search(word) { return this._walk(word) !== null; }   // TODO: a word needs an end-marker, not just a path
+  startsWith(prefix) { return this._walk(prefix) !== null; }
+  autocomplete(prefix) { return []; }                  // TODO: collect the subtree under the prefix
+}`,
+    solution: `class Trie {
+  constructor() { this.root = { children: {}, end: false }; }
+  insert(word) {
+    let n = this.root;
+    for (const c of word) { if (!n.children[c]) n.children[c] = { children: {}, end: false }; n = n.children[c]; }
+    n.end = true;
+  }
+  _walk(prefix) { let n = this.root; for (const c of prefix) { if (!n.children[c]) return null; n = n.children[c]; } return n; }
+  search(word) { const n = this._walk(word); return n !== null && n.end === true; }
+  startsWith(prefix) { return this._walk(prefix) !== null; }
+  autocomplete(prefix) {
+    const start = this._walk(prefix);
+    if (start === null) return [];
+    const out = [];
+    const dfs = (node, acc) => {
+      if (node.end) out.push(acc);
+      for (const c of Object.keys(node.children).sort()) dfs(node.children[c], acc + c);
+    };
+    dfs(start, prefix);
+    return out;
+  }
+}`,
+    tests: [
+      {
+        name: "search distinguishes a word from a mere prefix",
+        body: `const t = new Trie();
+for (const w of ["car","card","care","cat","dog","do"]) t.insert(w);
+assert(t.search("car") === true, "car is a word");
+assert(t.search("ca") === false, "ca is only a prefix");
+assert(t.search("do") === true, "do is both a word and a prefix");`,
+      },
+      {
+        name: "startsWith checks path existence",
+        body: `const t = new Trie();
+for (const w of ["car","cat"]) t.insert(w);
+assert(t.startsWith("ca") === true);
+assert(t.startsWith("z") === false);`,
+      },
+      {
+        name: "autocomplete collects the subtree, sorted",
+        body: `const t = new Trie();
+for (const w of ["car","card","care","cat","dog","do"]) t.insert(w);
+assertDeepEqual(t.autocomplete("car"), ["car","card","care"]);
+assertDeepEqual(t.autocomplete("do"), ["do","dog"]);
+assertDeepEqual(t.autocomplete("z"), []);`,
+      },
+    ],
+  },
+
+  // ========================================================================
+  // ch16 · Sorting & searching
+  // ========================================================================
+  {
+    id: "binary-search-lower-bound",
+    chapterId: "ch16",
+    title: "Lower bound",
+    difficulty: "core",
+    tags: ["search", "binary-search", "boundaries"],
+    prompt: `
+Return the **first index** \`i\` in a **sorted** array where \`arr[i] >= target\` — the **insertion point**. If every element is smaller, return \`arr.length\`.
+
+This is \`lower_bound\` / \`bisect_left\`: with duplicates it lands on the **first** occurrence; for an absent value it gives where it *would* go. Use a half-open window \`[lo, hi)\` and never return early.
+
+- Time: **O(log n)**.
+`,
+    signature: `function lowerBound(arr: number[], target: number): number`,
+    exportName: "lowerBound",
+    starter: `function lowerBound(arr, target) {
+  // TODO: half-open window [lo, hi); shrink until lo === hi = the insertion point.
+  return 0;
+}`,
+    solution: `function lowerBound(arr, target) {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) {
+    const mid = lo + ((hi - lo) >> 1);
+    if (arr[mid] < target) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}`,
+    tests: [
+      {
+        name: "lands on the FIRST of duplicate keys",
+        body: `const a = [1,2,2,2,4,4,5];
+assertEqual(lowerBound(a, 2), 1);
+assertEqual(lowerBound(a, 4), 4);`,
+      },
+      {
+        name: "absent value returns its insertion point",
+        body: `const a = [1,2,2,2,4,4,5];
+assertEqual(lowerBound(a, 3), 4);
+assertEqual(lowerBound(a, 0), 0);
+assertEqual(lowerBound(a, 99), 7);`,
+      },
+      { name: "empty array returns 0", body: `assertEqual(lowerBound([], 5), 0);` },
+      {
+        name: "insertion point is a valid split (everything left is < target)",
+        body: `const a = [2,4,6,8,10];
+for (const t of [1,4,5,10,11]) {
+  const i = lowerBound(a, t);
+  assert(a.slice(0, i).every((v) => v < t), "left of " + i + " all < " + t);
+}`,
+      },
+    ],
+  },
+  {
+    id: "merge-two-sorted",
+    chapterId: "ch16",
+    title: "Merge two sorted arrays",
+    difficulty: "intro",
+    tags: ["sorting", "merge", "two-pointer"],
+    prompt: `
+Merge two **sorted** arrays into one sorted array — the **merge** step at the heart of merge sort.
+
+Walk two pointers, always taking the smaller front element. Do **not** concatenate and re-sort; that throws away the fact that both inputs are already ordered (and costs O(n log n) instead of O(n)).
+
+- Time: **O(n + m)**.
+`,
+    signature: `function merge(a: number[], b: number[]): number[]`,
+    exportName: "merge",
+    starter: `function merge(a, b) {
+  // TODO: two pointers — repeatedly take the smaller front element.
+  return [...a, ...b];
+}`,
+    solution: `function merge(a, b) {
+  const out = [];
+  let i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] <= b[j]) out.push(a[i++]);
+    else out.push(b[j++]);
+  }
+  while (i < a.length) out.push(a[i++]);
+  while (j < b.length) out.push(b[j++]);
+  return out;
+}`,
+    tests: [
+      { name: "interleaves two runs", body: `assertDeepEqual(merge([1,3,5],[2,4,6]), [1,2,3,4,5,6]);` },
+      { name: "handles an empty input", body: `assertDeepEqual(merge([],[1,2]), [1,2]); assertDeepEqual(merge([1,2],[]), [1,2]);` },
+      { name: "handles duplicates across both", body: `assertDeepEqual(merge([1,1,2],[1,3]), [1,1,1,2,3]);` },
+      { name: "handles both empty", body: `assertDeepEqual(merge([],[]), []);` },
+      {
+        name: "merges unequal lengths",
+        body: `assertDeepEqual(merge([1,5,9,12],[3,4]), [1,3,4,5,9,12]);`,
+      },
+    ],
+  },
+  {
+    id: "quickselect",
+    chapterId: "ch16",
+    title: "Quickselect (k-th smallest)",
+    difficulty: "stretch",
+    tags: ["selection", "partition", "divide-and-conquer"],
+    prompt: `
+Return the **k-th smallest** element (1-indexed) of an unsorted array in expected **O(n)** — without fully sorting.
+
+Use quicksort's **partition**, but recurse into only the **one** side that contains rank k. Each step discards about half the array, giving expected O(n). Do not mutate the caller's array.
+
+### Example
+- \`quickselect([7,2,9,4,1], 1)\` → \`1\` (min); \`quickselect([7,2,9,4,1], 3)\` → \`4\` (median)
+`,
+    signature: `function quickselect(arr: number[], k: number): number`,
+    exportName: "quickselect",
+    starter: `function quickselect(arr, k) {
+  // TODO: partition around a pivot; recurse into the side holding rank k.
+  return arr[k - 1]; // wrong: that's the k-th element by POSITION, not by value
+}`,
+    solution: `function quickselect(arr, k) {
+  const a = arr.slice();
+  let lo = 0, hi = a.length - 1;
+  const target = k - 1;
+  while (lo <= hi) {
+    const pivot = a[hi];
+    let i = lo;
+    for (let j = lo; j < hi; j++) {
+      if (a[j] < pivot) { const t = a[i]; a[i] = a[j]; a[j] = t; i++; }
+    }
+    const t = a[i]; a[i] = a[hi]; a[hi] = t;
+    if (i === target) return a[i];
+    if (i < target) lo = i + 1;
+    else hi = i - 1;
+  }
+  return undefined;
+}`,
+    tests: [
+      {
+        name: "matches the sorted array at every rank",
+        body: `const a = [7,2,9,4,1,8,3];
+const sorted = [...a].sort((x,y)=>x-y);
+for (let k=1;k<=a.length;k++) assertEqual(quickselect(a,k), sorted[k-1], "k="+k);`,
+      },
+      { name: "min and max", body: `const a=[7,2,9,4,1]; assertEqual(quickselect(a,1),1); assertEqual(quickselect(a,5),9);` },
+      { name: "single element", body: `assertEqual(quickselect([42],1), 42);` },
+      {
+        name: "does not mutate the input array",
+        body: `const b=[3,1,2]; quickselect(b,2); assertDeepEqual(b,[3,1,2]);`,
+      },
+      {
+        name: "handles duplicates",
+        body: `const a=[5,5,1,5,3]; const s=[...a].sort((x,y)=>x-y);
+for (let k=1;k<=a.length;k++) assertEqual(quickselect(a,k), s[k-1], "k="+k);`,
+      },
+    ],
+  },
+  {
+    id: "counting-sort",
+    chapterId: "ch16",
+    title: "Counting sort",
+    difficulty: "core",
+    tags: ["sorting", "non-comparison", "counting"],
+    prompt: `
+Sort an array of **non-negative integers** with **counting sort** — no element comparisons.
+
+Tally how many of each key there are, then rebuild the array from the tallies (a key that appears 3 times contributes three copies, in order). Runs in **O(n + k)** where k is the largest key.
+
+- This is how you beat the Ω(n log n) comparison bound when keys are small integers.
+`,
+    signature: `function countingSort(arr: number[]): number[]`,
+    exportName: "countingSort",
+    starter: `function countingSort(arr) {
+  // TODO: tally counts[key]++ over 0..max, then emit each key that many times.
+  return arr;
+}`,
+    solution: `function countingSort(arr) {
+  if (arr.length === 0) return [];
+  let max = 0;
+  for (const v of arr) if (v > max) max = v;
+  const count = new Array(max + 1).fill(0);
+  for (const v of arr) count[v]++;
+  const out = [];
+  for (let v = 0; v <= max; v++) for (let c = 0; c < count[v]; c++) out.push(v);
+  return out;
+}`,
+    tests: [
+      { name: "sorts with duplicates", body: `assertDeepEqual(countingSort([3,1,2,3,0]), [0,1,2,3,3]);` },
+      { name: "empty and single", body: `assertDeepEqual(countingSort([]), []); assertDeepEqual(countingSort([5]), [5]);` },
+      { name: "all equal", body: `assertDeepEqual(countingSort([2,2,2]), [2,2,2]);` },
+      {
+        name: "matches a comparison sort on a larger array",
+        body: `const big = []; for (let i=0;i<60;i++) big.push((i*7) % 12);
+assertDeepEqual(countingSort(big), [...big].sort((a,b)=>a-b));`,
+      },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {
