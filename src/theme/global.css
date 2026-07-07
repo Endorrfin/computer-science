@@ -228,15 +228,61 @@ code {
 }
 
 /* ---------- footer ---------- */
+/* CHANGED: two centred rows (identity · tagline + derived stats). Wide enough
+   that the tagline + stats stay on a single line on desktop (2 lines total). */
 .footer {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 18px 24px;
+  padding: 26px 24px 28px;
   border-top: 1px solid var(--line);
   color: var(--tx2);
   font-size: 13.5px;
+}
+.footer-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+}
+.footer-id,
+.footer-tag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 5px 9px;
+  line-height: 1.5;
+}
+.footer-id b {
+  color: var(--tx);
+  font-weight: 650;
+}
+.footer-tag {
+  color: var(--tx3);
+  font-size: 12.75px;
+}
+.footer .sep {
+  color: var(--line);
+  user-select: none;
+}
+.footer .flink {
+  color: var(--tx2);
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.footer .flink:hover,
+.footer .flink:focus-visible {
+  color: var(--p7);
+  border-bottom-color: var(--p7);
+  outline: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .footer .flink {
+    transition: none;
+  }
 }
 
 /* ---------- stack map ---------- */
