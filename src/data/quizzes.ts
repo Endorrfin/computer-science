@@ -654,6 +654,86 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "scheduling-predict",
+    chapterId: "ch22",
+    questions: [
+      {
+        prompt:
+          "Three processes arrive together at t = 0: **P1** (burst 20), **P2** (burst 2), **P3** (burst 2). Under **FCFS**, what is the average waiting time?",
+        options: ["14", "2", "8", "24"],
+        answer: 0,
+        explain:
+          "FCFS runs them in arrival order: P1 waits 0, P2 waits 20, P3 waits 22 → (0 + 20 + 22) / 3 = **14**. That's the **convoy effect** — two tiny jobs stuck behind one long one. Shortest-job-first would run P2, P3, P1 for waits 0, 2, 4 → average **2**. Load this into the scheduler-sim and flip FCFS → SJF to watch the Gantt (and the number) collapse.",
+      },
+      {
+        prompt:
+          "You set **round-robin** to a very small quantum (1 tick) on a machine where each context switch costs real time. Compared with a large quantum, what happens?",
+        options: [
+          "Throughput drops — most of the CPU goes to context switches",
+          "Turnaround always improves",
+          "It behaves exactly like SJF",
+          "Page faults increase",
+        ],
+        answer: 0,
+        explain:
+          "A tiny quantum means the scheduler switches constantly, and each switch burns cycles saving/restoring state and running cold. Overhead eats the CPU. The opposite extreme — a huge quantum — decays into **FCFS**. Turn on the context-switch cost in the sim and shrink the quantum: utilization visibly falls.",
+      },
+      {
+        prompt:
+          "**SJF** is provably optimal for average waiting time. Why don't real operating systems simply use it?",
+        options: [
+          "It needs each job's CPU-burst length in advance, which the OS can't know",
+          "It only works on a single core",
+          "It causes deadlocks",
+          "It is patented",
+        ],
+        answer: 0,
+        explain:
+          "SJF requires an **oracle** for burst lengths you don't have — a program's next CPU burst isn't known until it runs. Real schedulers *estimate* it (e.g. exponential averaging of past bursts) or sidestep it entirely with feedback schemes like **MLFQ**, which infer 'short and interactive' from behaviour instead of asking.",
+      },
+    ],
+  },
+  {
+    id: "paging-predict",
+    chapterId: "ch23",
+    questions: [
+      {
+        prompt:
+          "Under **FIFO** page replacement you increase the frames from 3 to 4. Can the number of page faults **increase**?",
+        options: [
+          "Yes — that's Bélády's anomaly",
+          "No, more frames can never increase faults",
+          "Only if the page size is 4 KiB",
+          "Only under LRU",
+        ],
+        answer: 0,
+        explain:
+          "FIFO isn't a **stack algorithm** (its resident set with n frames need not be a subset of the set with n+1), so more memory can cost *more* faults. The classic witness **1 2 3 4 1 2 5 1 2 3 4 5** faults 9 times with 3 frames but **10** times with 4 — Bélády's anomaly. LRU and Optimal are immune.",
+      },
+      {
+        prompt:
+          "A process reads a **valid** address whose page was evicted to disk. What happens?",
+        options: [
+          "A page fault traps to the OS, which loads the page and restarts the instruction",
+          "The program crashes with a segmentation fault",
+          "The read returns garbage",
+          "The CPU halts until reboot",
+        ],
+        answer: 0,
+        explain:
+          "A **page fault is not a crash**. The access is legal; the page just isn't resident. The MMU traps, the OS fetches the page (evicting a victim if needed), fixes the table, and re-runs the instruction — invisibly. A **segfault** is different: that's touching an *invalid* address (no valid mapping at all).",
+      },
+      {
+        prompt:
+          "Reference string **1 2 3 1 2 4 1 2 5**, **3 frames**. FIFO produces **7** page faults. How many does **LRU** produce?",
+        options: ["5", "7", "9", "3"],
+        answer: 0,
+        explain:
+          "**5.** LRU keeps the hot pages 1 and 2 resident because they're used recently and often, so only 1, 2, 3, 4, 5 each fault once. FIFO evicts 1 and 2 just for being *old*, then has to fault them back in — 7 faults. Run both in page-fault-lab on this string to see the two extra FIFO faults.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

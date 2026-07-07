@@ -1957,6 +1957,215 @@ assertEqual(isHamiltonianCycle(3, e, [0, 1, 2]), true);
 assertEqual(isHamiltonianCycle(3, e, [0, 2, 1]), true);` },
     ],
   },
+  // ======================================================================
+  // ch22 · Processes & scheduling
+  // ======================================================================
+  {
+    id: "sjf-average-wait",
+    chapterId: "ch22",
+    title: "SJF average waiting time",
+    difficulty: "core",
+    tags: ["os", "scheduling", "greedy"],
+    prompt: `
+All processes are ready at time 0 with the given CPU **burst** times. Return the **minimum possible average waiting time**, which **Shortest-Job-First** achieves.
+
+Waiting time of a process = time it spends in the ready queue before it first runs (here, the sum of all bursts scheduled before it). Run the shortest bursts first to minimise the total.
+
+- Return \`0\` for an empty list.
+
+### Examples
+- \`sjfAverageWait([6, 8, 7, 3])\` → \`7\`  (order 3, 6, 7, 8 → waits 0, 3, 9, 16)
+- \`sjfAverageWait([3, 3, 3])\` → \`3\`
+`,
+    signature: `function sjfAverageWait(bursts: number[]): number`,
+    exportName: "sjfAverageWait",
+    starter: `function sjfAverageWait(bursts) {
+  // TODO: schedule shortest-first; average the per-process waiting times.
+  return 0;
+}`,
+    solution: `function sjfAverageWait(bursts) {
+  if (bursts.length === 0) return 0;
+  const sorted = [...bursts].sort((a, b) => a - b);
+  let wait = 0;
+  let total = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    total += wait;
+    wait += sorted[i];
+  }
+  return total / sorted.length;
+}`,
+    tests: [
+      { name: "classic four-job instance → 7", body: `assertEqual(sjfAverageWait([6, 8, 7, 3]), 7);` },
+      { name: "equal bursts → 3", body: `assertEqual(sjfAverageWait([3, 3, 3]), 3);` },
+      { name: "input order does not matter (it sorts)", body: `assertEqual(sjfAverageWait([8, 7, 6, 3]), 7);` },
+      { name: "empty list → 0", body: `assertEqual(sjfAverageWait([]), 0);` },
+      { name: "single process never waits → 0", body: `assertEqual(sjfAverageWait([42]), 0);` },
+      { name: "fractional average is exact", body: `assert(Math.abs(sjfAverageWait([1, 2, 4]) - 4 / 3) < 1e-9, "want 4/3");` },
+      {
+        name: "SJF beats the reverse (longest-first) order",
+        body: `const b = [2, 4, 6, 8];
+// longest-first total waiting = 0 + 8 + 12 + 14 = 34 → avg 8.5; SJF must be less
+assert(sjfAverageWait(b) < 8.5, "SJF should be strictly better than longest-first");
+assertEqual(sjfAverageWait(b), 5);`,
+      },
+    ],
+  },
+  {
+    id: "round-robin-order",
+    chapterId: "ch22",
+    title: "Round-robin dispatch order",
+    difficulty: "core",
+    tags: ["os", "scheduling", "queue"],
+    prompt: `
+Processes \`0 … n−1\` are all ready at time 0 with the given **burst** times. Simulate **round-robin** with the given time \`quantum\` and return the sequence of process **indices** in the order they receive the CPU — one entry per dispatched slice (a slice runs for \`min(quantum, remaining)\`).
+
+Use a FIFO ready queue: dispatch the front process for one slice, and if it still has time left, re-enqueue it at the **back**.
+
+### Examples
+- \`roundRobinOrder([4, 2, 3], 2)\` → \`[0, 1, 2, 0, 2]\`
+- \`roundRobinOrder([5], 2)\` → \`[0, 0, 0]\`
+- \`roundRobinOrder([3, 3], 3)\` → \`[0, 1]\`
+`,
+    signature: `function roundRobinOrder(bursts: number[], quantum: number): number[]`,
+    exportName: "roundRobinOrder",
+    starter: `function roundRobinOrder(bursts, quantum) {
+  // TODO: FIFO queue; dispatch a slice, re-enqueue if work remains.
+  return [];
+}`,
+    solution: `function roundRobinOrder(bursts, quantum) {
+  const remaining = bursts.map((b) => b);
+  const queue = [];
+  for (let i = 0; i < bursts.length; i++) if (remaining[i] > 0) queue.push(i);
+  const order = [];
+  while (queue.length > 0) {
+    const i = queue.shift();
+    order.push(i);
+    remaining[i] -= Math.min(quantum, remaining[i]);
+    if (remaining[i] > 0) queue.push(i);
+  }
+  return order;
+}`,
+    tests: [
+      { name: "three processes, quantum 2", body: `assertDeepEqual(roundRobinOrder([4, 2, 3], 2), [0, 1, 2, 0, 2]);` },
+      { name: "single long process is sliced", body: `assertDeepEqual(roundRobinOrder([5], 2), [0, 0, 0]);` },
+      { name: "each fits in one quantum", body: `assertDeepEqual(roundRobinOrder([3, 3], 3), [0, 1]);` },
+      { name: "empty input → empty order", body: `assertDeepEqual(roundRobinOrder([], 2), []);` },
+      { name: "huge quantum degenerates to FCFS", body: `assertDeepEqual(roundRobinOrder([2, 5, 1], 100), [0, 1, 2]);` },
+      {
+        name: "index i appears ceil(burst/quantum) times",
+        body: `const bursts = [4, 2, 3];
+const q = 2;
+const order = roundRobinOrder(bursts, q);
+for (let i = 0; i < bursts.length; i++) {
+  const count = order.filter((x) => x === i).length;
+  assertEqual(count, Math.ceil(bursts[i] / q), "dispatches of P" + i);
+}`,
+      },
+    ],
+  },
+  // ======================================================================
+  // ch23 · Memory
+  // ======================================================================
+  {
+    id: "page-table-translate",
+    chapterId: "ch23",
+    title: "Virtual → physical translation",
+    difficulty: "core",
+    tags: ["os", "memory", "paging", "bit-manipulation"],
+    prompt: `
+Translate a **virtual address** to a **physical address** through a single-level page table.
+
+- \`pageSize\` is a power of two.
+- \`pageTable[vpn]\` is the physical **frame** number for virtual page \`vpn\`, or \`-1\` if that page is **not present** (invalid).
+- Split the address: \`offset = addr mod pageSize\`, \`vpn = ⌊addr / pageSize⌋\`.
+- If \`vpn\` is out of range **or** the entry is \`-1\`, it's a **page fault** — return \`-1\`.
+- Otherwise return \`frame × pageSize + offset\`.
+
+### Examples
+- \`translateAddress(16, [5, -1, 3], 2)\` → \`82\`  (vpn 0, frame 5 → 5·16+2)
+- \`translateAddress(16, [5, -1, 3], 18)\` → \`-1\`  (vpn 1 is not present)
+`,
+    signature: `function translateAddress(pageSize: number, pageTable: number[], addr: number): number`,
+    exportName: "translateAddress",
+    starter: `function translateAddress(pageSize, pageTable, addr) {
+  // TODO: split into vpn/offset, look up the frame, handle faults.
+  return -1;
+}`,
+    solution: `function translateAddress(pageSize, pageTable, addr) {
+  const offset = addr % pageSize;
+  const vpn = Math.floor(addr / pageSize);
+  if (vpn < 0 || vpn >= pageTable.length) return -1;
+  const frame = pageTable[vpn];
+  if (frame < 0) return -1;
+  return frame * pageSize + offset;
+}`,
+    tests: [
+      { name: "present page, low offset", body: `assertEqual(translateAddress(16, [5, -1, 3], 2), 82);` },
+      { name: "present page, second entry via offset math", body: `assertEqual(translateAddress(16, [5, -1, 3], 33), 49);` },
+      { name: "not-present page → fault", body: `assertEqual(translateAddress(16, [5, -1, 3], 18), -1);` },
+      { name: "vpn beyond the table → fault", body: `assertEqual(translateAddress(16, [5, -1, 3], 100), -1);` },
+      { name: "4 KiB page, offset preserved", body: `assertEqual(translateAddress(4096, [2], 100), 8292);` },
+      {
+        name: "offset never leaks into the frame",
+        body: `// max offset stays within the page
+assertEqual(translateAddress(16, [5], 15), 5 * 16 + 15);
+assertEqual(translateAddress(16, [5], 16), -1); // vpn 1, out of range`,
+      },
+    ],
+  },
+  {
+    id: "fifo-page-faults",
+    chapterId: "ch23",
+    title: "FIFO page faults",
+    difficulty: "core",
+    tags: ["os", "memory", "paging", "queue"],
+    prompt: `
+Count the **page faults** a reference string causes under **FIFO** replacement with \`frames\` physical frames.
+
+A reference is a **fault** if the page isn't resident. On a fault: if a frame is free, load it there; otherwise evict the **oldest-loaded** page (first in, first out) and load the new one. A reference to a resident page is a hit (no fault).
+
+### Examples
+- \`fifoPageFaults([1, 2, 3, 1, 2, 4, 1, 2, 5], 3)\` → \`7\`
+- \`fifoPageFaults([1, 2, 3], 3)\` → \`3\`  (all cold misses)
+
+> Bonus intuition: try the string \`1 2 3 4 1 2 5 1 2 3 4 5\` with 3 vs 4 frames and watch FIFO fault **more** with more memory — Bélády's anomaly.
+`,
+    signature: `function fifoPageFaults(refs: number[], frames: number): number`,
+    exportName: "fifoPageFaults",
+    starter: `function fifoPageFaults(refs, frames) {
+  // TODO: track the resident set + a FIFO queue of load order.
+  return 0;
+}`,
+    solution: `function fifoPageFaults(refs, frames) {
+  const resident = new Set();
+  const queue = [];
+  let faults = 0;
+  for (const page of refs) {
+    if (resident.has(page)) continue;
+    faults++;
+    if (resident.size >= frames) {
+      const victim = queue.shift();
+      resident.delete(victim);
+    }
+    resident.add(page);
+    queue.push(page);
+  }
+  return faults;
+}`,
+    tests: [
+      { name: "hot pages evicted by age → 7 faults", body: `assertEqual(fifoPageFaults([1, 2, 3, 1, 2, 4, 1, 2, 5], 3), 7);` },
+      { name: "all distinct, enough frames → all cold misses", body: `assertEqual(fifoPageFaults([1, 2, 3], 3), 3);` },
+      { name: "one page hammered → 1 fault", body: `assertEqual(fifoPageFaults([1, 1, 1, 1], 1), 1);` },
+      { name: "empty string → 0 faults", body: `assertEqual(fifoPageFaults([], 3), 0);` },
+      {
+        name: "Bélády's anomaly: more frames, MORE faults",
+        body: `const s = [1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5];
+assertEqual(fifoPageFaults(s, 3), 9);
+assertEqual(fifoPageFaults(s, 4), 10);
+assert(fifoPageFaults(s, 4) > fifoPageFaults(s, 3), "the anomaly");`,
+      },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

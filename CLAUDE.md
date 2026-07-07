@@ -970,3 +970,58 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   **S10 CLOSED pending user commit — suggested branch `feat/s10-p5-theory`. PART 5 COMPLETE. Next:
   S11 — P6 · Operating Systems I: ch.22 (Processes & scheduling — scheduler-sim HERO) + ch.23
   (Memory — paging/address-translation steppers).**
+- **2026-07-07 · S11 (P6 · Operating Systems I)** — ch.22–23 built to the golden bar; the guide
+  now carries the OS's two great illusions, time-sharing and virtual memory. **Kickoff (4
+  AskUserQuestion):** user chose (1) **whole S11 in one pass**; (2) the **canonical scheduler set**
+  — FCFS, SJF, SRTF, RR, preemptive Priority + **aging/starvation**, plus **MLFQ** as a senior
+  stretch; (3) **deep paging** — TLB + a single/2-level walk toggle, and FIFO/LRU/**Optimal**/**Clock**
+  with **Bélády's anomaly** + thrashing; (4) **stage-only** hand-off (user commits on the Mac). The
+  **P6 boss stays in S12** (`deadlock-lab`, ch.25). **ch.22 Processes & scheduling** (story: **Corbató
+  / CTSS**, MIT, 1961, IBM 709 — web-verified): program vs process, the PCB + the new→ready→running→
+  blocked→terminated state machine, process vs thread, **user/kernel mode + the system-call trap**,
+  the context switch (direct ~µs vs the larger indirect cache/TLB cost), the five scheduling criteria,
+  the FCFS/SJF/SRTF/RR/priority/MLFQ family + a senior **O(1)→CFS→EEVDF** beat (**EEVDF default since
+  Linux 6.6, Oct 2023** — web-verified) and a formal SJF-optimality proof — 7 keyPoints, 4 pitfalls, 6
+  sources. **ch.23 Memory** (story: **Kilburn / Atlas** "one-level store", Manchester, Dec 1962 — web-
+  verified): virtual memory & the address space, paging (page/frame/page-table, the offset-passes-through
+  bit split), the **TLB**, the **page fault** (vs segfault) + replacement, thrashing & **Denning's working
+  set (1968)**, and a senior **x86-64 4-/5-level, 4 KiB/2 MiB/1 GiB huge-pages** beat — 7 keyPoints, 4
+  pitfalls, 7 sources. **1 HERO + 3 micro + 2 fig + 2 quiz** — **`scheduler-sim` HERO** (editable process
+  table; FCFS/SJF/SRTF/RR/priority/MLFQ; Gantt revealed by the transport; per-process wait/turnaround/
+  response + averages/util; context-switch-cost slider; Convoy/Mixed/RR presets), `syscall-boundary`
+  (7-step user↔kernel trap, mode bit + one vetted entry point), `address-translate` (bit-split → single/
+  2-level walk → persistent TLB → physical, or page-fault trap), `page-fault-lab` (FIFO/LRU/Optimal/Clock
+  with ref-bits+hand; fault-vs-frames curve; Bélády callout; Silberschatz/Bélády presets); figs
+  `process-states` (8-frame lifecycle walk) + `stack-vs-heap` (7-frame address space, leak → OOM); quizzes
+  `scheduling-predict` / `paging-predict`; **+4 katas** (sjf-average-wait, round-robin-order [ch22];
+  page-table-translate, fifo-page-faults [ch23]) → batch now **34**. **2 pure engines** (`scheduler-sim/
+  model.ts` — a unit-time scheduler + a separate context-switch-overlay pass, so CS=0 reproduces the
+  textbook exactly; `paging/model.ts` — address translation + FIFO/LRU/Optimal/Clock + working-set/curve
+  helpers) + **`scripts/test-ch22.ts`** (FCFS/SJF/SRTF/RR/priority Gantt + avg wait/turnaround vs the
+  canonical **Silberschatz** instances; RR arrival-vs-preemption tie-break; CS accounting; aging rescues a
+  starved job 16→14; MLFQ favours short jobs; per-algorithm invariants) and **`scripts/test-ch23.ts`**
+  (VA→PA arithmetic single/2-level; TLB LRU; **Silberschatz FIFO 15 / LRU 12 / OPT 9**; **Bélády 3f=9,
+  4f=10**; Optimal-minimality; working set) — wired into `npm test` + `verify`; test-katas whitelist
+  extended to ch22–23. **Sim components + figures were delegated to parallel subagents then reviewed**
+  (each built only its own file against the tested engines; per-sim styles in `src/theme/_p6css/*.css`
+  imported as side-effects; figures inline-styled). **Adversarial review** (subagent: independent Node
+  probes + a from-scratch exhaustive Optimal/SJF minimizer confirming the engines are *externally*
+  correct, not just self-consistent; recomputed all 6 quiz keys; hand-traced the katas; web-re-verified
+  every dated fact incl. EEVDF-still-default-2026, Atlas Dec 1962, Bélády 1969, Denning 1968, x86-64 page
+  sizes): **no blocking issues** — one polish item actioned (the CTSS hook said "Spring 1961 …
+  demonstrates"; the public demo was **November 1961**, spring was project start — softened to "1961 …
+  that November"). **verify = typecheck ✓ · lint ✓ (0/0) · qa ✓ (23 live chapters; 48 sims · 24 figs ·
+  23 quizzes · 118 interview Qs · 34 katas · 10 bosses; mandate holds) · test ✓ (18 suites; +test-ch22/23,
+  +4 katas) · build ✓** (fresh `dist-s11`: SchedulerSim 15.9 KB · TuringMachine 18.0 · CompilerPipeline
+  24.4 · PageFaultLab 8.7 · AddressTranslate 8.4 · StackVsHeap 7.8 · SyscallBoundary 7.1 · react-vendor
+  190 KB · index 573 KB/208 gzip — data still in the main bundle, S18/S19 lazy-load note stands).
+  `dist-s11` gitignored (`dist-*`); sandbox `unlink` still blocked (build uses a fresh `--outDir`).
+  **INTERACTIVES.md** updated (ch.22–23 → shipped keys + 2 quizzes + 4 katas + census → P6 OS I done).
+  NOT sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (scheduler-sim:
+  load Convoy, flip FCFS→SJF and watch avg-wait 14→2, turn on CS cost + shrink quantum to see utilization
+  drop, try MLFQ; syscall-boundary: step the 7 stages, watch the mode bit flip at the trap; address-
+  translate: translate a present VA then repeat for a TLB hit, then a fault VA, toggle 1↔2 levels;
+  page-fault-lab: Bélády preset under FIFO at 3 vs 4 frames → anomaly callout, switch to LRU/Optimal;
+  process-states / stack-vs-heap: step + auto-play). **S11 CLOSED pending user commit — suggested branch
+  `feat/s11-p6-os-i`. Next: S12 — P6 · OS II: ch.24 (Files & storage) + ch.25 (Concurrency — deadlock-lab
+  HERO) + the P6 *Deadlock Breaker* boss.**

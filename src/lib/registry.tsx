@@ -58,6 +58,11 @@ const sims: Record<SimKey, LazyComp> = {
   "turing-machine": lazy(() => import("../components/sims/turing/TuringMachine.tsx")),
   "brute-force-death-watch": lazy(() => import("../components/sims/complexity/BruteForceDeathWatch.tsx")),
   "tsp-playground": lazy(() => import("../components/sims/complexity/TspPlayground.tsx")),
+  // P6 · Operating Systems
+  "scheduler-sim": lazy(() => import("../components/sims/scheduler-sim/SchedulerSim.tsx")),
+  "syscall-boundary": lazy(() => import("../components/sims/syscall-boundary/SyscallBoundary.tsx")),
+  "address-translate": lazy(() => import("../components/sims/paging/AddressTranslate.tsx")),
+  "page-fault-lab": lazy(() => import("../components/sims/paging/PageFaultLab.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -88,6 +93,9 @@ const figs: Record<FigKey, LazyComp> = {
   "chomsky-rings": lazy(() => import("../components/figures/ChomskyRings.tsx")),
   "halting-paradox": lazy(() => import("../components/figures/HaltingParadox.tsx")),
   "pnp-map": lazy(() => import("../components/figures/PnpMap.tsx")),
+  // P6 · Operating Systems
+  "process-states": lazy(() => import("../components/figures/ProcessStates.tsx")),
+  "stack-vs-heap": lazy(() => import("../components/figures/StackVsHeap.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

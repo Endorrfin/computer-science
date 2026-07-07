@@ -1,0 +1,400 @@
+/* scheduler-sim ([HERO] ch.22) — layout, hover and the Gantt reveal animation
+   only. All functional coloring (per-process hues, CS / idle / done semantics)
+   is inline-styled from theme vars in SchedulerSim.tsx, so the sim still reads
+   correctly without this sheet. Prefix: sch-. Reduced motion honored below. */
+
+/* ------------------------------- layout ------------------------------- */
+.sch-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ------------------------------- controls ------------------------------- */
+.sch-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.sch-ctl .ss-field {
+  gap: 6px;
+}
+.sch-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8rem;
+  max-width: 34vw;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  outline-offset: 3px;
+  vertical-align: middle;
+}
+.sch-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.08s ease;
+}
+.sch-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.sch-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+}
+.sch-slider:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+.sch-numval {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.2em;
+  display: inline-block;
+  text-align: right;
+}
+.sch-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.sch-toggle input {
+  accent-color: var(--accent, var(--sem-state));
+  cursor: pointer;
+}
+
+/* ------------------------------- presets ------------------------------- */
+.sch-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.sch-preset-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.sch-preset {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 11px;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease;
+}
+.sch-preset:hover {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--accent, var(--tx2)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--tx2)) 10%, var(--s2));
+}
+.sch-preset:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+  outline-offset: 2px;
+}
+
+/* ------------------------------- process editor ------------------------------- */
+.sch-panel {
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+.sch-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sch-panel-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.sch-proc-table {
+  display: grid;
+  gap: 6px;
+}
+.sch-proc-row {
+  display: grid;
+  grid-template-columns: 1.4rem repeat(4, minmax(0, 1fr)) 1.8rem;
+  align-items: center;
+  gap: 8px;
+}
+.sch-proc-head {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.sch-proc-head span {
+  padding: 0 2px;
+}
+.sch-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  justify-self: center;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 80%, transparent);
+}
+.sch-num {
+  width: 100%;
+  min-width: 0;
+  background: var(--surface);
+  color: var(--tx);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.12s ease;
+}
+.sch-num:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--tx2)) 40%, var(--line));
+}
+.sch-num:focus-visible {
+  outline: none;
+  border-color: var(--accent, var(--tx2));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, var(--tx2)) 25%, transparent);
+}
+.sch-num:disabled {
+  opacity: 0.4;
+}
+.sch-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--tx3);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease;
+}
+.sch-iconbtn:hover:not(:disabled) {
+  color: var(--sem-err);
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 10%, transparent);
+}
+.sch-iconbtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.sch-addbtn {
+  margin-top: 4px;
+  justify-self: start;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 12px;
+  color: var(--tx2);
+  background: var(--surface);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+.sch-addbtn:hover:not(:disabled) {
+  color: var(--accent, var(--tx));
+  border-color: color-mix(in srgb, var(--accent, var(--tx2)) 60%, var(--line));
+}
+.sch-addbtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ------------------------------- gantt ------------------------------- */
+.sch-gantt {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px 8px;
+}
+.sch-gantt-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.sch-seg {
+  transition:
+    opacity 0.25s ease,
+    fill 0.2s ease;
+}
+.sch-seg-rect {
+  transition: opacity 0.25s ease;
+}
+.sch-seg.is-head .sch-seg-rect {
+  filter: drop-shadow(0 0 5px currentColor);
+}
+.sch-cursor {
+  transition: transform 0.12s linear;
+}
+.sch-tick {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.sch-tick-lbl {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sch-seg-lbl {
+  fill: var(--tx);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.sch-lane-lbl {
+  fill: var(--tx3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ------------------------------- legend ------------------------------- */
+.sch-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+.sch-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.sch-legend-chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.sch-legend-chip.is-cs {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--sem-control),
+    var(--sem-control) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  border: 1px solid color-mix(in srgb, var(--sem-control) 60%, transparent);
+}
+
+/* ------------------------------- stats ------------------------------- */
+.sch-stats {
+  overflow-x: auto;
+}
+.sch-stats table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sch-stats caption {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: 8px;
+}
+.sch-stats th,
+.sch-stats td {
+  text-align: right;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.sch-stats thead th {
+  color: var(--tx3);
+  font-weight: 500;
+  font-size: 11px;
+  border-bottom: 1px solid var(--line);
+}
+.sch-stats td.sch-cell-id,
+.sch-stats th.sch-cell-id {
+  text-align: left;
+}
+.sch-cell-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--tx);
+}
+.sch-stats tbody tr {
+  transition: background 0.14s ease;
+}
+.sch-stats tbody tr:hover {
+  background: color-mix(in srgb, var(--accent, var(--tx2)) 6%, transparent);
+}
+.sch-stats tfoot td {
+  color: var(--tx2);
+  border-bottom: none;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.sch-stats tfoot .sch-summary-lbl {
+  text-align: left;
+  color: var(--tx3);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.sch-stat-strong {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .sch-seg,
+  .sch-seg-rect,
+  .sch-cursor,
+  .sch-preset,
+  .sch-num,
+  .sch-iconbtn,
+  .sch-addbtn,
+  .sch-slider::-webkit-slider-thumb,
+  .sch-stats tbody tr {
+    transition: none;
+  }
+}

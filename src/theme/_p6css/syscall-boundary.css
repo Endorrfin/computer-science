@@ -1,0 +1,275 @@
+/* syscall-boundary (ch.22 micro) — small sheet: layout / hover / animation only.
+   All functional coloring is inline-styled from theme vars in
+   SyscallBoundary.tsx, so the sim still reads correctly if this sheet is absent.
+   Prefix: syb-. */
+
+.syb-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* ---- diagram ------------------------------------------------------------- */
+.syb-diagram {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 6px;
+}
+.syb-diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.syb-lane-lbl {
+  font: 700 14px var(--font-head);
+  letter-spacing: 0.06em;
+}
+.syb-lane-sub {
+  font: 12px var(--font-body);
+  fill: var(--tx3);
+}
+.syb-tiny {
+  font: 10px var(--font-mono);
+  fill: var(--tx3);
+  letter-spacing: 0.04em;
+}
+.syb-reg-t {
+  font: 11px var(--font-mono);
+  fill: var(--tx2);
+}
+.syb-entry-t {
+  font: 700 13px var(--font-mono);
+  letter-spacing: 0.02em;
+}
+
+/* lanes dim slightly until they hold the CPU */
+.syb-lane {
+  opacity: 0.72;
+}
+.syb-lane.active {
+  opacity: 1;
+}
+.syb-regs,
+.syb-entry {
+  opacity: 0.85;
+}
+.syb-regs.hot,
+.syb-entry.hot {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .syb-lane,
+  .syb-regs rect,
+  .syb-entry rect {
+    transition: opacity 0.28s ease, stroke 0.28s ease, fill 0.28s ease;
+  }
+}
+
+/* ---- the privilege wall + trap gate ------------------------------------- */
+.syb-wall {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--syb-accent, #22d3ee) 55%, transparent));
+}
+.syb-wall-lbl {
+  font: 700 12px var(--font-head);
+  letter-spacing: 0.16em;
+}
+.syb-gate rect {
+  opacity: 0.6;
+}
+.syb-gate.open rect {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .syb-gate rect {
+    transition: opacity 0.28s ease, fill 0.28s ease;
+  }
+  .syb-gate.open rect {
+    animation: syb-gate-pulse 1.1s ease-in-out infinite;
+  }
+}
+@keyframes syb-gate-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ---- the control token (the thread of execution) ------------------------ */
+.syb-token {
+  will-change: transform;
+}
+.syb-token-t {
+  font: 700 10px var(--font-mono);
+  fill: var(--bg);
+  letter-spacing: 0.04em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .syb-token {
+    transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+/* explicit escape hatch: the component adds .no-anim under reduced motion */
+.syb-token.no-anim {
+  transition: none;
+}
+
+/* ---- caption ------------------------------------------------------------- */
+.syb-caption {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  min-height: 3rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx);
+}
+.syb-caption-n {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  font: 700 0.8rem var(--font-mono);
+  color: var(--bg);
+}
+.syb-caption-n.is-user {
+  background: var(--sem-data);
+}
+.syb-caption-n.is-kernel {
+  background: var(--sem-control);
+}
+.syb-caption-t {
+  padding-top: 1px;
+}
+.syb-kbd {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.05em 0.35em;
+  border-radius: var(--r-s);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  color: var(--tx);
+}
+
+/* ---- two teaching points ------------------------------------------------- */
+.syb-teach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.syb-teach-item {
+  flex: 1 1 15rem;
+  min-width: 12rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--tx2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--syb-accent, #22d3ee);
+  border-radius: var(--r-s);
+  padding: 0.5rem 0.7rem;
+}
+.syb-teach-item b {
+  color: var(--tx);
+}
+
+/* ---- mode-bit indicator (in toolbar controls) --------------------------- */
+.syb-modebit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.75rem;
+}
+.syb-modebit-lbl {
+  color: var(--tx3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.syb-modebit-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line);
+}
+.syb-modebit-val.is-user {
+  color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+}
+.syb-modebit-val.is-kernel {
+  color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--sem-control) 50%, var(--line));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .syb-modebit-val {
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+}
+
+/* ---- footer: numbered step chips ---------------------------------------- */
+.syb-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.syb-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.6rem 0.28rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--tx3);
+  background: var(--surface);
+}
+.syb-step-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  font: 700 0.68rem var(--font-mono);
+  background: var(--s2);
+  color: var(--tx3);
+}
+.syb-step-t {
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+}
+.syb-step.done {
+  color: var(--tx2);
+}
+.syb-step.on {
+  color: var(--tx);
+  border-color: var(--syb-accent, #22d3ee);
+  background: color-mix(in srgb, var(--syb-accent, #22d3ee) 12%, var(--surface));
+}
+.syb-step.on.is-user .syb-step-n {
+  background: var(--sem-data);
+  color: var(--bg);
+}
+.syb-step.on.is-kernel .syb-step-n {
+  background: var(--sem-control);
+  color: var(--bg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .syb-step {
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  }
+}

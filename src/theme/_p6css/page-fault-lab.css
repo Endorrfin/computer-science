@@ -1,0 +1,463 @@
+/* page-fault-lab ([micro] ch.23) — layout, hover and the fill/hand animations
+   only. All functional coloring (resident = cyan, hit = green, fault = red,
+   evicted = violet, current-frame bar = accent) is inline-styled from theme
+   vars in PageFaultLab.tsx, so the sim still reads correctly without this
+   sheet. Prefix: pfl-. Reduced motion honored at the bottom. */
+
+/* ------------------------------- layout ------------------------------- */
+.pfl-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pfl-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.pfl-lbl b {
+  color: var(--tx);
+}
+.pfl-clock-note {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--sem-data);
+}
+
+/* ------------------------------- controls ------------------------------- */
+.pfl-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.pfl-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 7rem;
+  max-width: 30vw;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  outline-offset: 3px;
+  vertical-align: middle;
+}
+.pfl-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.08s ease;
+}
+.pfl-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.pfl-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+}
+.pfl-slider:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+.pfl-numval {
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 1em;
+  text-align: right;
+}
+
+/* ------------------------------- input + presets ------------------------------- */
+.pfl-input-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 18px;
+}
+.pfl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+.pfl-input {
+  width: 100%;
+  min-width: 0;
+  background: var(--bg);
+  color: var(--tx);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px 11px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.12s ease;
+}
+.pfl-input:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--tx2)) 40%, var(--line));
+}
+.pfl-input:focus-visible {
+  outline: none;
+  border-color: var(--accent, var(--tx2));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, var(--tx2)) 22%, transparent);
+}
+.pfl-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.pfl-preset {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 11px;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease;
+}
+.pfl-preset:hover {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--accent, var(--tx2)) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent, var(--tx2)) 10%, var(--s2));
+}
+.pfl-preset:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+  outline-offset: 2px;
+}
+
+/* ------------------------------- reference track ------------------------------- */
+.pfl-refs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.pfl-ref {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx3);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  transition:
+    transform 0.12s ease,
+    color 0.14s ease,
+    border-color 0.14s ease;
+}
+.pfl-ref.past {
+  color: var(--tx2);
+  border-color: color-mix(in srgb, var(--sem-data) 30%, var(--line));
+}
+.pfl-ref.cur {
+  font-weight: 700;
+  transform: translateY(-2px) scale(1.08);
+  box-shadow: 0 0 0 1px currentColor;
+}
+
+/* ------------------------------- panels ------------------------------- */
+.pfl-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .pfl-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.pfl-frames-panel,
+.pfl-curve-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+
+/* ------------------------------- frame grid ------------------------------- */
+.pfl-frames {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.pfl-frame {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.3rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  min-height: 2.6rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.pfl-frame.filled {
+  background: color-mix(in srgb, var(--sem-data) 8%, var(--bg));
+}
+.pfl-frame.loaded {
+  box-shadow: 0 0 0 1px var(--sem-data);
+  animation: pfl-pop 0.34s ease;
+}
+.pfl-frame.hand {
+  border-left-width: 3px;
+}
+.pfl-frame-no {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--tx3);
+}
+.pfl-frame-page {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+.pfl-refbit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    border-color 0.16s ease;
+}
+.pfl-refbit.on {
+  color: var(--bg);
+  background: var(--sem-state);
+  border-color: var(--sem-state);
+}
+.pfl-hand {
+  position: absolute;
+  left: -0.7rem;
+  color: var(--accent, var(--sem-control));
+  font-size: 15px;
+  line-height: 1;
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: pfl-tick 0.3s ease;
+}
+.pfl-frame-note {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  min-height: 1.2em;
+}
+
+/* ------------------------------- fault curve ------------------------------- */
+.pfl-curve {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  gap: 8px;
+  height: 138px;
+  padding: 4px 2px 0;
+}
+.pfl-bar-col {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  align-items: end;
+  justify-items: center;
+  gap: 4px;
+  height: 100%;
+}
+.pfl-bar-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx3);
+}
+.pfl-bar-col.cur .pfl-bar-val {
+  color: var(--accent, var(--tx));
+  font-weight: 700;
+}
+.pfl-bar-track {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  max-width: 2.4rem;
+  height: 100%;
+}
+.pfl-bar-fill {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition:
+    height 0.3s ease,
+    background 0.2s ease;
+}
+.pfl-bar-x {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx3);
+}
+.pfl-bar-x.cur {
+  color: var(--accent, var(--tx));
+  font-weight: 700;
+}
+
+/* ------------------------------- callouts ------------------------------- */
+.pfl-callout {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--tx2);
+  padding: 8px 11px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: var(--r-s);
+}
+.pfl-callout b {
+  color: var(--tx);
+}
+.pfl-callout.anomaly {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--sem-err) 45%, var(--line));
+  border-left-color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 8%, var(--surface));
+}
+.pfl-callout.anomaly b {
+  color: var(--sem-err);
+}
+.pfl-callout.muted {
+  color: var(--tx3);
+}
+
+/* ------------------------------- counters ------------------------------- */
+.pfl-counters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 20px;
+}
+.pfl-verdict {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 4px 12px;
+  border-radius: var(--r-s);
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  min-width: 4.6rem;
+  text-align: center;
+}
+.pfl-verdict.hit {
+  color: var(--sem-ok);
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 12%, transparent);
+}
+.pfl-verdict.fault {
+  color: var(--sem-err);
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 12%, transparent);
+}
+.pfl-metric {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.pfl-mv {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
+  line-height: 1.05;
+}
+.pfl-ml {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+/* ------------------------------- animation ------------------------------- */
+@keyframes pfl-pop {
+  0% {
+    transform: scale(0.9);
+  }
+  55% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes pfl-tick {
+  0% {
+    transform: translateX(3px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .pfl-ref,
+  .pfl-frame,
+  .pfl-refbit,
+  .pfl-bar-fill,
+  .pfl-preset,
+  .pfl-input,
+  .pfl-slider::-webkit-slider-thumb {
+    transition: none;
+  }
+  .pfl-frame.loaded,
+  .pfl-hand {
+    animation: none;
+  }
+  .pfl-ref.cur {
+    transform: none;
+  }
+}
