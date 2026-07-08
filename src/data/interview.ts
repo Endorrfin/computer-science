@@ -1474,6 +1474,88 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "Start structured: enumerate **assets** (data, funds, access), map the **attack surface** (every input, endpoint, dependency, trust boundary), then walk threats with a framework like **STRIDE** (Spoofing, Tampering, Repudiation, Information disclosure, DoS, Elevation of privilege) per asset, and prioritize by likelihood × impact. Drive fixes structurally (parameterization, output encoding, authN/authZ, secrets management, dependency hygiene) rather than patching known payloads. **Assume breach** flips the posture from 'keep attackers out' to 'contain them when they're in': **least privilege** and **zero trust** (verify every request, even internal), network segmentation to limit **blast radius**, short-lived credentials, thorough **logging/alerting** (an OWASP 2025 category) for detection and response, and secure-by-default design so a single compromised component can't pivot to everything.",
   },
+  // ================= ch33 · Machine learning =================
+  {
+    id: "iv-ch33-1",
+    chapterId: "ch33",
+    level: "mid",
+    q: "What is overfitting, and how do you detect and reduce it?",
+    a:
+      "**Overfitting** is when a model fits the training data too closely — including its noise — so it scores well on data it has seen and poorly on new data. **Detect** it by the gap between training and held-out **test/validation** accuracy: training keeps improving while validation stalls or degrades. **Reduce** it with (in rough order of power) **more/better data** and augmentation, **regularization** (L2 weight decay, dropout), **early stopping**, a **simpler model** (less capacity), and cross-validation. The underlying frame is the **bias–variance trade-off**: overfitting is high variance, underfitting is high bias.",
+  },
+  {
+    id: "iv-ch33-2",
+    chapterId: "ch33",
+    level: "mid",
+    q: "Why does a single-layer perceptron fail on XOR, and what fixes it?",
+    a:
+      "A single linear unit can only draw a **linear decision boundary** (a hyperplane), and XOR's two classes are **not linearly separable** — no straight line separates {(0,1),(1,0)} from {(0,0),(1,1)}. This is exactly the Minsky–Papert result that stalled early neural nets. The fix is a **hidden layer with a non-linear activation** (tanh/ReLU): the hidden units warp the input space so the output can separate it with a plane. That's the whole point of depth + non-linearity — and why the neural-playground can solve XOR and the spiral while one neuron can't.",
+  },
+  {
+    id: "iv-ch33-3",
+    chapterId: "ch33",
+    level: "senior",
+    q: "Walk through gradient descent. How does the learning rate affect convergence?",
+    a:
+      "Gradient descent minimizes a loss by repeatedly stepping parameters opposite the gradient: θ ← θ − η·∇L. The **learning rate** η is the step size. **Too small**: convergence is slow and can stall in flat regions. **Too large**: you overshoot the minimum — the loss oscillates or diverges to NaN. On a quadratic bowl of curvature κ, steps are stable only while η < 2/κ, which is why ill-conditioned surfaces (very different curvature per direction) are hard and motivate **normalization**, **momentum/Adam** (adaptive per-parameter rates), and **learning-rate schedules** (warmup then decay). Practically: watch the loss curve — smooth decline is right, jagged or rising means lower η. Also note **batch size** interacts with η and gradient noise.",
+  },
+  {
+    id: "iv-ch33-4",
+    chapterId: "ch33",
+    level: "senior",
+    q: "What is backpropagation, really — and why is it efficient?",
+    a:
+      "Backpropagation is **reverse-mode automatic differentiation** applied to a neural network: it computes the gradient of the loss with respect to *every* parameter by applying the **chain rule** backward through the computation graph. A single **forward pass** caches each layer's activations; a single **backward pass** propagates the error signal from the loss back to each weight, reusing the downstream gradients so each parameter's derivative costs roughly the same as the forward computation — **O(number of parameters)**, not O(params²) as naive per-weight finite differences would. That efficiency (one forward + one backward pass gives *all* gradients) is what makes training networks with millions of weights feasible. Watch for **vanishing/exploding gradients** in deep stacks, mitigated by ReLU, residual connections, and careful initialization.",
+  },
+  {
+    id: "iv-ch33-5",
+    chapterId: "ch33",
+    level: "staff",
+    q: "A model scores 99% offline but performs poorly in production. How do you diagnose it?",
+    a:
+      "Systematically rule out the usual gaps between offline and online. **Data leakage**: a feature encodes the label or uses information unavailable at prediction time (or preprocessing statistics were computed before the split) — the classic cause of 'too good' offline scores. **Distribution shift**: production inputs differ from the training/test distribution (covariate shift), or labels drift over time. **Train/serve skew**: feature computation differs between training and serving. **Evaluation flaws**: test set contaminated by training data, wrong metric (accuracy on an imbalanced problem), or tuning that overfit the test set. **Feedback loops**: the model's own actions change the data. Diagnose by auditing the feature pipeline for leakage, comparing offline vs online feature/label distributions, checking the split methodology (time-based for temporal data), and shadow-deploying with live metrics before trusting offline numbers.",
+  },
+  // ================= ch34 · Modern AI & frontiers =================
+  {
+    id: "iv-ch34-1",
+    chapterId: "ch34",
+    level: "mid",
+    q: "What are word embeddings, and what does king − man + woman ≈ queen show?",
+    a:
+      "**Embeddings** map tokens/words to dense vectors in a continuous space, learned so that words appearing in similar contexts (the **distributional hypothesis**) end up near each other. Because relationships are captured as consistent **directions**, you can do vector arithmetic on meaning: the 'gender' direction (man→woman) is roughly parallel to (king→queen), so **king − man + woman** lands near **queen**. It shows embeddings encode **semantic structure geometrically**, not just similarity — which is why they became the input layer of modern NLP. Caveat: classic word2vec/GloVe give one **static** vector per word (no sense disambiguation); transformers produce **contextual** embeddings that fix this.",
+  },
+  {
+    id: "iv-ch34-2",
+    chapterId: "ch34",
+    level: "mid",
+    q: "Why do LLMs struggle to count letters or do exact arithmetic?",
+    a:
+      "Because they operate on **tokens**, not characters or digits. A **BPE** tokenizer splits text into subword chunks, so a word like *strawberry* becomes a few opaque tokens and the model literally never sees the individual letters — counting them is off-distribution. Same for arithmetic: numbers get chunked into arbitrary token pieces, so there's no clean place-value representation to 'carry the one.' It's a **representation limit**, not a general reasoning failure. Practical fix: give the model **tools** (a code interpreter/calculator) for exact symbolic work and let it orchestrate, rather than expecting a token predictor to act like an ALU.",
+  },
+  {
+    id: "iv-ch34-3",
+    chapterId: "ch34",
+    level: "senior",
+    q: "Explain self-attention. Why did transformers replace RNNs?",
+    a:
+      "**Self-attention** lets each token build a **query**, match it against every token's **key** to get scores, softmax those into weights, and take a weighted sum of the **values**: softmax(Q·Kᵀ/√dₖ)·V. So every position can directly pull information from any other, regardless of distance. Transformers replaced **RNNs** because RNNs process sequentially (hard to parallelize) and struggle to carry information across long distances (vanishing gradients, a fixed-size hidden state bottleneck). Attention is **fully parallel** across positions (great for GPUs) and gives **O(1) path length** between any two tokens, so long-range dependencies are learned far better. The trade-off is **O(n²)** attention cost in sequence length — the motivation behind long-context and efficient-attention research. **Multi-head** attention lets different heads specialize (syntax, coreference, etc.).",
+  },
+  {
+    id: "iv-ch34-4",
+    chapterId: "ch34",
+    level: "senior",
+    q: "What are scaling laws, and what did Chinchilla change?",
+    a:
+      "**Scaling laws** (Kaplan et al., 2020) found that a model's test loss decreases as a smooth **power law** in three inputs — parameters, dataset size, and compute — which means you can **extrapolate** capability before training a big model. **Chinchilla** (Hoffmann et al., 2022) corrected the recipe: for a fixed **compute budget** there's an optimal balance, and most large models of the era were **undertrained** — too many parameters for too few tokens. Their 70B-parameter Chinchilla trained on 1.4T tokens **beat** the 280B Gopher trained on ~300B tokens at equal compute. The practical rule: scale **parameters and training tokens together** (roughly proportionally). It shifted the field from 'biggest model wins' to 'best use of compute,' and reframed data quantity/quality as first-class.",
+  },
+  {
+    id: "iv-ch34-5",
+    chapterId: "ch34",
+    level: "staff",
+    q: "What is RLHF, why is alignment hard, and what are an LLM's fundamental limits?",
+    a:
+      "**RLHF** (reinforcement learning from human feedback) aligns a pretrained model to human preferences: collect human rankings of outputs, train a **reward model** to predict them, then fine-tune the LLM (e.g. with PPO, or newer preference-optimization methods) to maximize that reward — turning a raw next-token predictor into an instruction-following assistant (InstructGPT, 2022). **Alignment is hard** because human values are hard to specify completely, reward models are **proxies** that can be gamed (reward hacking / Goodhart), feedback doesn't cover every situation, and we lack strong **interpretability** to verify *why* a model behaves as it does. **Fundamental limits**: an LLM has no built-in notion of **truth** (it optimizes plausibility, hence hallucination), no guarantee of consistency, tokenization blind spots, and — the link to computability (ch.20) — no escape from what's **uncomputable**: no scale lets it decide the halting problem. The honest framing is a powerful, fallible pattern machine, not an oracle — use it with verification and tooling.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

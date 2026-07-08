@@ -1,0 +1,169 @@
+/* gradient-bowl ([micro] ch.33) — gradient descent on an elongated quadratic
+   bowl. The SVG (contours, descent path, draggable start, loss-vs-step strip)
+   carries its functional color inline from the semantic palette in
+   GradientBowl.tsx; this sheet only lays out the stage, styles the LR presets
+   and verdict chip, and adds the reduced-motion-aware handle transition. Every
+   class is prefixed `.gb-` so nothing collides with another part's CSS. */
+
+/* --------------------------------- stage --------------------------------- */
+.gb-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gb-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 200 / 150;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  touch-action: none; /* let pointer-drag own the gesture */
+}
+
+/* draggable start handle */
+.gb-handle {
+  outline: none;
+}
+.gb-handle:focus-visible > circle:nth-of-type(2) {
+  stroke: var(--tx);
+  stroke-width: 2;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .gb-handle > circle:nth-of-type(2) {
+    transition: r 0.12s ease;
+  }
+  .gb-handle.is-drag > circle:nth-of-type(2) {
+    r: 3;
+  }
+}
+
+/* --------------------------------- read-out --------------------------------- */
+.gb-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+  padding: 8px 12px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.gb-readout b {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.gb-ro-sep {
+  color: var(--tx3);
+}
+.gb-ro-verdict {
+  margin-left: auto;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.gb-rm-note {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--tx2);
+  padding: 9px 12px;
+  border-radius: var(--r-s);
+  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--sem-state) 6%, var(--surface));
+}
+.gb-rm-note b {
+  color: var(--tx);
+}
+
+/* --------------------------------- controls (LR presets) --------------------------------- */
+.gb-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.gb-ctl-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-right: 2px;
+}
+.gb-lr {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 46px;
+  justify-content: center;
+}
+/* risky rates (≥ 2/κ) get a warm ring so the threshold reads at a glance */
+.gb-lr.is-risky:not(.btn-primary) {
+  border-color: color-mix(in srgb, var(--sem-err) 45%, var(--line));
+  color: color-mix(in srgb, var(--sem-err) 85%, var(--tx));
+}
+
+/* --------------------------------- footer / verdict --------------------------------- */
+.gb-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gb-verdict {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gb-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--bg);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .gb-chip {
+    transition: background 0.25s ease;
+  }
+}
+.gb-verdict-txt {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.gb-verdict-txt b {
+  font-variant-numeric: tabular-nums;
+}
+.gb-verdict-sub {
+  color: var(--tx3);
+  font-size: 11px;
+}
+.gb-lesson {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.gb-lesson b {
+  color: var(--tx);
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .gb-handle > circle:nth-of-type(2),
+  .gb-chip {
+    transition: none;
+  }
+}

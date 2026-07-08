@@ -1,0 +1,657 @@
+/* neural-playground (ch.33 HERO) — the crown jewel: a build-and-train MLP with
+   a live decision-boundary heat-map, a loss curve, and the Model Tamer 🧠 boss.
+   Layout + accents that aren't inline-styled from theme vars in
+   NeuralPlayground.tsx. Every class is prefixed `.np-` so nothing here collides
+   with another part's CSS. Animation lives behind prefers-reduced-motion:
+   no-preference; the sim itself falls back to step-mode when RM is on.
+   Palette: class 0 → --sem-data (cyan) · class 1 → --accent (P10 violet) ·
+   train ok → --sem-ok · overfit/danger → --sem-err · boss won → --sem-ok. */
+
+/* ------------------------------- controls ------------------------------- */
+.np-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.np-field {
+  gap: 8px;
+}
+.np-field-lbl {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+.np-actseg {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.np-actseg .bit-segbtn {
+  min-width: 58px;
+}
+.np-reseed {
+  margin-left: 2px;
+}
+
+/* --------------------------------- stage -------------------------------- */
+.np-stage {
+  display: grid;
+  grid-template-columns: minmax(148px, 200px) minmax(280px, 1fr) minmax(180px, 232px);
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .np-stage {
+    grid-template-columns: 1fr;
+  }
+}
+.np-left,
+.np-right {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.np-center {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* generic panel used by feature/layer/metrics rails */
+.np-panel {
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 12px 12px;
+}
+.np-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.np-panel-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--accent);
+}
+.np-panel-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+/* ---------------------------- feature chips ----------------------------- */
+.np-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.np-chip {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx2);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s, color 0.14s, transform 0.06s;
+}
+.np-chip:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  color: var(--tx);
+}
+.np-chip:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.np-chip.on {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+.np-chip.is-locked {
+  cursor: default;
+  opacity: 0.92;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.np-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.np-feats-note {
+  margin: 9px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.np-feats-note code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+
+/* ---------------------------- hidden layers ----------------------------- */
+.np-layers .np-panel-head,
+.np-readout .np-panel-head {
+  margin-bottom: 10px;
+}
+.np-layerrow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.np-lbtn {
+  padding: 0 10px;
+  font-size: 16px;
+  line-height: 1;
+  min-width: 30px;
+}
+.np-layercols {
+  display: flex;
+  flex: 1;
+  gap: 10px;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 88px;
+}
+.np-nolayer {
+  align-self: center;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--tx3);
+  text-align: center;
+  padding: 8px 4px;
+}
+.np-layercol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 6px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  min-width: 40px;
+}
+.np-neurons {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 64px;
+}
+.np-neuron {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 78%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.np-widthrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.np-wbtn {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.np-wbtn:hover:not(:disabled) {
+  color: var(--tx);
+  border-color: var(--accent);
+}
+.np-wbtn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.np-wval {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx);
+  min-width: 16px;
+  text-align: center;
+}
+.np-wrange {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.np-lbtn:disabled {
+  opacity: 0.4;
+}
+
+/* ----------------------- decision-boundary plot ------------------------- */
+.np-plotfig {
+  margin: 0;
+}
+.np-plot {
+  display: block;
+  width: 100%;
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.np-heat rect {
+  shape-rendering: crispEdges;
+}
+.np-axis {
+  stroke: color-mix(in srgb, var(--tx3) 45%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+.np-frame {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.np-pt {
+  stroke-width: 1.4;
+}
+.np-pt.is-c0 {
+  fill: var(--sem-data);
+  stroke: color-mix(in srgb, var(--sem-data) 60%, #000);
+}
+.np-pt.is-c1 {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, var(--accent) 55%, #000);
+}
+.np-pt-test {
+  fill: none !important;
+  stroke-width: 2;
+}
+.np-pt-test.is-c0 {
+  stroke: var(--sem-data);
+}
+.np-pt-test.is-c1 {
+  stroke: color-mix(in srgb, var(--accent) 85%, #fff);
+}
+
+/* legend under the plot */
+.np-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.np-leg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.np-leg-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.np-leg-dot.is-c0 {
+  background: var(--sem-data);
+}
+.np-leg-dot.is-c1 {
+  background: var(--accent);
+}
+.np-leg-ring {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 2px solid var(--tx2);
+  box-sizing: border-box;
+}
+.np-leg-ramp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.np-ramp-bar {
+  width: 78px;
+  height: 9px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--sem-data) 72%, var(--surface)),
+    var(--surface),
+    color-mix(in srgb, var(--accent) 72%, var(--surface))
+  );
+}
+.np-ramp-tag {
+  color: var(--tx3);
+}
+
+/* -------------------------------- loss curve ---------------------------- */
+.np-lossfig {
+  margin: 0;
+}
+.np-loss-cap {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.np-loss-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--tx3);
+}
+.np-loss-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--sem-ok);
+}
+.np-loss {
+  display: block;
+  width: 100%;
+}
+.np-loss-bg {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.np-loss-base {
+  stroke: color-mix(in srgb, var(--tx3) 40%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.np-loss-line {
+  stroke: var(--sem-ok);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* -------------------------------- readout ------------------------------- */
+.np-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+.np-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.np-stat dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--tx3);
+}
+.np-stat dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tx);
+  line-height: 1.1;
+}
+.np-stat-epoch {
+  color: var(--tx) !important;
+}
+.np-stat-acc.is-train {
+  color: var(--sem-data) !important;
+}
+.np-stat-acc.is-test {
+  color: var(--accent) !important;
+}
+.np-stat-loss {
+  color: var(--sem-ok) !important;
+}
+.np-arch {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.np-arch-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--tx3);
+}
+.np-arch-val {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx);
+}
+
+/* train/test gap meter */
+.np-gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+.np-gap-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--tx3);
+}
+.np-gap-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.np-gap-fill {
+  display: block;
+  height: 100%;
+  background: var(--sem-ok);
+}
+.np-gap.is-wide .np-gap-fill {
+  background: var(--sem-err);
+}
+.np-gap-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+  min-width: 30px;
+  text-align: right;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .np-gap-fill {
+    transition: width 0.25s ease, background 0.25s ease;
+  }
+}
+
+/* ---------------------- boss banner (right rail) ------------------------ */
+.np-boss {
+  background: color-mix(in srgb, var(--accent) 8%, var(--s2));
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: var(--r);
+  padding: 10px 12px 11px;
+}
+.np-boss.is-won {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 10%, var(--s2));
+}
+.np-boss-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+.np-boss-icon {
+  font-size: 17px;
+  line-height: 1;
+}
+.np-boss-title {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--tx);
+  flex: 1;
+}
+.np-boss-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--sem-ok);
+}
+.np-boss-goal,
+.np-boss-badge {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.np-boss-goal b {
+  color: var(--tx);
+}
+.np-boss-badge {
+  color: var(--tx);
+}
+.np-boss-badge b {
+  color: var(--sem-ok);
+}
+
+/* -------------------------------- footer -------------------------------- */
+.np-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.np-explain,
+.np-note {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--tx2);
+}
+.np-explain b,
+.np-note b {
+  color: var(--tx);
+}
+.np-explain em,
+.np-note em {
+  color: var(--accent);
+  font-style: normal;
+}
+.np-explain code,
+.np-note code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+/* boss card (spiral) */
+.np-bosscard {
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: var(--r);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  padding: 12px 14px;
+}
+.np-bosscard.is-won {
+  border-color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 8%, var(--surface));
+}
+.np-bosscard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.np-bosscard-head strong {
+  font-family: var(--font-head);
+  font-size: 14px;
+}
+.np-bosscard-badge {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.np-bosscard-goal,
+.np-bosscard-win,
+.np-bosscard-hint {
+  margin: 0 0 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.np-bosscard-goal b {
+  color: var(--tx);
+}
+.np-bosscard-win {
+  color: var(--tx);
+}
+.np-bosscard-win b {
+  color: var(--sem-ok);
+}
+.np-bosscard-hint {
+  color: var(--tx3);
+}
+.np-bosscard-hint:last-child {
+  margin-bottom: 0;
+}
+.np-bosscard-hint b {
+  color: var(--tx2);
+}
+.np-bosscard code,
+.np-bosscard-goal code,
+.np-bosscard-hint code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+/* won → a quiet pulse on the badge line (motion-safe only) */
+@media (prefers-reduced-motion: no-preference) {
+  .np-bosscard.is-won .np-bosscard-win,
+  .np-boss.is-won .np-boss-badge {
+    animation: np-badge-in 0.5s ease;
+  }
+  @keyframes np-badge-in {
+    from {
+      opacity: 0.3;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}

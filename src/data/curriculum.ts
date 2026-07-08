@@ -5092,6 +5092,308 @@ const ch32: Chapter = {
   ],
 };
 
+const ch33: Chapter = {
+  id: "ch33",
+  part: "p10",
+  order: 35,
+  title: "Machine learning",
+  tagline: "The shift from writing rules to learning them from data: features, loss, gradient descent, the neuron that becomes a network, and the discipline that separates learning from memorizing",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "In **1958**, Frank Rosenblatt unveiled the **Perceptron** — a machine that learned to classify images by adjusting weights, and the *New York Times* breathlessly reported it might soon walk, talk, and reproduce. Then in **1969**, Marvin Minsky and Seymour Papert proved a devastating limit: a single-layer perceptron cannot even learn **XOR**, the simplest non-linear pattern. Funding evaporated; the first **AI winter** set in. The thaw came in **1986**, when Rumelhart, Hinton and Williams popularized **backpropagation** — a way to train *many* layers by the chain rule — and the curved boundaries a perceptron couldn't draw became learnable after all. That arc, from a single neuron to a trained network, is exactly the one you'll retrace in this chapter — and you'll teach a net to solve the very XOR that once froze the field.",
+  },
+  assumes: [
+    { chapterId: "ch13", oneLiner: "Big-O told you how running time grows; here it's how *training* cost grows with data and parameters." },
+    { chapterId: "ch9", oneLiner: "GPUs did thousands of identical multiply-adds in parallel — that same hardware is what makes training neural nets practical." },
+  ],
+  mentalModel:
+    "Machine learning replaces hand-written rules with a model that learns from examples. The recipe is always the same: turn inputs into FEATURES, pick a MODEL with tunable parameters, define a LOSS that measures how wrong it is, then use GRADIENT DESCENT to nudge the parameters downhill until the loss is small. A single linear unit can only cut the space with a straight line; stack units with non-linear activations into a NEURAL NETWORK and it can bend the boundary to any shape, trained end-to-end by backpropagation (the chain rule, run backwards). The one thing that matters is GENERALIZATION — doing well on data you have never seen. A model that memorizes its training set (low training loss, high test loss) has OVERFIT and learned nothing useful, which is why the train/test split, not training accuracy, is the honest measure.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Every chapter so far ran on rules a human wrote: gates, instructions, algorithms, protocols. **Machine learning inverts that.** Instead of coding the logic, you show a model thousands of **examples** and let it *find* the logic — the rule becomes a set of numbers the machine tunes for itself. This is the right tool exactly when the rule is too fuzzy to write by hand: recognizing a cat, flagging spam, predicting a price. You still write code, but the interesting behavior is **learned**, not authored.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The supervised setup\n" +
+        "The most common flavor is **supervised learning**: you have inputs paired with the right answers (**labels**), and you want a function that maps new inputs to answers. Four pieces recur everywhere. **Features** — the numbers describing each example (here, a point's x and y). A **model** with tunable **parameters** — the knobs to be learned. A **loss** — a single number saying how wrong the model is on the data. And the **goal**, which is *not* to fit the examples you have but to **generalize** to ones you don't. Start with the simplest 'learner' imaginable — one that does no training at all, and just remembers:",
+    },
+    { kind: "sim", sim: "knn-toy" },
+    {
+      kind: "prose",
+      md:
+        "## From memorizing to a model\n" +
+        "**k-nearest-neighbours** is barely learning: it stores every training point and, to classify a new one, takes a vote among its *k* closest neighbours. It works, but it keeps the whole dataset forever and its regions get jagged. We want something that distills the data into a few **parameters** instead. The smallest such model is a single **neuron**: weigh each feature, add a bias, squash the result through a curve — it draws **one straight boundary**. That's enough for linearly separable data, but as Minsky and Papert showed, a straight line can't cut apart **XOR** or a spiral. We need to bend the boundary — and for that we need to *train*.",
+    },
+    {
+      kind: "table",
+      caption: "The three broad families of machine learning. This chapter lives in the first row; ch.34 and modern LLMs draw on all three.",
+      head: ["Paradigm", "Learns from", "Answers the question"],
+      rows: [
+        ["Supervised", "labeled examples (input → correct output)", "what's the label for this new input?"],
+        ["Unsupervised", "unlabeled data (structure only)", "how does this data cluster or compress?"],
+        ["Reinforcement", "rewards from acting in an environment", "which action maximizes long-run reward?"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Training = rolling downhill\n" +
+        "**Training** means choosing parameters that make the loss small, and the workhorse is **gradient descent**. Picture the loss as a landscape over the parameters: the **gradient** points in the direction of steepest *increase*, so you step the opposite way — downhill — over and over. The **learning rate** is your step size, and it is the knob people get wrong most: too small and training crawls; too large and you overshoot the valley, bouncing or flying off to infinity. Feel it directly — drag the start point and push the learning rate until descent turns to divergence:",
+    },
+    { kind: "sim", sim: "gradient-bowl" },
+    {
+      kind: "formal",
+      title: "The update rule and the loss",
+      md:
+        "Gradient descent updates every parameter θ by θ ← θ − η·∂L/∂θ, where η is the learning rate. For binary classification the model outputs a probability p = σ(z) with the **sigmoid** σ(z)=1/(1+e^−z), and the loss is **binary cross-entropy** L = −[y·log p + (1−y)·log(1−p)]. The reason this pairing is beloved: the gradient of BCE through the sigmoid collapses to the clean **(p − y)** — predicted minus actual — so each step nudges the output straight toward the label. On a simple quadratic bowl with curvature κ, descent is stable only while η < 2/κ; above it, steps grow instead of shrink. That single inequality is the whole story behind 'the learning rate was too high.'",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Neurons become a network\n" +
+        "Stack neurons in **layers** and put a **non-linear activation** (tanh, ReLU) between them, and something remarkable happens: the network can carve **curved, arbitrary boundaries**. Each hidden layer warps the space so the next layer's straight cut lands in the right place; enough of them approximate essentially any function. Training all those weights at once seems hard, but **backpropagation** makes it cheap — it's just the **chain rule** run backward through the layers, computing every weight's share of the loss in a single pass. Build a net, pick a dataset, and watch the decision boundary *morph* as it learns and the loss curve fall:",
+    },
+    { kind: "sim", sim: "neural-playground" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The boss, and what makes the spiral hard",
+      lens: "both",
+      md:
+        "The **spiral** is the P10 boss: **train to 95% test accuracy with a budget of ≤3 hidden layers** to earn 🧠 *Model Tamer*. Two honest ways in — pile on three raw hidden layers and let depth bend the boundary, or add **engineered features** (x₁², x₂², x₁·x₂) and let *two* layers finish the job. That's the real lesson: **good features can replace network depth.** And because the sim inits weights randomly each run (like real training), an unlucky start may stall shy of 95% — hit reseed and watch initialization matter. Architecture is your move.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The one failure that matters: overfitting\n" +
+        "A model with enough capacity can drive training loss to zero by **memorizing** — including the noise. It looks brilliant on the data it saw and falls apart on anything new. That's **overfitting**, and it's why training accuracy is a vanity metric. The fix is discipline: **split your data** into a training set (to fit) and a held-out **test set** (to judge), and never let the test set leak into training. When training accuracy keeps climbing while test accuracy stalls or drops, the model has stopped learning and started memorizing. Predict which of these training curves is the overfit one:",
+    },
+    { kind: "quiz", quiz: "why-overfit" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Bias, variance, and the levers that fight overfitting",
+      lens: "senior",
+      md:
+        "Generalization error splits into **bias** (too simple — underfits both sets) and **variance** (too flexible — fits noise, overfits). The levers that trade a little training accuracy for much better *test* accuracy: **more data** (the strongest), **regularization** (L2 weight decay, dropout — penalize complexity), **early stopping** (quit when validation loss turns up), and **simpler models**. Tuning happens on a *third* split — a **validation set** — so the test set stays untouched until the very end; reusing the test set to pick hyperparameters is just overfitting one level up. The whole craft of applied ML is managing this trade-off.",
+    },
+    {
+      kind: "code",
+      lang: "py",
+      note: "The same loop, in the language ML actually speaks. Libraries hide gradient descent, but the shape is exactly what you just built by hand.",
+      code:
+        "from sklearn.neural_network import MLPClassifier\n" +
+        "from sklearn.model_selection import train_test_split\n\n" +
+        "# X = features (n_samples, 2), y = labels (0/1)\n" +
+        "X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)\n\n" +
+        "model = MLPClassifier(hidden_layer_sizes=(16, 16, 8),  # <= 3 hidden layers\n" +
+        "                      activation='tanh', max_iter=500)\n" +
+        "model.fit(X_train, y_train)          # gradient descent + backprop, hidden\n\n" +
+        "print('train:', model.score(X_train, y_train))  # looks great...\n" +
+        "print('test :', model.score(X_test,  y_test))   # ...but THIS is the truth",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You've seen the whole machine: features in, a loss to minimize, gradient descent turning a stack of neurons into a curved boundary, and the train/test discipline that keeps you honest. Everything in modern AI is this idea scaled up — more layers, more data, more compute, and a few architectural tricks. **Chapter 34** takes the leap: how words become vectors, how **attention** lets a network read context, and how next-token prediction at scale became the large language models reshaping the field.",
+    },
+  ],
+  keyPoints: [
+    "Machine learning learns rules from data — instead of hand-coding logic, you fit a model to labeled examples so it generalizes to inputs it never saw.",
+    "Every supervised model has three parts — features (the inputs as numbers), parameters (the knobs), and a loss (how wrong it is); training minimizes the loss.",
+    "Gradient descent is how models learn — step the parameters opposite the loss gradient; the learning rate is the step size, and too large a rate diverges.",
+    "One linear unit draws only a straight boundary — stacking neurons with non-linear activations bends it to fit XOR or a spiral, trained by backpropagation (the chain rule backward).",
+    "Overfitting is memorizing noise — a model that aces training but fails on held-out data hasn't learned; the train/test split, not training accuracy, is the honest measure.",
+    "Generalization is the whole game — more data, regularization, and simpler models trade a little training accuracy for much better test accuracy (the bias–variance trade-off).",
+    "Good features can replace depth — engineering x², x·y features often lets a shallow net solve what would otherwise need many layers.",
+  ],
+  pitfalls: [
+    {
+      title: "Judging a model by its training accuracy",
+      body: "A model can score 100% on data it has already seen by memorizing it — that number says nothing about the future. Always report accuracy on a held-out test set the model never trained on, and keep a separate validation set for tuning. If training accuracy is high and test accuracy is low, you have overfit, not learned.",
+      lens: "both",
+    },
+    {
+      title: "Setting the learning rate by feel",
+      body: "Too high and the loss oscillates or explodes to NaN; too low and training takes forever or stalls in a bad spot. Watch the loss curve: a smooth steady decline means it's about right, a jagged or rising curve means turn it down. There's no universal value — it depends on the loss surface — so tune it and watch.",
+      lens: "both",
+    },
+    {
+      title: "Data leakage — feeding the model the answer",
+      body: "If a feature encodes the label (or information you won't have at prediction time), test scores look magical and collapse in production. Classic leaks: scaling with statistics computed over the whole dataset before splitting, or including a downstream field that's only known after the outcome. Split first, then derive features from the training set alone.",
+      lens: "senior",
+    },
+    {
+      title: "Reaching for more layers before more data",
+      body: "Extra capacity without extra data just memorizes noise faster. Before deepening the network, try more or better data, feature engineering, and regularization. A smaller model that generalizes beats a bigger one that overfits — capacity is only useful if the data can support it.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch33-1", "iv-ch33-2", "iv-ch33-3", "iv-ch33-4", "iv-ch33-5"],
+  kataIds: ["sigmoid", "mse-loss"],
+  seeAlso: ["ch34", "ch13", "ch9"],
+  sources: [
+    { title: "TensorFlow Playground (the neural-playground's inspiration)", url: "https://playground.tensorflow.org/" },
+    { title: "Nielsen — Neural Networks and Deep Learning (free book)", url: "http://neuralnetworksanddeeplearning.com/" },
+    { title: "Rumelhart, Hinton & Williams (1986) — Learning representations by back-propagating errors", url: "https://www.nature.com/articles/323533a0" },
+    { title: "Perceptron & the XOR limitation (history)", url: "https://en.wikipedia.org/wiki/Perceptron" },
+  ],
+};
+
+const ch34: Chapter = {
+  id: "ch34",
+  part: "p10",
+  order: 36,
+  title: "Modern AI & frontiers",
+  tagline: "From word vectors to transformers to large language models: how attention, tokenization, and scale turned next-token prediction into general-seeming intelligence — and where its hard limits still are",
+  readMins: { foundations: 20, senior: 35 },
+  storyHook: {
+    md:
+      "For decades, language AI leaned on **recurrence** — networks that read a sentence one word at a time, passing a hidden state along like a bucket brigade, forgetting the start by the time they reached the end. In **2017**, eight researchers at Google published a paper with an audacious title: **\"Attention Is All You Need.\"** Their **transformer** threw out recurrence entirely and let every word look at every other word *at once*, through a mechanism called **self-attention**. It trained faster, scaled further, and within five years had become the substrate of nearly every frontier AI system — GPT, Gemini, Claude, and the rest. This chapter takes apart that machine: how words become vectors, how attention reads context, and how the same idea, scaled to trillions of words, became the large language models of today.",
+  },
+  assumes: [
+    { chapterId: "ch33", oneLiner: "You built and trained a neural network by gradient descent; an LLM is that idea scaled up with one key new part — attention." },
+    { chapterId: "ch20", oneLiner: "Computability drew a hard line around what any machine can compute; it still bounds even the largest model." },
+  ],
+  mentalModel:
+    "A large language model is a next-token predictor. Text is chopped into TOKENS (subword chunks, via byte-pair encoding), each token becomes a vector (an EMBEDDING) whose directions encode meaning, and a stack of TRANSFORMER layers uses ATTENTION — every token weighing every other — to fold context into each position before predicting the next token. Train this on enormous text with enormous compute and broad competence emerges, predictably, as you add data and parameters (SCALING LAWS); then align it with human feedback (RLHF) so it follows instructions. But underneath it is still pattern completion: astonishingly fluent, yet with no built-in notion of truth, blind to the letters inside its own tokens, and bounded by the same computability limits as any machine. Powerful pattern machine — not an oracle.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Chapter 33 gave you the engine: features, loss, gradient descent, a network trained by backprop. **Modern AI is that engine at a scale that changes its character.** 'Deep learning' just means neural networks with many layers, trained on enormous datasets using the parallel hardware of ch.9. The leap of the last decade wasn't a new kind of math — it was **representing language as vectors**, a mechanism (**attention**) for mixing them, and enough **compute** to train on a meaningful slice of the internet. We'll build up the three ideas — embeddings, tokens, attention — then see what falls out at scale.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Words as vectors\n" +
+        "A network can't multiply the word *king*; it needs numbers. An **embedding** maps each word to a vector in a high-dimensional space, learned so that words used in similar contexts land near each other — the **distributional hypothesis**: *you shall know a word by the company it keeps*. The startling payoff is that **directions become meaning**. The vector from *man* to *woman* is roughly the same as *king* to *queen*, so you can do arithmetic on meaning: **king − man + woman ≈ queen**. Try it on real trained vectors — pick a word, run the analogy, watch where it lands:",
+    },
+    { kind: "sim", sim: "embedding-space" },
+    {
+      kind: "prose",
+      md:
+        "## Tokens, not letters\n" +
+        "Before a model sees text, a **tokenizer** breaks it into pieces. Modern models use **Byte-Pair Encoding (BPE)**: start from characters and repeatedly merge the most frequent adjacent pair, building a vocabulary of common **subword** chunks. Frequent words become a single token; rare ones shatter into fragments. This is efficient — but it has a strange consequence. The model never sees individual **letters**; it sees opaque token ids. Type a word and watch it fracture, then ask the classic question — how many r's in *strawberry*? — and see why the model can't just look:",
+    },
+    { kind: "sim", sim: "tokenizer-toy" },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Why LLMs miscount letters and fumble arithmetic",
+      md:
+        "The infamous *\"how many r's in strawberry\"* failure isn't stupidity — it's **tokenization**. To the model, *strawberry* might be a few tokens like `st | raw | berry`; the letters are welded inside chunks it can't inspect, so counting them is genuinely off-distribution. The same blind spot explains shaky digit-by-digit arithmetic: numbers get split into arbitrary token pieces, so 'carry the one' has no clean representation. It's a representation limit, not a reasoning one — and a reminder that the model's world is made of tokens, not the characters you typed.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Attention: every token reads the others\n" +
+        "Here is the idea that changed everything. **Self-attention** lets each token look at all the others and pull in what's relevant. For every position it forms a **query**, compares it against every token's **key** to get a score, softmaxes the scores into weights, and takes a weighted sum of the **values** — `softmax(Q·Kᵀ/√d)·V`. So the word *it* can reach back and attend to the noun it refers to; a verb can attend to its subject and object. Hover a word and watch where its attention flows (the weights are real softmax; the tiny vectors are illustrative):",
+    },
+    { kind: "sim", sim: "attention-heatmap" },
+    { kind: "figure", fig: "transformer-block", caption: "One transformer block, stepped: token embeddings → multi-head self-attention (mix context) → a feed-forward network (per-token compute) → out, with residual connections carrying the signal. Stack dozens of these and predict the next token." },
+    {
+      kind: "prose",
+      md:
+        "## How a language model actually works\n" +
+        "Put it together. Text → tokens → embeddings → a deep stack of transformer blocks → for each position, a probability distribution over the next token. **That's the whole objective: predict the next token.** Trained on a huge corpus, this simple game forces the model to absorb grammar, facts, styles, even reasoning patterns — because predicting the next word well *requires* them. Raw pretraining yields a brilliant autocomplete; a second stage, **alignment** via **RLHF** (reinforcement learning from human feedback), teaches it to follow instructions and be helpful rather than merely plausible. The capability curve as you scale is not random — it's a **law**:",
+    },
+    { kind: "figure", fig: "scaling-curves", caption: "Scaling laws: test loss falls as a smooth power law in compute, data, and parameters (log–log straight lines). Chinchilla's correction — scale data and parameters together — is why 'just make it bigger' was leaving performance on the table." },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Scaling laws and the Chinchilla correction",
+      lens: "senior",
+      md:
+        "**Scaling laws** (Kaplan et al., 2020) found that a model's loss drops predictably as a power law in parameters, data, and compute — capability you can extrapolate before training. **Chinchilla** (Hoffmann et al., 2022) sharpened it: for a fixed compute budget there's an *optimal* split, and most large models were badly **undertrained** — too many parameters for too few tokens. Their 70B model trained on 1.4T tokens beat the 280B Gopher trained on ~300B tokens at equal compute. The rule of thumb that followed: scale parameters and training tokens **together**, roughly in proportion. It reframed the race from 'biggest model' to 'best-used compute.'",
+    },
+    {
+      kind: "compare",
+      a: "What today's LLMs do well",
+      b: "Where they still fail",
+      rows: [
+        ["Fluency & breadth", "coherent text across nearly any topic or style", "no built-in truth — they hallucinate confidently"],
+        ["Pattern tasks", "summarize, translate, draft, refactor code", "exact letters & arithmetic (tokenization hides them)"],
+        ["In-context use", "follow examples and instructions in the prompt", "long-horizon planning & reliable multi-step reasoning"],
+        ["Knowledge recall", "vast memorized associations", "fresh facts, real citations, knowing what they don't know"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "State of play — mid-2026 (a dated snapshot)",
+      md:
+        "Concepts age slowly; the leaderboard ages weekly — so, timestamped **July 2026**: the frontier is a cluster of families — OpenAI's **GPT-5.x**, Anthropic's **Claude (Opus 4.x / Sonnet / Fable)**, Google's **Gemini 3.x**, plus **DeepSeek**, **Llama 4**, and **Qwen** — with **1M-token** context windows now common (some far larger). The old yardstick **MMLU is saturated** (frontier models cluster near ~92%, up from ~32% in 2020), so labs report **GPQA Diamond**, **SWE-bench**, **ARC-AGI-2** (built to resist memorization, with famously wide gaps between reported and independently-verified scores), and **Humanity's Last Exam** instead. The durable takeaways behind the churn: capability tracks compute and data; every static benchmark eventually saturates and gets replaced by a harder one; and reliability, cost, and grounding — not raw fluency — are the live frontier. Treat specific numbers as a snapshot; the *mechanisms* in this chapter are what last.",
+    },
+    { kind: "quiz", quiz: "llm-limits" },
+    {
+      kind: "formal",
+      title: "Scaled dot-product attention",
+      md:
+        "For a sequence packed into a matrix X, attention learns three projections: Q = X·Wᵠ (queries), K = X·Wᵏ (keys), V = X·Wᵛ (values). The output is Attention(Q,K,V) = softmax(Q·Kᵀ / √dₖ)·V. The dot product Q·Kᵀ scores how much each token should attend to each other token; dividing by √dₖ keeps those scores from growing with dimension (which would saturate the softmax toward one-hot); the softmax makes each row a probability distribution; multiplying by V returns a context-weighted blend of values. **Multi-head** attention runs several of these in parallel with different projections and concatenates them, so different heads can specialize (one on syntax, one on coreference). Stacked with feed-forward layers and residual connections, this is the transformer.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Limits, alignment, and the line from Part 5\n" +
+        "For all their power, these systems are **next-token predictors**, and that frames both their magic and their limits. They **hallucinate** because plausible and true are different objectives. They have no ground truth, no guarantee of consistency, and — the link back to **ch.20** — no escape from **computability**: no amount of scale lets a model decide the halting problem or compute the uncomputable. **Alignment** (making systems do what we actually intend, safely) is an open research problem, not a solved feature; interpretability — understanding *why* a model answered — is young. The honest posture is the one this whole guide has argued for: understand the mechanism, and you can use the tool for what it's genuinely good at without mistaking fluency for understanding.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That completes **Part 10 — Intelligence**, and with it the climb from a single learning neuron to the transformers behind modern AI. You've seen embeddings turn words into geometry, tokenization shape what a model can and can't perceive, attention read context, and scale turn next-token prediction into broad competence — with hallucination and the old computability limits still firmly in place. One part remains. **Part 11 — the Capstone** rides a single keystroke down through every layer you've built, from this AI at the top to the electron at the bottom, and back up to a pixel — the whole of computer science in one traversal.",
+    },
+  ],
+  keyPoints: [
+    "Embeddings turn words into vectors where direction encodes relation — trained only on co-occurrence, they place similar words together and make king − man + woman ≈ queen a real computation.",
+    "Language models read tokens, not letters — byte-pair encoding splits text into subword chunks, which is why LLMs miscount letters and stumble on raw arithmetic.",
+    "Attention lets every token weigh every other — softmax(Q·Kᵀ/√d)·V mixes context so a word can attend to what it refers to; the transformer (2017) is stacked attention.",
+    "An LLM is next-token prediction at scale — pretraining on huge text plus alignment (RLHF) turns an autocomplete into an assistant that follows instructions.",
+    "Scaling laws make capability predictable — loss falls as a power law in compute, data, and parameters; Chinchilla showed most models were undertrained (scale data and params together).",
+    "Fluent is not correct — LLMs hallucinate, lack built-in ground truth, and are still bounded by computability; they're powerful pattern machines, not oracles.",
+  ],
+  pitfalls: [
+    {
+      title: "Trusting fluent output as fact",
+      body: "An LLM optimizes for plausible next tokens, not truth, so it will state wrong facts, invent citations, and fabricate details with total confidence. Verify anything that matters — names, numbers, quotes, references — against a real source. Fluency is evidence of language modeling, not of correctness.",
+      lens: "both",
+    },
+    {
+      title: "Expecting character-level or exact-arithmetic precision",
+      body: "Because text is tokenized into subword chunks, the model can't reliably see individual letters or digits — counting letters, reversing strings, and long multiplication are off-distribution. Use a tool (code, a calculator) for exact symbolic work and let the model orchestrate, rather than asking it to be an ALU.",
+      lens: "both",
+    },
+    {
+      title: "Reading attention weights as an explanation",
+      body: "Attention shows where the model looked, not why its answer is right. High attention to a token is suggestive, not a faithful causal reason, and interpretability research repeatedly shows attention maps can mislead. Don't treat a pretty heat-map as proof the model reasoned correctly.",
+      lens: "senior",
+    },
+    {
+      title: "Mistaking scale for understanding",
+      body: "Bigger models predict better and pass more benchmarks, but scaling doesn't grant grounding, consistency, or guarantees, and saturated benchmarks overstate progress. Judge a model on held-out, contamination-free tasks that match your real use, not on leaderboard numbers it may have effectively trained on.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch34-1", "iv-ch34-2", "iv-ch34-3", "iv-ch34-4", "iv-ch34-5"],
+  kataIds: ["softmax", "cosine-similarity"],
+  seeAlso: ["ch33", "ch20", "ch2"],
+  sources: [
+    { title: "Vaswani et al. (2017) — Attention Is All You Need", url: "https://arxiv.org/abs/1706.03762" },
+    { title: "Hoffmann et al. (2022) — Training Compute-Optimal LLMs (Chinchilla)", url: "https://arxiv.org/abs/2203.15556" },
+    { title: "Ouyang et al. (2022) — InstructGPT / RLHF", url: "https://arxiv.org/abs/2203.02155" },
+    { title: "Counting Ability of LLMs and the Impact of Tokenization (2024)", url: "https://arxiv.org/abs/2410.19730" },
+    { title: "Artificial Analysis — frontier model leaderboard (dated snapshot)", url: "https://artificialanalysis.ai/leaderboards/models" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -5137,9 +5439,9 @@ export const CHAPTERS: Chapter[] = [
   // P9 · Security (built in S15)
   ch31,
   ch32,
-  // P10 · Intelligence
-  stub("ch33", "p10", 35, "Machine learning", "Features, loss, gradient descent, overfitting", 16, { foundations: 22, senior: 38 }),
-  stub("ch34", "p10", 36, "Modern AI & frontiers", "Transformers, embeddings, capabilities & limits", 16, { foundations: 20, senior: 35 }),
+  // P10 · Intelligence (built in S16)
+  ch33,
+  ch34,
   // P11 · Capstone
   stub("ch35", "p11", 37, "The whole picture", "The entire stack in one animated traversal", 17, { foundations: 15, senior: 20 }),
 ];

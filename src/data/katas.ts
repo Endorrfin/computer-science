@@ -2917,6 +2917,161 @@ Return \`false\` immediately if the lengths differ; otherwise scan the whole str
       { name: "long identical secrets", body: `assertEqual(constantTimeEqual("a3f9c1e0b7", "a3f9c1e0b7"), true);` },
     ],
   },
+  // ========================================================================
+  // ch33 · Machine learning
+  // ========================================================================
+  {
+    id: "sigmoid",
+    chapterId: "ch33",
+    title: "The sigmoid",
+    difficulty: "intro",
+    tags: ["ml", "activation", "probability"],
+    prompt: `
+Implement the **logistic sigmoid** σ(z) = 1 / (1 + e⁻ᶻ) — the squashing function that turns any real number into a probability in (0, 1). It's the output non-linearity of the binary classifier in ch.33.
+
+- σ(0) = 0.5, σ(+∞) → 1, σ(−∞) → 0, and it's **monotonic increasing**.
+
+### Examples
+- \`sigmoid(0)\` → \`0.5\`
+- \`sigmoid(2)\` → \`0.8807...\`
+`,
+    signature: `function sigmoid(z: number): number`,
+    exportName: "sigmoid",
+    starter: `function sigmoid(z) {
+  // TODO: 1 / (1 + e^(-z))
+  return 0;
+}`,
+    solution: `function sigmoid(z) {
+  return 1 / (1 + Math.exp(-z));
+}`,
+    tests: [
+      { name: "sigmoid(0) = 0.5", body: `assert(Math.abs(sigmoid(0) - 0.5) < 1e-9);` },
+      { name: "large positive -> ~1", body: `assert(sigmoid(20) > 0.999);` },
+      { name: "large negative -> ~0", body: `assert(sigmoid(-20) < 0.001);` },
+      { name: "monotonic increasing", body: `assert(sigmoid(1) > sigmoid(0) && sigmoid(0) > sigmoid(-1));` },
+      { name: "symmetry: s(-z) = 1 - s(z)", body: `assert(Math.abs(sigmoid(-1.3) - (1 - sigmoid(1.3))) < 1e-9);` },
+      { name: "in range (0,1)", body: `assert(sigmoid(5) < 1 && sigmoid(-5) > 0);` },
+    ],
+  },
+  {
+    id: "mse-loss",
+    chapterId: "ch33",
+    title: "Mean squared error",
+    difficulty: "intro",
+    tags: ["ml", "loss", "regression"],
+    prompt: `
+Implement **mean squared error**: the average of the squared differences between predictions and the true values — the loss a regression model minimizes.
+
+\`MSE = (1/n) · Σ (predᵢ − actualᵢ)²\`
+
+Assume the arrays are the same non-zero length.
+
+### Examples
+- \`mse([1, 2, 3], [1, 2, 3])\` → \`0\`
+- \`mse([0, 0], [3, 4])\` → \`12.5\`
+`,
+    signature: `function mse(pred: number[], actual: number[]): number`,
+    exportName: "mse",
+    starter: `function mse(pred, actual) {
+  // TODO: average the squared differences
+  return 0;
+}`,
+    solution: `function mse(pred, actual) {
+  let sum = 0;
+  for (let i = 0; i < pred.length; i++) {
+    const d = pred[i] - actual[i];
+    sum += d * d;
+  }
+  return sum / pred.length;
+}`,
+    tests: [
+      { name: "perfect prediction -> 0", body: `assert(mse([1, 2, 3], [1, 2, 3]) === 0);` },
+      { name: "[0,0] vs [3,4] -> 12.5", body: `assert(Math.abs(mse([0, 0], [3, 4]) - 12.5) < 1e-9);` },
+      { name: "single error squared", body: `assert(Math.abs(mse([1], [4]) - 9) < 1e-9);` },
+      { name: "order-independent magnitude", body: `assert(Math.abs(mse([2, 0], [0, 2]) - 4) < 1e-9);` },
+      { name: "always non-negative", body: `assert(mse([-3, 5], [1, 1]) >= 0);` },
+    ],
+  },
+  // ========================================================================
+  // ch34 · Modern AI
+  // ========================================================================
+  {
+    id: "softmax",
+    chapterId: "ch34",
+    title: "Softmax",
+    difficulty: "core",
+    tags: ["ml", "attention", "probability"],
+    prompt: `
+Implement **softmax**: turn a vector of real-valued logits into a probability distribution. Each output is \`exp(zᵢ) / Σ exp(zⱼ)\`, so the outputs are all positive and **sum to 1**. It's the heart of attention (\`softmax(QKᵀ/√d)\`) and of every classifier's final layer.
+
+For numerical stability, **subtract the max logit** before exponentiating (this doesn't change the result but avoids overflow).
+
+### Examples
+- \`softmax([0, 0])\` → \`[0.5, 0.5]\`
+- \`softmax([2, 1, 0])\` → \`[0.665..., 0.244..., 0.090...]\`
+`,
+    signature: `function softmax(logits: number[]): number[]`,
+    exportName: "softmax",
+    starter: `function softmax(logits) {
+  // TODO: exponentiate (shifted by the max), then normalize to sum 1
+  return logits;
+}`,
+    solution: `function softmax(logits) {
+  const max = Math.max(...logits);
+  const exps = logits.map((z) => Math.exp(z - max));
+  const sum = exps.reduce((a, b) => a + b, 0);
+  return exps.map((e) => e / sum);
+}`,
+    tests: [
+      { name: "rows sum to 1", body: `assert(Math.abs(softmax([2, 1, 0, -1]).reduce((a, b) => a + b, 0) - 1) < 1e-9);` },
+      { name: "uniform logits -> uniform probs", body: `const r = softmax([0, 0]); assert(Math.abs(r[0] - 0.5) < 1e-9 && Math.abs(r[1] - 0.5) < 1e-9);` },
+      { name: "monotonic: bigger logit -> bigger prob", body: `const r = softmax([2, 1, 0]); assert(r[0] > r[1] && r[1] > r[2]);` },
+      { name: "all outputs positive", body: `assert(softmax([-5, 0, 5]).every((p) => p > 0));` },
+      { name: "numerically stable for large logits", body: `const r = softmax([1000, 1000]); assert(Math.abs(r[0] - 0.5) < 1e-9 && !Number.isNaN(r[0]));` },
+    ],
+  },
+  {
+    id: "cosine-similarity",
+    chapterId: "ch34",
+    title: "Cosine similarity",
+    difficulty: "core",
+    tags: ["ml", "embeddings", "vectors"],
+    prompt: `
+Implement **cosine similarity**: the closeness measure for embedding vectors. It's the cosine of the angle between two vectors — their dot product divided by the product of their lengths:
+
+\`cos(a, b) = (a · b) / (‖a‖ · ‖b‖)\`
+
+It ranges from **1** (same direction) through **0** (orthogonal) to **−1** (opposite), and ignores magnitude — only direction matters. Assume the vectors are the same non-zero length and non-zero.
+
+### Examples
+- \`cosineSimilarity([1, 2, 3], [1, 2, 3])\` → \`1\`
+- \`cosineSimilarity([1, 0], [0, 1])\` → \`0\`
+`,
+    signature: `function cosineSimilarity(a: number[], b: number[]): number`,
+    exportName: "cosineSimilarity",
+    starter: `function cosineSimilarity(a, b) {
+  // TODO: dot(a,b) / (norm(a) * norm(b))
+  return 0;
+}`,
+    solution: `function cosineSimilarity(a, b) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}`,
+    tests: [
+      { name: "identical vectors -> 1", body: `assert(Math.abs(cosineSimilarity([1, 2, 3], [1, 2, 3]) - 1) < 1e-9);` },
+      { name: "orthogonal -> 0", body: `assert(Math.abs(cosineSimilarity([1, 0], [0, 1])) < 1e-9);` },
+      { name: "opposite -> -1", body: `assert(Math.abs(cosineSimilarity([1, 0], [-1, 0]) + 1) < 1e-9);` },
+      { name: "scale-invariant (direction only)", body: `assert(Math.abs(cosineSimilarity([1, 2], [2, 4]) - 1) < 1e-9);` },
+      { name: "symmetric", body: `assert(Math.abs(cosineSimilarity([1, 3], [2, 1]) - cosineSimilarity([2, 1], [1, 3])) < 1e-12);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

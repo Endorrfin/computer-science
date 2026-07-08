@@ -1136,6 +1136,96 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "why-overfit",
+    chapterId: "ch33",
+    questions: [
+      {
+        prompt:
+          "During training you watch two curves. **Training accuracy** keeps climbing toward 100%, but **test accuracy** rises, peaks, then starts **falling**. What's happening?",
+        options: [
+          "Underfitting — the model is too simple",
+          "Overfitting — the model is memorizing the training set, including its noise",
+          "The learning rate is too low",
+          "Nothing — this is exactly what you want",
+        ],
+        answer: 1,
+        explain:
+          "The widening gap between rising *training* accuracy and falling *test* accuracy is the signature of **overfitting**: the model has started memorizing quirks and noise that don't generalize. The moment test accuracy peaks is where you'd **early-stop**. Underfitting would show *both* curves stuck low.",
+      },
+      {
+        prompt:
+          "Your spiral classifier gets **100% on training** data but only **70% on the test set**. The single best first move?",
+        options: [
+          "Add more layers and train longer",
+          "Get more (or augment) training data, and add regularization",
+          "Raise the learning rate",
+          "Report the 100% — it's the accuracy that counts",
+        ],
+        answer: 1,
+        explain:
+          "A big train-vs-test gap means **high variance** (overfitting). More data is the strongest cure, with **regularization** (L2/dropout) and a simpler model next. Adding capacity or training longer makes memorization *worse*, and the 100% is meaningless — only held-out accuracy predicts the future.",
+      },
+      {
+        prompt:
+          "You tune the learning rate and layer count by repeatedly checking the **test set** and keeping whatever scores highest. Why is this a trap?",
+        options: [
+          "It isn't — that's the right way to tune",
+          "You're overfitting to the test set — it no longer estimates real-world performance",
+          "The test set is too small to matter",
+          "You should tune on the training set instead",
+        ],
+        answer: 1,
+        explain:
+          "Every peek-and-pick decision leaks test information into your choices, so the test score becomes optimistic — you've overfit *one level up*. Tune on a separate **validation set** and touch the test set only once, at the very end.",
+      },
+    ],
+  },
+  {
+    id: "llm-limits",
+    chapterId: "ch34",
+    questions: [
+      {
+        prompt:
+          "You ask a strong LLM: *\"How many times does the letter 'r' appear in 'strawberry'?\"* It confidently answers **two**. The core reason?",
+        options: [
+          "The model is broken or too small",
+          "It reads subword TOKENS, not individual letters, so the r's are hidden inside chunks",
+          "It can't do any counting at all",
+          "'strawberry' is spelled differently in its training data",
+        ],
+        answer: 1,
+        explain:
+          "Tokenization is the culprit: *strawberry* is a handful of subword tokens (e.g. `st | raw | berry`), and the model never sees the individual letters — they're welded inside opaque tokens. It's a **representation** blind spot, not a reasoning failure, and the same reason digit-by-digit arithmetic is shaky.",
+      },
+      {
+        prompt:
+          "A model with 10× the parameters scores higher on MMLU. What does scaling reliably buy — and not buy?",
+        options: [
+          "It buys guaranteed correctness and truthfulness",
+          "It buys lower loss / better prediction, but not grounding, consistency, or an end to hallucination",
+          "It buys nothing measurable",
+          "It removes the need for any evaluation",
+        ],
+        answer: 1,
+        explain:
+          "**Scaling laws** say loss falls predictably with parameters, data, and compute — so benchmark scores rise. But scale doesn't grant a notion of truth: bigger models still **hallucinate**, lack guarantees, and can look better simply because a static benchmark is **saturating** or contaminated. Fluency ≠ correctness.",
+      },
+      {
+        prompt:
+          "In the attention sim, hovering *it* in \"the animal crossed the road because it was tired\" lights up *animal*. What does that attention weight actually tell you?",
+        options: [
+          "A faithful proof of why the model's answer is correct",
+          "Where the model looked when building context — suggestive, but not a guaranteed explanation",
+          "That attention has no purpose",
+          "That the model has solved coreference perfectly",
+        ],
+        answer: 1,
+        explain:
+          "Attention shows *where information flowed*, which is genuinely useful intuition — but interpretability research shows attention maps are **not** faithful explanations of *why* an output is right. Treat a pretty heat-map as a hint about mechanism, not as proof of correct reasoning.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
