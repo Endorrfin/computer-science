@@ -1025,3 +1025,76 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   process-states / stack-vs-heap: step + auto-play). **S11 CLOSED pending user commit — suggested branch
   `feat/s11-p6-os-i`. Next: S12 — P6 · OS II: ch.24 (Files & storage) + ch.25 (Concurrency — deadlock-lab
   HERO) + the P6 *Deadlock Breaker* boss.**
+- **2026-07-07 · S12 (P6 · OS II — PART 6 COMPLETE)** *(log entry backfilled at S13 — the S12
+  session shipped but did not record its own status paragraph)*. Per the merge commit and repo state:
+  ch.24 **Files & storage** (`inode-explorer` HERO + `disk-allocation` micro + `journaling` fig) and
+  ch.25 **Concurrency** (`deadlock-lab` HERO + `race-lab` micro + `wait-for-graph` fig) built to the
+  golden bar; the **P6 *Deadlock Breaker* boss** went live inside `deadlock-lab`. Engines
+  `sims/files/model.ts` + `sims/concurrency/model.ts` with `scripts/test-ch24/25.ts`; +4 katas
+  (batch → 38), 12 interview Qs, 2 quizzes. Footer redesign merged separately (PR #13). **Part 6
+  complete.** *(If any S12 detail is needed, see commit `06a831e`.)*
+- **2026-07-08 · S13 (P7 · Networks — PART 7 COMPLETE)** — ch.26–28 built to the golden bar; the guide
+  now leaves the single machine and crosses the planet: **name → packet → reliable stream → encrypted
+  request → page**, and the **P7 *Wire Shark* boss went live** inside `tcp-lab`. **Kickoff (4
+  AskUserQuestion):** user chose (1) **whole P7 in one pass**; (2) the recommended **TCP Reno** spine for
+  the congestion engine (slow-start → AIMD → fast recovery = the classic sawtooth, with a senior
+  **CUBIC (Linux default) / BBR** beat); (3) **full INTERACTIVES.md inventory**; (4) **stage-only**
+  hand-off. **ch.26 How networks work** (story: **ARPANET's first message, 29 Oct 1969** — Charley Kline
+  types LOGIN, it crashes after "LO"; web-verified): the four-layer TCP/IP model as **encapsulation**,
+  the **link layer** (MAC + a learning switch: flood → learn → forward), the **internet layer** (IP,
+  routers, **TTL** decrement + the traceroute trick), and **DNS** (**Mockapetris 1983**, root→TLD→
+  authoritative); a NAT/IPv6/ARP/**BGP (~78,000 ASes)** senior callout + a **hierarchical-addressing**
+  formal corner (longest-prefix match: O(prefixes), not O(hosts)). 7 keyPoints, 4 pitfalls, 5 sources.
+  **ch.27 TCP & UDP** (story: **Cerf & Kahn, May 1974** + the end-to-end principle; **flag day 1 Jan
+  1983**; web-verified): TCP vs UDP, the **3-way handshake** (a SYN consumes a sequence number → ack =
+  peer + 1), reliability (cumulative ACKs + sliding window + timeout/fast-retransmit), **flow vs
+  congestion control** (rwnd vs cwnd), and **TCP Reno** — the **1986 collapse** (~800×, 32 Kbps→40 bps),
+  **Tahoe 1988 → Reno's fast recovery**, the AIMD sawtooth; senior **CUBIC/BBR/head-of-line** beat +
+  a **window/RTT throughput + AIMD-fairness (Chiu-Jain 1989)** formal corner. Hosts the **boss**. 7
+  keyPoints, 4 pitfalls, 5 sources. **ch.28 The Web** (story: **Berners-Lee, March 1989 CERN**, "vague
+  but exciting"; web-verified): HTTP request/response + statelessness, the **URL→pixels** timeline,
+  **HTTPS/TLS 1.3** (RFC 8446, **1-RTT / 0-RTT** resumption), **HTTP/1.1→2→3** head-of-line blocking
+  (app-layer → TCP-layer → QUIC fixes it; **HTTP/3 = RFC 9114, 2022, ~21% & plateaued**), and **caching**
+  (max-age/ETag/no-store/CDN); a CDN/cookies/CORS/**0-RTT-replay** senior callout + a **cache-freshness**
+  formal corner. Closes Part 7. 7 keyPoints, 4 pitfalls, 5 sources. **1 HERO + 5 micro + 2 fig + 3 quiz
+  + 1 boss** — `packet-journey` HERO (DNS side-quest → hop-by-hop journey, TTL ticks, MAC rewritten/IP
+  pinned, encapsulation envelope, low-TTL drop preset), `switch-learning`, **`tcp-lab` HERO** (lab|boss:
+  handshake stepper + Go-Back-N loss/retransmit + Reno **cwnd sawtooth** with injectable triple-dup/
+  timeout; **boss grades 3 broken handshakes → `markChallengeDone("boss-p7")` = 🦈 *Wire Shark***),
+  `udp-vs-tcp-race`, `url-journey`, `cache-headers`; figs `layer-cake` + `http-evolution`; quizzes
+  `packet-predict` / `seq-puzzle` / `web-predict`. **4 pure engines** — `sims/net/{layers,switching,tcp,
+  web}.ts` — plus **`scripts/test-ch26.ts`** (encapsulation round-trip, journey IP-constant/MAC-rewritten/
+  TTL, DNS, switch learning), **`test-ch27.ts`** (handshake seq/ack + each broken-field diagnosis, all 3
+  boss traces distinct + graded, Go-Back-N recovers under loss, **Reno sawtooth: 1→2→4→8→16 then 17;
+  triple-dup→8; timeout→1**), **`test-ch28.ts`** (timeline sum, HOL: h2 stalls all / h3 stalls 1,
+  cache precedence incl. age===maxAge) — all wired into `npm test`. **Fail-first caught a stale test
+  premise** (DEFAULT_PATH has **4** routers not 3 → TTL 64→60; the app-layer header is "HTTP" — engine
+  right, test fixed). **Sim components + figures delegated to 6 parallel subagents** (each built one
+  component against the tested engine + SimShell/FigureStepper, per-sim styles in `src/theme/_p7css/*.css`
+  side-effect imports; a shared `_test_ops/S13_BRIEF.md` kept them consistent), then reviewed.
+  registryKeys/registry → **58 sims, 28 figs**; +6 katas (`ip-same-subnet`, `switch-learn`,
+  `handshake-acks`, `reno-cwnd`, `parse-url`, `cache-decision`) → batch **44** (223 cases; test-katas
+  whitelist → ch28); +11 interview Qs (iv-ch26 ×4, iv-ch27 ×4, iv-ch28 ×3). **Adversarial review**
+  (subagent: independent Node probes on all 4 engines with hand-computed values + web-verified every dated
+  fact + recomputed all 9 quiz keys + hand-checked the 6 katas & 2 figures): **engines, quiz keys and
+  katas all correct.** One figure fix (blocking-ish): `http-evolution`'s HTTP/1.1 headline showed the
+  **in-flight count (6)** under a "one loss stalls N" banner → changed to the engine's **stall count
+  (⌈12/6⌉ = 2), warn tone**, so 2→12→1 reads honestly. Four factual-polish items actioned: end-to-end
+  principle credited to **Saltzer/Reed/Clark 1984** (not the 1974 paper); **1988 = Tahoe, Reno added fast
+  recovery**; 1986 collapse quantified (**~800×, 32 Kbps→40 bps**, not "×1000"); **ASes ~78,000** (was
+  75k); plus a `seq-puzzle` distractor made all-numeric. **verify = typecheck ✓ · lint ✓ (0/0) · qa ✓
+  (28 live chapters; 58 sims · 28 figs · 28 quizzes · 141 interview Qs · 44 katas · 10 bosses; mandate
+  holds) · test ✓ (21 suites; +test-ch26/27/28, +6 katas → 223 cases) · build ✓** (fresh `dist-s13`:
+  TcpLab 21 KB · HttpEvolution 12 · PacketJourney 12 · CacheHeaders 10 · UdpVsTcpRace 8 · SwitchLearning 7
+  · LayerCake 5 · UrlJourney 5 · react-vendor 190 · index 697 KB/251 gzip — data still in the main
+  bundle, S18/S19 lazy-load note stands). `dist-s13` gitignored (`dist-*`); sandbox `unlink` still blocked
+  (fresh `--outDir`); Rolldown linux-arm64 binding present. NOT sandbox-testable: real-browser interaction
+  pass — **5-min manual QA after deploy** (packet-journey: DNS resolves then hops advance, TTL ticks at
+  routers, MAC changes while IP holds, low-TTL preset drops at hop 1; switch-learning: first frame floods,
+  reply forwards, floods flatline; tcp-lab: step the handshake, drop a segment → retransmit, drive the
+  Reno sawtooth, then boss → diagnose all 3 traces → 🦈 badge; udp-vs-tcp-race: raise loss → UDP finishes
+  first with gaps, TCP later but complete; url-journey: click a phase to expand; cache-headers: toggle
+  no-store/etag + age → hit/revalidate/miss; layer-cake + http-evolution auto-play). **PART 7 COMPLETE.
+  S13 CLOSED pending user commit — suggested branch `feat/s13-p7-networks`. Next: S14 — P8 · Data: ch.29
+  (Databases — `btree-lab` HERO + isolation-anomalies) + ch.30 (Distributed systems — election-toy,
+  cap-explorer) + the P8 *Query Planner* boss.**

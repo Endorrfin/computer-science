@@ -2335,6 +2335,261 @@ Return \`true\` if the graph contains a **cycle** (a deadlock), else \`false\`.
       { name: "tail leading into a cycle still counts", body: `assertEqual(hasCycle([1, 2, 3, 1]), true);` },
     ],
   },
+  // ========================================================================
+  // ch26 · How networks work
+  // ========================================================================
+  {
+    id: "ip-same-subnet",
+    chapterId: "ch26",
+    title: "Same subnet?",
+    difficulty: "core",
+    tags: ["networks", "bitwise", "subnet"],
+    prompt: `
+Two IPv4 addresses are on the **same subnet** if their network **prefixes** match. Given two dotted-quad strings and a **prefix length** (0–32), return whether they share a subnet.
+
+Build the 32-bit mask (the top \`prefix\` bits set), AND each address with it, and compare. Watch the sign bit: use \`>>> 0\` to stay unsigned.
+
+### Examples
+- \`sameSubnet("192.168.1.10", "192.168.1.99", 24)\` → \`true\`
+- \`sameSubnet("192.168.1.10", "192.168.2.10", 24)\` → \`false\`
+- \`sameSubnet("1.2.3.4", "5.6.7.8", 0)\` → \`true\` (a /0 is the whole internet)
+`,
+    signature: `function sameSubnet(a: string, b: string, prefix: number): boolean`,
+    exportName: "sameSubnet",
+    starter: `function sameSubnet(a, b, prefix) {
+  // TODO: turn each address into a 32-bit int, mask off the host bits, compare.
+  return false;
+}`,
+    solution: `function sameSubnet(a, b, prefix) {
+  const toInt = (ip) => ip.split(".").reduce((acc, o) => acc * 256 + Number(o), 0);
+  const mask = prefix === 0 ? 0 : (0xffffffff << (32 - prefix)) >>> 0;
+  return ((toInt(a) & mask) >>> 0) === ((toInt(b) & mask) >>> 0);
+}`,
+    tests: [
+      { name: "same /24", body: `assertEqual(sameSubnet("192.168.1.10", "192.168.1.99", 24), true);` },
+      { name: "different /24", body: `assertEqual(sameSubnet("192.168.1.10", "192.168.2.10", 24), false);` },
+      { name: "same /16", body: `assertEqual(sameSubnet("10.0.0.1", "10.0.5.1", 16), true);` },
+      { name: "different /8", body: `assertEqual(sameSubnet("10.0.0.1", "11.0.0.1", 8), false);` },
+      { name: "/0 matches everything", body: `assertEqual(sameSubnet("1.2.3.4", "5.6.7.8", 0), true);` },
+      { name: "/32 is a single host", body: `assertEqual(sameSubnet("10.0.0.1", "10.0.0.2", 32), false);` },
+    ],
+  },
+  {
+    id: "switch-learn",
+    chapterId: "ch26",
+    title: "Switch MAC learning",
+    difficulty: "intro",
+    tags: ["networks", "hash-map", "simulation"],
+    prompt: `
+A learning switch records which port each **source** MAC arrived on. Given a list of frames \`{ src, dst, inPort }\`, return the final **MAC table** as an object mapping \`mac → port\`.
+
+Only the **source** and **inPort** matter for learning (the destination is about *forwarding*, not learning). If a host later appears on a new port, the table updates to the latest.
+
+### Examples
+- \`learnedTable([{src:"A",dst:"B",inPort:0}])\` → \`{ A: 0 }\`
+- \`learnedTable([{src:"A",dst:"B",inPort:0},{src:"B",dst:"A",inPort:1}])\` → \`{ A: 0, B: 1 }\`
+`,
+    signature: `function learnedTable(frames: { src: string; dst: string; inPort: number }[]): Record<string, number>`,
+    exportName: "learnedTable",
+    starter: `function learnedTable(frames) {
+  // TODO: record src -> inPort for every frame; last write wins.
+  return {};
+}`,
+    solution: `function learnedTable(frames) {
+  const table = {};
+  for (const f of frames) table[f.src] = f.inPort;
+  return table;
+}`,
+    tests: [
+      { name: "learns one host", body: `assertDeepEqual(learnedTable([{ src: "A", dst: "B", inPort: 0 }]), { A: 0 });` },
+      { name: "learns two hosts", body: `assertDeepEqual(learnedTable([{ src: "A", dst: "B", inPort: 0 }, { src: "B", dst: "A", inPort: 1 }]), { A: 0, B: 1 });` },
+      { name: "a moved host updates its port", body: `assertDeepEqual(learnedTable([{ src: "A", dst: "B", inPort: 0 }, { src: "A", dst: "C", inPort: 2 }]), { A: 2 });` },
+      { name: "empty input, empty table", body: `assertDeepEqual(learnedTable([]), {});` },
+    ],
+  },
+  // ========================================================================
+  // ch27 · TCP & UDP
+  // ========================================================================
+  {
+    id: "handshake-acks",
+    chapterId: "ch27",
+    title: "Handshake numbers",
+    difficulty: "intro",
+    tags: ["networks", "tcp"],
+    prompt: `
+In the TCP three-way handshake a **SYN consumes one sequence number**. Given the client and server initial sequence numbers, return the three key values:
+
+- \`synAckAck\` — the ack in the server's SYN-ACK (acknowledges the client's SYN),
+- \`finalAck\` — the ack in the client's closing ACK (acknowledges the server's SYN),
+- \`finalSeq\` — the client's own sequence number on that final segment.
+
+### Example
+- \`handshake(1000, 5000)\` → \`{ synAckAck: 1001, finalAck: 5001, finalSeq: 1001 }\`
+`,
+    signature: `function handshake(clientISN: number, serverISN: number): { synAckAck: number; finalAck: number; finalSeq: number }`,
+    exportName: "handshake",
+    starter: `function handshake(clientISN, serverISN) {
+  // TODO: remember that a SYN consumes one sequence number.
+  return { synAckAck: 0, finalAck: 0, finalSeq: 0 };
+}`,
+    solution: `function handshake(clientISN, serverISN) {
+  return { synAckAck: clientISN + 1, finalAck: serverISN + 1, finalSeq: clientISN + 1 };
+}`,
+    tests: [
+      { name: "the worked example", body: `assertDeepEqual(handshake(1000, 5000), { synAckAck: 1001, finalAck: 5001, finalSeq: 1001 });` },
+      { name: "zero ISNs still shift by one", body: `assertDeepEqual(handshake(0, 0), { synAckAck: 1, finalAck: 1, finalSeq: 1 });` },
+      { name: "un-round numbers", body: `assertDeepEqual(handshake(4200, 9100), { synAckAck: 4201, finalAck: 9101, finalSeq: 4201 });` },
+    ],
+  },
+  {
+    id: "reno-cwnd",
+    chapterId: "ch27",
+    title: "Reno congestion window",
+    difficulty: "core",
+    tags: ["networks", "tcp", "congestion"],
+    prompt: `
+Simulate TCP Reno's congestion window. Start \`cwnd = 1\` in **slow start**. Apply each event in order:
+
+- \`"ack"\` in slow start (\`cwnd < ssthresh\`): \`cwnd *= 2\`; if it reaches \`ssthresh\`, clamp to \`ssthresh\` and switch to congestion avoidance.
+- \`"ack"\` in congestion avoidance: \`cwnd += 1\`.
+- \`"loss"\` (triple-dup ACK): \`ssthresh = floor(cwnd/2)\`, \`cwnd = ssthresh\`, congestion avoidance.
+- \`"timeout"\`: \`ssthresh = floor(cwnd/2)\`, \`cwnd = 1\`, back to slow start.
+
+Return the final \`cwnd\`.
+
+### Examples
+- \`finalCwnd(16, ["ack","ack","ack","ack"])\` → \`16\` (1→2→4→8→16)
+- \`finalCwnd(16, ["ack","ack","ack","ack","loss"])\` → \`8\`
+`,
+    signature: `function finalCwnd(ssthresh: number, events: string[]): number`,
+    exportName: "finalCwnd",
+    starter: `function finalCwnd(ssthresh, events) {
+  // TODO: track cwnd + phase (slow-start vs congestion-avoidance) across events.
+  return 1;
+}`,
+    solution: `function finalCwnd(ssthresh, events) {
+  let cwnd = 1;
+  let thresh = ssthresh;
+  let slowStart = true;
+  for (const e of events) {
+    if (e === "timeout") {
+      thresh = Math.max(1, Math.floor(cwnd / 2));
+      cwnd = 1;
+      slowStart = true;
+    } else if (e === "loss") {
+      thresh = Math.max(1, Math.floor(cwnd / 2));
+      cwnd = thresh;
+      slowStart = false;
+    } else {
+      if (slowStart) {
+        cwnd *= 2;
+        if (cwnd >= thresh) {
+          cwnd = thresh;
+          slowStart = false;
+        }
+      } else {
+        cwnd += 1;
+      }
+    }
+  }
+  return cwnd;
+}`,
+    tests: [
+      { name: "slow start doubles to the threshold", body: `assertEqual(finalCwnd(16, ["ack", "ack", "ack", "ack"]), 16);` },
+      { name: "then congestion avoidance adds one", body: `assertEqual(finalCwnd(16, ["ack", "ack", "ack", "ack", "ack"]), 17);` },
+      { name: "triple-dup loss halves", body: `assertEqual(finalCwnd(16, ["ack", "ack", "ack", "ack", "loss"]), 8);` },
+      { name: "timeout collapses to 1", body: `assertEqual(finalCwnd(16, ["ack", "ack", "ack", "ack", "timeout"]), 1);` },
+      { name: "one ack from a cold start", body: `assertEqual(finalCwnd(8, ["ack"]), 2);` },
+    ],
+  },
+  // ========================================================================
+  // ch28 · The Web
+  // ========================================================================
+  {
+    id: "parse-url",
+    chapterId: "ch28",
+    title: "Parse a URL",
+    difficulty: "core",
+    tags: ["strings", "parsing", "web"],
+    prompt: `
+Split an \`http\`/\`https\` URL into its parts: \`{ protocol, host, port, path }\`. Assume no query string or fragment.
+
+- If no explicit port, default to **443** for https and **80** for http.
+- If no path, default to \`"/"\`.
+
+### Examples
+- \`parseUrl("https://example.com/")\` → \`{ protocol:"https", host:"example.com", port:443, path:"/" }\`
+- \`parseUrl("http://example.com:8080/a/b")\` → \`{ protocol:"http", host:"example.com", port:8080, path:"/a/b" }\`
+`,
+    signature: `function parseUrl(url: string): { protocol: string; host: string; port: number; path: string }`,
+    exportName: "parseUrl",
+    starter: `function parseUrl(url) {
+  // TODO: split protocol://authority/path, then default the port + path.
+  return { protocol: "", host: "", port: 0, path: "/" };
+}`,
+    solution: `function parseUrl(url) {
+  const [protocol, rest] = url.split("://");
+  const slash = rest.indexOf("/");
+  const authority = slash === -1 ? rest : rest.slice(0, slash);
+  const path = slash === -1 ? "/" : rest.slice(slash);
+  const colon = authority.indexOf(":");
+  let host = authority;
+  let port;
+  if (colon !== -1) {
+    host = authority.slice(0, colon);
+    port = Number(authority.slice(colon + 1));
+  } else {
+    port = protocol === "https" ? 443 : 80;
+  }
+  return { protocol, host, port, path };
+}`,
+    tests: [
+      { name: "https defaults to 443 and root path", body: `assertDeepEqual(parseUrl("https://example.com/"), { protocol: "https", host: "example.com", port: 443, path: "/" });` },
+      { name: "http defaults to 80 with a path", body: `assertDeepEqual(parseUrl("http://example.com/a/b"), { protocol: "http", host: "example.com", port: 80, path: "/a/b" });` },
+      { name: "explicit port wins", body: `assertDeepEqual(parseUrl("http://example.com:8080/a/b"), { protocol: "http", host: "example.com", port: 8080, path: "/a/b" });` },
+      { name: "no path defaults to /", body: `assertDeepEqual(parseUrl("https://example.com"), { protocol: "https", host: "example.com", port: 443, path: "/" });` },
+      { name: "https with explicit port and deep path", body: `assertDeepEqual(parseUrl("https://api.example.com:9443/v1/users"), { protocol: "https", host: "api.example.com", port: 9443, path: "/v1/users" });` },
+    ],
+  },
+  {
+    id: "cache-decision",
+    chapterId: "ch28",
+    title: "Cache freshness",
+    difficulty: "intro",
+    tags: ["web", "caching", "logic"],
+    prompt: `
+Given a cached response's policy \`{ maxAge, etag, noStore }\` and the seconds since it was stored, decide the outcome of a re-request: \`"hit"\`, \`"revalidate"\`, or \`"miss"\`.
+
+Precedence (first match wins):
+1. \`noStore\` → \`"miss"\` (never cached).
+2. \`ageSec < maxAge\` → \`"hit"\` (fresh, served from cache).
+3. stale **and** \`etag\` → \`"revalidate"\` (conditional GET → 304).
+4. otherwise → \`"miss"\` (full refetch).
+
+### Examples
+- \`cacheOutcome({maxAge:3600,etag:true,noStore:false}, 100)\` → \`"hit"\`
+- \`cacheOutcome({maxAge:60,etag:true,noStore:false}, 120)\` → \`"revalidate"\`
+`,
+    signature: `function cacheOutcome(policy: { maxAge: number; etag: boolean; noStore: boolean }, ageSec: number): string`,
+    exportName: "cacheOutcome",
+    starter: `function cacheOutcome(policy, ageSec) {
+  // TODO: apply the four precedence rules in order.
+  return "miss";
+}`,
+    solution: `function cacheOutcome(policy, ageSec) {
+  if (policy.noStore) return "miss";
+  if (ageSec < policy.maxAge) return "hit";
+  if (policy.etag) return "revalidate";
+  return "miss";
+}`,
+    tests: [
+      { name: "fresh within max-age is a hit", body: `assertEqual(cacheOutcome({ maxAge: 3600, etag: true, noStore: false }, 100), "hit");` },
+      { name: "stale with an ETag revalidates", body: `assertEqual(cacheOutcome({ maxAge: 60, etag: true, noStore: false }, 120), "revalidate");` },
+      { name: "stale without a validator misses", body: `assertEqual(cacheOutcome({ maxAge: 60, etag: false, noStore: false }, 120), "miss");` },
+      { name: "no-store always misses", body: `assertEqual(cacheOutcome({ maxAge: 3600, etag: true, noStore: true }, 1), "miss");` },
+      { name: "age exactly at max-age is stale", body: `assertEqual(cacheOutcome({ maxAge: 60, etag: true, noStore: false }, 60), "revalidate");` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

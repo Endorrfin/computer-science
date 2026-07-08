@@ -4046,6 +4046,414 @@ const ch25: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.26 — How networks work  (P7 · Networks, built in S13)
+// ---------------------------------------------------------------
+const ch26: Chapter = {
+  id: "ch26",
+  part: "p7",
+  order: 28,
+  title: "How networks work",
+  tagline: "No shared memory, an unreliable wire, billions of machines — and yet a packet you send finds one exact server on the far side of the planet in milliseconds",
+  readMins: { foundations: 22, senior: 35 },
+  storyHook: {
+    md:
+      "10:30 p.m., **29 October 1969**. In a basement lab at UCLA, a student named **Charley Kline** types the first message ever sent between two computers, aimed at a machine 350 miles away at Stanford. The message was supposed to be **LOGIN**. He typed **L** — the far end confirmed it. He typed **O** — confirmed. He typed **G** — and the receiving system **crashed**. So the first word ever transmitted across the network that became the internet was, by accident, **\"LO\"** — as in *lo and behold*. ARPANET grew from four nodes that year into a planetary system now spanning billions of machines that share no memory, trust no wire, and speak dozens of hardware dialects — yet cooperate flawlessly. This chapter is the trick that makes that possible: not one clever protocol, but a **stack of layers**, each solving one problem and hiding it from the next.",
+  },
+  assumes: [
+    { chapterId: "ch25", oneLiner: "Concurrency was many flows sharing one machine's memory. A network is many machines with NO shared memory and an unreliable link between them — coordination gets strictly harder." },
+    { chapterId: "ch6", oneLiner: "A MAC address is burned into a network card the way an address decoder is wired into RAM — a fixed hardware identity the link layer uses to reach the next hop." },
+  ],
+  mentalModel:
+    "A network is a stack of layers, each talking only to its peer on the other machine and using the layer below as a dumb pipe. The application layer means something (a web request); the transport layer (TCP/UDP) adds port numbers to pick the right program; the internet layer (IP) adds source and destination addresses for end-to-end routing across networks; the link layer (Ethernet/Wi-Fi) carries a frame to the NEXT hop by MAC address. Sending wraps the data in a header at each layer on the way down (encapsulation); receiving strips one header per layer on the way up. Two addresses do two different jobs: the IP address is end-to-end and never changes, while the MAC address is hop-by-hop and is rewritten by every router. Routers forward packets between networks and decrement a TTL so a lost packet can't circle forever; switches forward frames within one network by learning which MAC lives on which port; and DNS is the distributed directory that turns a human name into the IP address the whole journey needs before it can even start.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Everything until now lived inside **one machine**: gates, a CPU, programs, algorithms, an operating system sharing that machine among many tasks. **This part leaves the machine.** The question of Part 7 is the hardest kind of coordination there is: how do two computers that share **no memory**, connected by a wire that **loses, reorders, and corrupts** whatever you put on it, agree on anything at all?\n" +
+        "The answer that won — after decades of competing designs — is **layering**. Instead of one protocol that does everything, you build a **stack**: each layer solves exactly one problem, talks only to the matching layer on the other machine, and treats the layer beneath it as a pipe it doesn't need to understand.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The four layers (the TCP/IP model)\n" +
+        "The model that runs the internet has **four** layers. Top to bottom: the **application** layer is what you actually mean — an HTTP request, an email, a DNS query. The **transport** layer (TCP or UDP) adds **port numbers** so the right *program* gets the data, and — for TCP — the promise of reliable, ordered delivery. The **internet** layer (**IP**) adds a **source and destination address** and routes the packet across networks. The **link** layer (**Ethernet**, **Wi-Fi**) puts the bits on the physical medium and carries a **frame** to the *next hop*.\n" +
+        "The magic word is **encapsulation**: on the way down, each layer wraps the data in its own header (HTTP → +TCP → +IP → +Ethernet); on the way up on the far machine, each layer peels *its* header back off. A layer only ever reads its own header — it never looks inside the payload. That's what makes the stack swappable: Wi-Fi or fiber underneath, TCP or QUIC on top, the layers between don't care.",
+    },
+    { kind: "figure", fig: "layer-cake", caption: "Encapsulation, both directions. Down the sender's stack each layer wraps the payload in its own header and renames the unit — message → segment → packet → frame. Up the receiver's stack each layer strips exactly its own header back off, until the original message is delivered unchanged. Every layer reads only its own envelope." },
+    {
+      kind: "prose",
+      md:
+        "## The link layer: MAC addresses and the learning switch\n" +
+        "On one local network — your home, an office floor — machines are identified by a **MAC address**, a 48-bit identity burned into each network card. The device that ties a LAN together is a **switch**, and it starts out knowing *nothing*. When a frame arrives, the switch does two things: it **learns** (the source MAC must live on the port this frame came in on) and it **decides** (if it already knows where the destination MAC lives, it **forwards** out that one port; if not, it **floods** the frame out every other port and lets the real owner answer). Over a few frames the table fills and flooding stops. No configuration, no central authority — just learning from traffic.",
+    },
+    { kind: "sim", sim: "switch-learning" },
+    {
+      kind: "prose",
+      md:
+        "## The internet layer: IP, routers, and TTL\n" +
+        "MACs only work *within* one network. To cross between networks you need the **internet layer** and its **IP address** — a hierarchical, *routable* address (unlike a flat MAC). A **router** sits at the boundary of networks; it reads a packet's destination IP, consults its routing table, and forwards the packet one hop closer. Crucially, the packet's **IP addresses stay the same end to end**, but the **link-layer MACs are rewritten at every router** — because each hop is a fresh delivery on a different physical network.\n" +
+        "One safety valve makes this survivable: every IP packet carries a **TTL** (time-to-live) that each router **decrements**. Hit zero and the packet is **dropped** and an error is sent back — so a routing loop can't spin a packet around forever. (That very mechanism, abused deliberately, is how **traceroute** maps the path: send packets with TTL 1, 2, 3… and collect the 'time exceeded' reply from each hop in turn.)",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Names: DNS, the internet's phone book\n" +
+        "You typed a *name*, not an address. The **Domain Name System** — invented by **Paul Mockapetris in 1983** to replace a single hand-edited `HOSTS.TXT` file that no longer scaled — is a **distributed, hierarchical** directory that turns `example.com` into an IP. A **recursive resolver** walks the hierarchy: ask a **root** server (it knows the `.com` servers), ask the **`.com` TLD** server (it knows `example.com`'s authoritative server), ask the **authoritative** server (it knows the address). Answers are cached with a TTL at every level, so the common names resolve in one hop. This lookup must finish **before** the packet journey can begin — the name resolves, *then* the connection opens.",
+    },
+    { kind: "sim", sim: "packet-journey" },
+    {
+      kind: "table",
+      caption: "The four layers of the TCP/IP model, and the one job each one owns. Read it bottom-up (how bits become meaning) or top-down (how meaning becomes bits): each layer adds exactly one header and hides one problem from the layer above.",
+      head: ["Layer", "Address / unit", "Job", "Example"],
+      rows: [
+        ["Application", "— / message", "what you actually mean", "HTTP, DNS, SMTP"],
+        ["Transport", "port / segment", "which program; reliable or not", "TCP, UDP"],
+        ["Internet", "IP address / packet", "end-to-end routing across networks", "IP, ICMP"],
+        ["Link", "MAC address / frame", "next hop on this physical medium", "Ethernet, Wi-Fi"],
+      ],
+    },
+    { kind: "quiz", quiz: "packet-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "NAT, IPv6, ARP, and the autonomous-system view of the internet",
+      lens: "senior",
+      md:
+        "A few realities the clean four-layer picture hides. **IPv4 has only ~4.3 billion addresses and ran out** — so your home router runs **NAT** (Network Address Translation), sharing one public IP across every device by rewriting addresses and ports, keeping a translation table. It's why your laptop has a private `192.168.x.x` address the wider internet never sees. **IPv6** (128-bit addresses — 3.4×10³⁸ of them) is the real fix and now carries a large share of traffic, but NAT'd IPv4 refuses to die. Between the IP and MAC layers sits **ARP**, which resolves 'what MAC has this IP?' on the local wire. And zoom all the way out: the internet isn't one network but **~78,000 Autonomous Systems** (ISPs, clouds, universities) that exchange reachability with **BGP**, the internet's core routing protocol — a system held together by trust and policy, whose misconfigurations have taken large services offline. 'The internet' is a negotiated agreement, not a machine.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — why hierarchical addressing scales (and flat addressing can't)",
+      md:
+        "A **switch** forwards on **flat** MAC addresses: to know where a MAC lives it must have an entry for *that exact address*. A table of every device on Earth is impossible, which is exactly why switching stays *local*.\n\n" +
+        "**Routing** scales because IP addresses are **hierarchical** and can be **aggregated**. An address is a prefix + host: `93.184.216.0/24` means 'the first 24 bits are the network, the last 8 identify a host on it.' A router doesn't store a route per host — it stores a route per **prefix**, and picks the **longest matching prefix**. One routing entry like `93.184.0.0/16` covers 65,536 addresses. This is why the global routing table is ~1 million prefixes instead of ~20 billion hosts: hierarchy turns an impossible O(hosts) problem into a tractable O(prefixes) one. The same idea — a name's structure mirroring the delegation of authority — is why **DNS** scales too: the root delegates `.com`, which delegates `example.com`, which owns its own records. Hierarchy is the recurring trick that makes a planet-sized network addressable.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You can now get a **packet** from any machine to any other — but that's all IP promises: **best effort**. Packets can vanish, arrive out of order, or be duplicated, and IP will happily deliver the mess without apology. That's fine for some things and unacceptable for others. **Chapter 27** is the layer that turns this unreliable delivery into a promise you can build on — **TCP**'s handshake, acknowledgements, and congestion control — and its opposite number **UDP**, which keeps the speed by keeping *none* of the promises.",
+    },
+  ],
+  keyPoints: [
+    "Networking works by layering — each layer solves one problem, talks only to its peer on the other machine, and treats the layer below as a dumb pipe it never inspects.",
+    "The TCP/IP model has four layers — application (meaning), transport (ports + reliability), internet (IP addresses + routing), link (MAC + the physical next hop).",
+    "Encapsulation is the mechanism — sending wraps a header at each layer on the way down (message→segment→packet→frame); receiving strips exactly one header per layer on the way up.",
+    "Two addresses, two jobs — the IP address is end-to-end and constant the whole journey; the MAC address is hop-by-hop and is rewritten by every router.",
+    "A switch learns; a router routes — a switch floods then learns source-MAC→port to forward within a LAN, while a router forwards between networks by destination IP and decrements the TTL.",
+    "TTL prevents immortal packets — every router decrements it and drops the packet at zero, which stops routing loops and (abused on purpose) is how traceroute maps the path.",
+    "DNS resolves names before the journey starts — a hierarchical, cached directory (root → TLD → authoritative) turns a name into the IP that routing actually needs.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking the MAC address gets you across the internet",
+      body: "A MAC address only means anything on the local link — a switch can't route on it, and it's rewritten at the very first router. What travels end to end is the IP address. Confusing the two ('my MAC is my internet identity') misreads the whole model: MAC = this hop, IP = the whole trip.",
+      lens: "both",
+    },
+    {
+      title: "Assuming IP delivery is reliable",
+      body: "IP is best-effort: packets can be dropped, duplicated, reordered, or corrupted, and IP won't tell you. Reliability is not a property of the network — it's a promise TCP adds on top (ch.27). Building on 'the packet will arrive' is the root of a whole class of networking bugs.",
+      lens: "both",
+    },
+    {
+      title: "Treating DNS as instant or free",
+      body: "A name lookup is a real network round trip (often several) before your connection can even open — and it's cached at many layers, which is both why it's usually fast and why stale caches cause 'it works on my machine' mysteries after a DNS change. DNS is also a common outage cause: 'it's always DNS' is a sysadmin joke precisely because it's so often true.",
+      lens: "senior",
+    },
+    {
+      title: "Confusing a switch with a router",
+      body: "They operate at different layers and forward on different addresses: a switch moves frames within one network by MAC (flat, learned), a router moves packets between networks by IP (hierarchical, configured/advertised). Your home 'router' is really both — plus NAT, DHCP, and a firewall — in one box, which is why the distinction blurs in practice.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch26-1", "iv-ch26-2", "iv-ch26-3", "iv-ch26-4"],
+  kataIds: ["ip-same-subnet", "switch-learn"],
+  seeAlso: ["ch27", "ch28", "ch6"],
+  sources: [
+    { title: "Internet protocol suite / TCP-IP model (Wikipedia)", url: "https://en.wikipedia.org/wiki/Internet_protocol_suite" },
+    { title: "ARPANET — the first message, 29 Oct 1969 (Wikipedia)", url: "https://en.wikipedia.org/wiki/ARPANET" },
+    { title: "Domain Name System — Mockapetris, 1983 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Domain_Name_System" },
+    { title: "Network switch — MAC learning & flooding (Wikipedia)", url: "https://en.wikipedia.org/wiki/Network_switch" },
+    { title: "Time to live — IP TTL & traceroute (Wikipedia)", url: "https://en.wikipedia.org/wiki/Time_to_live" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.27 — TCP & UDP  (P7 · Networks, built in S13)
+// ---------------------------------------------------------------
+const ch27: Chapter = {
+  id: "ch27",
+  part: "p7",
+  order: 29,
+  title: "TCP & UDP",
+  tagline: "IP promises nothing — packets drop, duplicate, and arrive out of order. TCP turns that shrug into a promise you can build a bank on, using only acknowledgements and a clock",
+  readMins: { foundations: 20, senior: 35 },
+  storyHook: {
+    md:
+      "**May 1974.** **Vint Cerf** and **Bob Kahn** publish *\"A Protocol for Packet Network Intercommunication\"* — nine pages that describe how to lash together many different packet networks into one. Their key move was almost philosophical: keep the **network in the middle dumb** (it just forwards packets, best-effort) and push all the intelligence — reliability, ordering, flow control — to the **hosts at the edges**. That design choice — later formalized as the *end-to-end principle* (Saltzer, Reed & Clark, 1984) — is why the internet could grow without asking permission: the middle never had to change. Their protocol later split into **IP** (addressing and routing) and **TCP** (the promises), and on **1 January 1983** — 'flag day' — the ARPANET switched to TCP/IP overnight. This chapter is the promise-keeping layer: how a stream you can trust is built on a network that guarantees nothing.",
+  },
+  assumes: [
+    { chapterId: "ch26", oneLiner: "IP gets a packet across the planet but promises only best-effort delivery — it can drop, duplicate, or reorder, and never tells you. This chapter is what the endpoints do about that." },
+    { chapterId: "ch25", oneLiner: "Reliability over an unreliable channel is a coordination problem between two parties with no shared memory — the network version of the concurrency puzzles from ch.25." },
+  ],
+  mentalModel:
+    "TCP and UDP are the two transport layers, both adding port numbers so the right program gets the data, but making opposite promises. UDP is a thin wrapper over IP: fire-and-forget datagrams, no connection, no retransmission — fast and simple, used where late data is worse than lost data (video, games, DNS). TCP is a reliable, ordered byte stream built on the same unreliable IP: it opens with a three-way handshake (SYN, SYN-ACK, ACK) that syncs sequence numbers — and a SYN consumes one sequence number, which is why each side acknowledges the peer's number plus one. Every byte is numbered; the receiver sends cumulative acknowledgements; a sender that doesn't hear an ACK before a timeout retransmits. A sliding window lets many bytes be in flight at once, and two separate limits bound it: flow control (the receiver's advertised window, so a fast sender can't drown a slow receiver) and congestion control (the sender's own congestion window, so the senders together can't drown the network). TCP Reno grows that congestion window by slow-start (double per round trip) until a threshold, then AIMD (add one per round trip, halve on loss) — the sawtooth that keeps the internet from collapsing.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Chapter 26 got a **packet** from anywhere to anywhere — but IP's promise is deliberately weak: **best effort**. A packet may be dropped by a congested router, duplicated by a retransmitting link, or arrive out of order because two packets took different paths. IP will deliver that mess without a word of warning.\n" +
+        "So the endpoints have a choice. Either **live with it** — and keep the speed — or **build a promise on top** of it. Those two choices are the two transport protocols: **UDP** and **TCP**.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Two transports, opposite promises\n" +
+        "Both **UDP** and **TCP** add one thing IP lacks: **port numbers**, so data reaches the right *program* (port 443 = HTTPS, 53 = DNS) rather than just the right machine. After that they diverge completely. **UDP** is barely more than IP with ports: a **datagram** you send and forget — no connection, no acknowledgements, no retransmission, no ordering. If it's lost, it's gone. That sounds useless until you realize that for a **video call** or a **game**, a packet that arrives late is *worse* than one that never arrives — you want the *next* frame, not last second's. **TCP** makes the opposite bet: a **reliable, ordered byte stream**, where every byte is guaranteed to arrive exactly once and in order, at the cost of connection setup, buffering, and waiting for retransmissions.",
+    },
+    {
+      kind: "compare",
+      a: "TCP",
+      b: "UDP",
+      rows: [
+        ["Delivery", "Reliable, ordered byte stream — every byte, once, in order", "Best-effort datagrams — may be lost, duplicated, reordered"],
+        ["Connection", "3-way handshake before data, teardown after", "Connectionless — just send"],
+        ["Reliability machinery", "ACKs + retransmission + flow & congestion control", "None — no ACKs, no retransmit, no backoff"],
+        ["Cost", "Higher latency & setup; head-of-line blocking on loss", "Minimal overhead; late data is simply skipped"],
+        ["Used by", "The web, email, file transfer, SSH", "Video/voice, gaming, DNS, QUIC's foundation"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## Opening a connection: the three-way handshake\n" +
+        "TCP is **connection-oriented**, and the connection begins with a three-step ritual that synchronizes both sides' **sequence numbers** (the byte counters that make ordering and loss detection possible). The client sends a **SYN** carrying its initial sequence number *x*. The server replies **SYN-ACK**: its own initial number *y*, plus an acknowledgement of **x + 1**. The client finishes with an **ACK** of **y + 1**. Why the *+1*? Because a **SYN consumes one sequence number** — it counts as a byte for the purposes of acknowledgement, even though it carries no data. Get that off by one and the connection never establishes. Step through it — and then break it — in the lab:",
+    },
+    { kind: "sim", sim: "tcp-lab" },
+    {
+      kind: "prose",
+      md:
+        "## Keeping the promise: ACKs, windows, retransmission\n" +
+        "Once open, reliability rests on three ideas. **Sequence numbers**: every byte is numbered, so the receiver can reorder and spot gaps. **Cumulative acknowledgements**: the receiver replies 'I have everything up to byte N' — one ACK can cover many segments. **Timeout + retransmission**: a sender keeps a copy of unacknowledged data and, if no ACK arrives before its timer expires, resends. A faster trigger, **fast retransmit**, resends immediately on *three duplicate ACKs* (the receiver repeating 'still waiting for N') without waiting for the timer. And because waiting for each segment to be acknowledged before sending the next would be agonizingly slow, TCP keeps a **sliding window** of many bytes in flight at once — the loss-injection button in the lab shows a dropped segment and the retransmit that recovers it.",
+    },
+    { kind: "quiz", quiz: "seq-puzzle" },
+    {
+      kind: "prose",
+      md:
+        "## Two windows, two problems: flow vs congestion control\n" +
+        "How big should that window be? Two *different* limits apply, and confusing them is a classic mistake. **Flow control** protects the **receiver**: it advertises a **receive window** ('I have room for this many more bytes') so a fast sender can't overflow a slow receiver's buffer. **Congestion control** protects the **network in the middle**: the sender maintains its own **congestion window** (`cwnd`) that estimates how much the *path* can absorb before routers start dropping packets. The actual bytes in flight are bounded by the **smaller** of the two. Flow control is a conversation between the two endpoints; congestion control is every sender's unilateral guess about a shared resource none of them can see.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## TCP Reno: the sawtooth that saved the internet\n" +
+        "In **1986** the young internet suffered a *congestion collapse* — throughput between two Berkeley sites fell by a factor of ~800 (from 32 Kbps to 40 bps) as senders retransmitted into an already-jammed network. **Van Jacobson's** 1988 fix — **TCP Tahoe** (slow start + congestion avoidance + fast retransmit), soon refined into **TCP Reno** by adding **fast recovery** — ended it, and the scheme still shapes most traffic. It runs two phases. **Slow start**: begin with a tiny `cwnd` and **double** it every round trip — exponential probing for the ceiling — until you reach a threshold (`ssthresh`). **Congestion avoidance (AIMD)**: now add just **one** segment per round trip (additive increase), gently pushing the limit. On a loss signalled by triple-dup ACKs, **halve** `cwnd` (multiplicative decrease) and keep going — that's *fast recovery*. On a **timeout** (a worse sign), collapse all the way back to 1 and slow-start again. Plotted over time, `cwnd` climbs and halves, climbs and halves: the famous **AIMD sawtooth**. Drive it in the congestion panel of the lab above, then race it against a protocol that does none of this:",
+    },
+    { kind: "sim", sim: "udp-vs-tcp-race" },
+    {
+      kind: "table",
+      caption: "How TCP Reno moves its congestion window. The two increase rules (exponential then linear) probe for bandwidth; the two decrease rules (gentle on a fast-retransmit loss, harsh on a timeout) back off — additive-increase / multiplicative-decrease is what makes many independent senders converge to a fair share.",
+      head: ["Event", "Phase", "cwnd change", "Why"],
+      rows: [
+        ["ACK, cwnd < ssthresh", "slow start", "× 2 per RTT", "probe fast for the ceiling from a cold start"],
+        ["ACK, cwnd ≥ ssthresh", "congestion avoidance", "+ 1 per RTT", "creep up gently near the known limit"],
+        ["3 duplicate ACKs", "fast recovery", "ssthresh ← cwnd/2, cwnd ← ssthresh", "one loss ≠ catastrophe: halve, don't reset"],
+        ["Timeout", "→ slow start", "ssthresh ← cwnd/2, cwnd ← 1", "silence is a bad sign: back off hard, restart"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Beyond Reno: CUBIC, BBR, NAT state, and head-of-line blocking",
+      lens: "senior",
+      md:
+        "Reno is the *teaching* model; production has moved on. **CUBIC** is the **default in Linux** (and thus most servers): still loss-based, but it grows the window along a **cubic curve** that recovers bandwidth far faster than Reno's straight line on today's high-bandwidth, high-latency 'long fat' paths. **BBR** (Google, 2016) breaks from the whole tradition — instead of treating loss as the congestion signal, it **models the path's bandwidth and round-trip time directly** and paces packets to that estimate, avoiding the bufferbloat that loss-based schemes cause; BBRv3 is the current iteration. Two more realities: **NAT** (ch.26) means a router holds **per-connection state**, which is why an idle TCP connection can be silently dropped and why UDP 'hole punching' is fiddly. And TCP has one baked-in flaw for the web — **head-of-line blocking**: because it's a single ordered stream, one lost segment stalls *everything* behind it, even unrelated data. That flaw is exactly what pushed the web onto **QUIC** (ch.28), which runs many independent streams over UDP.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — window/RTT throughput and why AIMD is fair",
+      md:
+        "**Throughput is bounded by window ÷ RTT.** With a window of *W* bytes in flight and a round-trip time of *RTT*, you can deliver at most *W* bytes every *RTT*, so throughput ≈ *W / RTT*. To fill a path you need *W* ≥ the **bandwidth-delay product** (link rate × RTT) — the amount of data 'in the pipe.' This is why a window too small starves a fast, long link (a 1 Gbit/s path at 100 ms RTT needs ~12.5 MB in flight), and why high-BDP paths drove CUBIC and window scaling.\n\n" +
+        "**Why AIMD converges to fairness.** Picture two flows sharing a link, plotting their rates on a graph. **Additive increase** moves both up along a 45° line (both +1). **Multiplicative decrease** on congestion pulls both toward the origin along a line through it (both ×½). Iterate, and the pair is driven onto the **fair line** (equal shares) where it then oscillates — Chiu & Jain's 1989 result. Additive-increase / multiplicative-decrease isn't just *a* rule that works; among simple linear controls it's essentially the *only* one that is both **stable** and **fair**. The Reno sawtooth is that theorem, drawn.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You now have a **reliable, congestion-aware byte stream** between any two programs on the planet. **Chapter 28** spends it: the **Web** — HTTP requests and responses riding on TCP, **TLS** wrapping them in encryption, the leap from HTTP/1.1 to HTTP/2 to **HTTP/3** (which throws out TCP for QUIC precisely to kill the head-of-line blocking we just met), and the caching that makes the whole thing fast. From 'a byte stream exists' to 'a page appears.'",
+    },
+  ],
+  keyPoints: [
+    "TCP and UDP are the two transports — both add port numbers to reach the right program, but TCP promises a reliable ordered stream while UDP is fire-and-forget datagrams.",
+    "UDP wins when late is worse than lost — video, voice, games, and DNS prefer UDP's speed and skip losses rather than wait for a retransmit.",
+    "The three-way handshake syncs sequence numbers — SYN, SYN-ACK, ACK; because a SYN consumes one sequence number, each side acknowledges the peer's number plus one.",
+    "Reliability = sequence numbers + cumulative ACKs + retransmission — the receiver reorders and reports gaps, and the sender resends on a timeout or three duplicate ACKs (fast retransmit).",
+    "Flow control and congestion control are different limits — the receive window protects a slow receiver; the congestion window protects the shared network; bytes in flight are bounded by the smaller.",
+    "TCP Reno is slow-start then AIMD — double cwnd per RTT until a threshold, then add one per RTT and halve on loss, producing the sawtooth that averts congestion collapse.",
+    "Production has moved past Reno — CUBIC is the Linux default (cubic growth for high-BDP paths) and BBR models bandwidth and RTT directly instead of treating loss as the signal.",
+  ],
+  pitfalls: [
+    {
+      title: "Believing TCP is 'more advanced' so always the right choice",
+      body: "TCP's reliability is a cost, not a free upgrade. Its in-order guarantee causes head-of-line blocking, its handshake adds a round trip, and its retransmissions add latency — all fatal for real-time media. UDP isn't 'TCP without features'; it's the correct choice whenever timeliness beats completeness. Picking TCP reflexively for a game or a voice call is a real design error.",
+      lens: "both",
+    },
+    {
+      title: "Confusing flow control with congestion control",
+      body: "They solve different problems with different signals. Flow control is the receiver saying 'my buffer is this full' (the advertised window). Congestion control is the sender inferring 'the network is dropping packets' (the congestion window). A connection can be slow because of either — and the fix differs. Interviewers probe this exact distinction constantly.",
+      lens: "senior",
+    },
+    {
+      title: "Reading a lost packet as an error to surface",
+      body: "In TCP, loss is not an exception — it's the normal, expected feedback signal that drives congestion control. Reno deliberately increases its window until a packet drops, then backs off. Treating every retransmission as a failure misunderstands the design: the sawtooth means the connection is doing its job of probing for available bandwidth.",
+      lens: "senior",
+    },
+    {
+      title: "Assuming a TCP 'connection' is a real thing on the wire",
+      body: "There is no physical circuit — a TCP connection is just agreed state (sequence numbers, windows) held at the two endpoints, carried over stateless IP packets that each route independently. That's why a connection can survive a path change, why NAT boxes must fake connection state with timers, and why a half-open connection can linger: the 'connection' lives only in the two hosts' memory.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch27-1", "iv-ch27-2", "iv-ch27-3", "iv-ch27-4"],
+  kataIds: ["handshake-acks", "reno-cwnd"],
+  seeAlso: ["ch26", "ch28", "ch25"],
+  sources: [
+    { title: "Transmission Control Protocol (Wikipedia)", url: "https://en.wikipedia.org/wiki/Transmission_Control_Protocol" },
+    { title: "User Datagram Protocol (Wikipedia)", url: "https://en.wikipedia.org/wiki/User_Datagram_Protocol" },
+    { title: "TCP congestion control — Reno, CUBIC, AIMD (Wikipedia)", url: "https://en.wikipedia.org/wiki/TCP_congestion_control" },
+    { title: "Cerf & Kahn, 'A Protocol for Packet Network Intercommunication', 1974 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Vint_Cerf" },
+    { title: "BBR congestion control (Wikipedia)", url: "https://en.wikipedia.org/wiki/TCP_BBR" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.28 — The Web  (P7 · Networks, built in S13 — closes Part 7)
+// ---------------------------------------------------------------
+const ch28: Chapter = {
+  id: "ch28",
+  part: "p7",
+  order: 30,
+  title: "The Web",
+  tagline: "Type a URL, press Enter, and in a few hundred milliseconds a dozen protocols you never see collaborate to turn a name into pixels — the most-used layer of the whole stack",
+  readMins: { foundations: 20, senior: 32 },
+  storyHook: {
+    md:
+      "**March 1989.** A software engineer at **CERN** named **Tim Berners-Lee** circulates a memo titled *\"Information Management: A Proposal.\"* His manager's now-famous scrawl on the top: *\"Vague, but exciting.\"* The idea was to let the lab's tangle of incompatible computers share documents by **linking** them. To make it work Berners-Lee invented, essentially alone, three things that still run the web: the **URL** (a universal address for any document), **HTTP** (the protocol to fetch it), and **HTML** (the format to write it) — plus the first browser and the first server. By 1991 the first website was live. He gave it all away for free, no patent. This chapter is what he built, grown up: how a URL becomes a page, why it's encrypted, and why the protocol has been rewritten twice to keep up.",
+  },
+  assumes: [
+    { chapterId: "ch27", oneLiner: "HTTP rides on TCP's reliable byte stream — and HTTP/3's whole reason to exist is escaping TCP's head-of-line blocking, so keep that flaw in mind." },
+    { chapterId: "ch26", oneLiner: "Before any request, DNS resolves the hostname to an IP and the packet is routed there — the URL journey starts with the ch.26 machinery." },
+  ],
+  mentalModel:
+    "The Web is the application layer almost everyone means by 'the internet': a client sends an HTTP request (a method like GET plus a URL and headers) and a server returns a response (a status code plus headers and a body). HTTP is stateless — each request stands alone — so state is bolted on with cookies and headers. Opening a page is a pipeline you can time: DNS resolves the name, TCP connects, TLS negotiates encryption, the request goes out, the server thinks (time to first byte), the body downloads, the browser parses HTML and CSS, then lays out and paints pixels. HTTPS is HTTP inside TLS, which provides confidentiality, integrity, and server authentication; TLS 1.3 needs just one round trip. The protocol itself evolved to kill head-of-line blocking: HTTP/1.1 sends one response at a time per connection (so browsers open ~6), HTTP/2 multiplexes many streams over one TCP connection but a single lost packet still stalls them all, and HTTP/3 runs over QUIC (on UDP) so each stream is independent and one loss stalls only its own stream. Caching — max-age, ETag validators, and CDNs at the edge — is what makes the whole thing feel instant the second time.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "This is the top of the journey. Under the URL bar sit **every** layer you've built: DNS and IP routing (ch.26), TCP's reliable stream (ch.27), and below those the OS, the CPU, the gates. The **Web** is the application layer that rides on all of it — and it's the one layer nearly everyone touches directly. The question of this chapter is deceptively simple: **what actually happens between pressing Enter and seeing the page?**\n" +
+        "The core is a request/response conversation. Your browser sends an **HTTP request** — a **method** (`GET`, `POST`, …), a path, and **headers** — and the server sends back an **HTTP response**: a **status code** (`200 OK`, `404 Not Found`, `301 Moved`), headers, and usually a body. HTTP is **stateless**: the server remembers nothing between requests on its own, which is why sessions ride in **cookies** and headers.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## URL → pixels: the timeline\n" +
+        "That one page load is really a **pipeline of phases**, each on a different layer, each costing time. **DNS** resolves the hostname (ch.26). **TCP** completes its handshake (ch.27). **TLS** negotiates keys. The **request** goes out; the server thinks (**time to first byte**); the **response** body downloads; the browser **parses** HTML and CSS into a DOM; and finally it **lays out, paints, and composites** — pixels. On a cold connection the *setup* (DNS + TCP + TLS) can cost more than the download. Watch the phases lay out end to end, and click one to see which layer it belongs to:",
+    },
+    { kind: "sim", sim: "url-journey" },
+    {
+      kind: "prose",
+      md:
+        "## The 'S' in HTTPS: TLS\n" +
+        "Plain HTTP sends everything in the clear — anyone on the path can read or tamper with it. **HTTPS is just HTTP carried inside TLS** (Transport Layer Security), which provides three things at once: **confidentiality** (encryption, so eavesdroppers see nothing), **integrity** (tampering is detected), and **authentication** (a certificate signed by a trusted authority proves you're really talking to the site, not an impostor). The magic is that two strangers derive a shared secret over a wire everyone can read — the key exchange we'll open up in **ch.31**. What matters here: **TLS 1.3** (2018) trimmed the handshake to a **single round trip** (down from two), and can resume a prior session in **zero** round trips — which is why modern HTTPS is barely slower than HTTP.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Why HTTP was rewritten twice: head-of-line blocking\n" +
+        "The web outgrew **HTTP/1.1**, whose fatal limit is that a connection handles **one response at a time** — a slow resource blocks everything queued behind it (**application-layer head-of-line blocking**), so browsers hack around it by opening ~6 parallel connections. **HTTP/2** (2015) fixed that by **multiplexing** many streams over a **single** TCP connection, plus header compression — a huge win. But it inherited a subtler flaw: because those streams share **one TCP** connection, a **single lost packet stalls *all* of them** (TCP-layer head-of-line blocking — ch.27). **HTTP/3** (standardized 2022) makes the radical move of dropping TCP entirely for **QUIC**, a transport over **UDP** that gives each stream its **own** reliability — so a loss stalls only *its* stream, and TLS is built in for a faster handshake. Step through why each version happened:",
+    },
+    { kind: "figure", fig: "http-evolution", caption: "One lost packet, three protocols. HTTP/1.1: one response per connection, so a stall blocks its queue and browsers open ~6 connections. HTTP/2: all streams multiplexed over one TCP connection — but a single lost packet stalls every stream at once (TCP head-of-line blocking). HTTP/3 over QUIC: independent streams, so a loss stalls only its own. The headline is the count of streams one loss freezes: several → all → one." },
+    {
+      kind: "prose",
+      md:
+        "## The other half of fast: caching\n" +
+        "The fastest request is the one you never send. HTTP has a rich **caching** model that lets a browser (or a CDN) reuse a previous response. The response header **`Cache-Control: max-age=N`** says 'this is **fresh** for N seconds' — within that window the cache serves it with **zero** network. Once stale, a **validator** like an **`ETag`** enables a cheap **conditional request**: the browser asks 'has it changed since this tag?' and the server can answer **`304 Not Modified`** — headers only, no body re-sent. And **`no-store`** opts out entirely (for anything sensitive or personalized). Tune the headers and watch a re-request resolve to a fresh hit, a revalidation, or a full refetch:",
+    },
+    { kind: "sim", sim: "cache-headers" },
+    { kind: "quiz", quiz: "web-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "CDNs, cookies, CORS, and the 0-RTT replay trap",
+      lens: "senior",
+      md:
+        "The web at scale adds layers the timeline hides. **CDNs** (content delivery networks) push cached copies to **edge** servers near users, so the DNS lookup steers you to the nearest point of presence — turning a trans-Pacific round trip into a local one; this is the single biggest real-world latency win. **State** is a whole subsystem: **cookies** carry session tokens (guard them with `HttpOnly`, `Secure`, `SameSite`), and the **same-origin policy** plus **CORS** headers govern which sites may talk to which — the browser's core security boundary (ch.32). **HSTS** forces HTTPS so a downgrade attack can't strip the TLS. And a sharp edge on TLS 1.3's **0-RTT** resumption: because the client's first data is replayable by an attacker, **0-RTT must be limited to *idempotent* requests** (a `GET`, never a `POST` that charges a card) — a rare case where a performance feature carries a correctness footgun. Finally, HTTP/3's UDP base means some restrictive networks block it, so browsers keep TCP as a fallback.",
+    },
+    {
+      kind: "formal",
+      title: "Formal corner — the freshness model and conditional requests",
+      md:
+        "HTTP caching is a small decision procedure the browser runs per resource. Let **age** be the seconds since the response was generated and **max-age** its freshness lifetime (from `Cache-Control`). Then:\n\n" +
+        "- **`no-store`** → never cache; always a full fetch (`200`).\n" +
+        "- **age < max-age** → **fresh**: serve from cache, **no network** (a true hit).\n" +
+        "- **age ≥ max-age** (stale) **with a validator** (`ETag` / `Last-Modified`) → **conditional GET** (`If-None-Match` / `If-Modified-Since`). The server returns **`304 Not Modified`** (revalidate — headers only, body reused) or `200` with fresh content.\n" +
+        "- **stale, no validator** → full refetch (`200`).\n\n" +
+        "The saving compounds: a `304` transfers a few hundred bytes of headers instead of a multi-megabyte asset, and a fresh hit transfers **nothing**. This is why cache headers, not bandwidth, dominate perceived web performance — and why a wrong `max-age` (too long → users see stale content; too short → needless refetches) is one of the most common and most visible web-ops mistakes.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next — and the summit of Part 7\n" +
+        "That completes **Part 7**. You've followed a single click all the way down and back up: a **name** resolved by DNS, a **packet** routed hop by hop with its TTL ticking, a **reliable stream** built by TCP's handshake and sawtooth, an **encrypted request** wrapped in TLS, and a **page** assembled by HTTP and cached at the edge. No shared memory, an unreliable wire — and yet it works, every time, because each layer keeps one promise and hides one problem. **Part 8 — Data** stays with many machines but changes the question from *moving* information to *remembering* it at scale: databases, indexes, transactions, and what happens to consistency when the network you just learned about inevitably splits.",
+    },
+  ],
+  keyPoints: [
+    "The Web is a stateless request/response protocol — the client sends an HTTP method + URL + headers, the server returns a status code + headers + body, and state is added via cookies.",
+    "A page load is a timed pipeline — DNS → TCP → TLS → request → wait (TTFB) → download → parse → render, and on a cold connection the setup can cost more than the download.",
+    "HTTPS is HTTP inside TLS — giving confidentiality, integrity, and authentication; TLS 1.3 needs one round trip (zero to resume), so encryption is nearly free.",
+    "HTTP evolved to kill head-of-line blocking — 1.1 does one response per connection, 2 multiplexes over one TCP (but a loss stalls all streams), 3 runs over QUIC so a loss stalls only its stream.",
+    "Caching is half of web performance — max-age marks a response fresh (served with zero network), an ETag enables a cheap 304 revalidation, and no-store opts out entirely.",
+    "CDNs turn distance into locality — edge caches near the user (steered by DNS) convert long round trips into local ones, the biggest real-world latency win.",
+    "0-RTT resumption carries a replay risk — TLS 1.3's zero-round-trip data must be limited to idempotent requests, since an attacker can replay that first payload.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking HTTPS hides who you talk to",
+      body: "TLS encrypts the request and response contents, but the destination IP is on the packet and the hostname often leaks via DNS and the TLS handshake's server name (SNI). HTTPS proves you're talking to the real site and stops eavesdropping on the payload — it does not make your browsing anonymous. Confusing encryption with anonymity is a common and consequential mistake.",
+      lens: "both",
+    },
+    {
+      title: "Assuming HTTP/2 or HTTP/3 is automatically faster",
+      body: "HTTP/2's multiplexing helps a page with many small resources, but over a lossy link its shared TCP connection can suffer worse head-of-line blocking than 1.1's parallel connections. HTTP/3 fixes that — but adds UDP setup cost some networks throttle. 'Newer version = faster' ignores that the win depends on loss, resource count, and network conditions.",
+      lens: "senior",
+    },
+    {
+      title: "Setting cache headers by guesswork",
+      body: "A max-age that's too long ships stale content users can't refresh; too short defeats caching and hammers the origin. no-store on everything 'to be safe' throws away the single biggest performance lever. Caching needs deliberate policy per resource type — immutable hashed assets can cache for a year; an HTML shell should revalidate. Vague caching is a top cause of both 'why is it stale?' and 'why is it slow?'",
+      lens: "senior",
+    },
+    {
+      title: "Treating HTTP as stateful",
+      body: "Each HTTP request is independent; the server holds no memory of the last one by default. Every appearance of state — you're logged in, your cart persists — is reconstructed from a token the client resends (a cookie, an auth header). Forgetting this leads to bugs where developers assume request ordering or server-side per-user memory that simply isn't there.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch28-1", "iv-ch28-2", "iv-ch28-3"],
+  kataIds: ["parse-url", "cache-decision"],
+  seeAlso: ["ch26", "ch27", "ch31"],
+  sources: [
+    { title: "HTTP — methods, status, statelessness (Wikipedia)", url: "https://en.wikipedia.org/wiki/HTTP" },
+    { title: "HTTP/3 and QUIC — RFC 9114, 2022 (Wikipedia)", url: "https://en.wikipedia.org/wiki/HTTP/3" },
+    { title: "Transport Layer Security — TLS 1.3, RFC 8446 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Transport_Layer_Security" },
+    { title: "Web cache — Cache-Control, ETag, conditional requests (Wikipedia)", url: "https://en.wikipedia.org/wiki/Web_cache" },
+    { title: "History of the World Wide Web — Berners-Lee, 1989 (Wikipedia)", url: "https://en.wikipedia.org/wiki/History_of_the_World_Wide_Web" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -4081,10 +4489,10 @@ export const CHAPTERS: Chapter[] = [
   ch23,
   ch24,
   ch25,
-  // P7 · Networks
-  stub("ch26", "p7", 28, "How networks work", "Layers, switching, IP routing, DNS", 13, { foundations: 22, senior: 35 }),
-  stub("ch27", "p7", 29, "TCP & UDP", "Handshakes, reliability, congestion control", 13, { foundations: 20, senior: 35 }),
-  stub("ch28", "p7", 30, "The Web", "HTTP/1.1→2→3, TLS, caching — URL to pixels", 13, { foundations: 20, senior: 32 }),
+  // P7 · Networks (built in S13)
+  ch26,
+  ch27,
+  ch28,
   // P8 · Data
   stub("ch29", "p8", 31, "Databases", "SQL, B-tree indexes, transactions, isolation", 14, { foundations: 25, senior: 40 }),
   stub("ch30", "p8", 32, "Distributed systems", "Replication, partitions, CAP, consensus intuition", 14, { foundations: 22, senior: 38 }),

@@ -814,6 +814,113 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  // ---- P7 · Networks (S13) ----
+  {
+    id: "packet-predict",
+    chapterId: "ch26",
+    questions: [
+      {
+        prompt: "A packet leaves your laptop with **TTL 64** and passes through **4 routers** (and 1 switch) to reach the server. What TTL does the server see on arrival?",
+        options: ["64", "60", "59", "0"],
+        answer: 1,
+        explain:
+          "Each **router** decrements the TTL by one; the **switch does not** (it's a link-layer forward, not a routing hop). 64 − 4 = **60**. TTL exists so a routing loop can't spin a packet forever — hit 0 and it's dropped, which is also the trick traceroute abuses to map the path.",
+      },
+      {
+        prompt: "As the packet crosses each router, which addresses **change**?",
+        options: [
+          "The source & destination IP addresses",
+          "The source & destination MAC addresses",
+          "Both the IP and the MAC addresses",
+          "Neither — everything is fixed end to end",
+        ],
+        answer: 1,
+        explain:
+          "The **IP addresses are end-to-end** and constant the whole journey — that's how the packet knows its ultimate source and destination. The **MAC addresses are hop-by-hop** and are rewritten by every router, because each hop is a fresh delivery on a different physical link. IP = the whole trip; MAC = this one hop.",
+      },
+      {
+        prompt: "A switch with an **empty** MAC table receives a frame for a destination D it has never seen. What does it do?",
+        options: [
+          "Drops the frame — unknown destination",
+          "Floods it out every port except the one it arrived on",
+          "Sends it back to the source",
+          "Queries a DNS server for D",
+        ],
+        answer: 1,
+        explain:
+          "Unknown destination → **flood** out all other ports and let the real owner respond. Meanwhile it **learns** the *source* MAC → this port, so next time a frame is destined *back* here it can **forward** to one port instead of flooding. Learning from traffic, no configuration.",
+      },
+    ],
+  },
+  {
+    id: "seq-puzzle",
+    chapterId: "ch27",
+    questions: [
+      {
+        prompt: "A client opens a connection with **SYN, seq = 1000**. What **acknowledgement** number does the server's SYN-ACK carry?",
+        options: ["1000", "1001", "1002", "0"],
+        answer: 1,
+        explain:
+          "A **SYN consumes one sequence number** even though it carries no data, so the server acknowledges the *next* byte it expects: clientISN + 1 = **1001**. This +1 is the single most common handshake off-by-one — get it wrong and the connection never establishes.",
+      },
+      {
+        prompt: "The server's SYN-ACK carries **seq = 5000**. What **ack** number does the client's final ACK carry?",
+        options: ["5000", "5001", "1001", "6000"],
+        answer: 1,
+        explain:
+          "Symmetric to the first step: the server's SYN also consumes a sequence number, so the client acknowledges serverISN + 1 = **5001**. After this third segment both sides agree on each other's starting byte and data can flow.",
+      },
+      {
+        prompt: "Why does the client acknowledge **5001** and not 5000, when the server's SYN carried no application data?",
+        options: [
+          "It's an arbitrary convention",
+          "A SYN (like a FIN) consumes one sequence number so the handshake itself is reliably acknowledged",
+          "The server secretly sent one byte",
+          "TCP rounds sequence numbers up",
+        ],
+        answer: 1,
+        explain:
+          "**SYN and FIN each consume a sequence number.** That's what lets the *control* events (open, close) be acknowledged and retransmitted by the exact same machinery as data bytes — the handshake and teardown get reliability for free, at the cost of one phantom byte each.",
+      },
+    ],
+  },
+  {
+    id: "web-predict",
+    chapterId: "ch28",
+    questions: [
+      {
+        prompt: "A response arrives with **`Cache-Control: max-age=3600`** and an **ETag**. You reload the page **30 minutes** later. What happens?",
+        options: [
+          "A conditional GET → 304 Not Modified",
+          "Served from cache with zero network — it's still fresh",
+          "A full refetch (200) — the ETag forces revalidation",
+          "The browser ignores the cache and refetches",
+        ],
+        answer: 1,
+        explain:
+          "30 minutes = 1800 s, which is **< max-age 3600 s**, so the response is still **fresh** — served straight from cache with **no network at all**. The ETag only comes into play once the response goes *stale*, enabling a cheap `304` revalidation instead of a full download.",
+      },
+      {
+        prompt: "Over a **lossy** link, a single lost packet stalls the **most** in-flight streams under which protocol?",
+        options: ["HTTP/1.1", "HTTP/2", "HTTP/3 (QUIC)", "They all stall the same number"],
+        answer: 1,
+        explain:
+          "**HTTP/2** multiplexes every stream over **one TCP** connection, so one lost packet triggers **TCP head-of-line blocking** and stalls *all* of them. HTTP/1.1 spreads load across ~6 connections (a loss stalls only that one's queue), and HTTP/3's QUIC gives each stream independent reliability — a loss stalls just **one** stream.",
+      },
+      {
+        prompt: "HTTPS (TLS) encrypts your traffic. What does it **not** hide from someone watching the network?",
+        options: [
+          "The password you typed into the form",
+          "The HTML of the response",
+          "The destination IP address (and often the hostname)",
+          "The cookies you send",
+        ],
+        answer: 2,
+        explain:
+          "TLS protects the request/response **contents**, but the **destination IP** is right on the packet header (routers need it), and the hostname commonly leaks via DNS and the TLS handshake's SNI field. HTTPS proves *who* you're talking to and stops eavesdropping on *what* — it does **not** make you anonymous.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

@@ -68,6 +68,13 @@ const sims: Record<SimKey, LazyComp> = {
   "disk-allocation": lazy(() => import("../components/sims/files/DiskAllocation.tsx")),
   "race-lab": lazy(() => import("../components/sims/concurrency/RaceLab.tsx")),
   "deadlock-lab": lazy(() => import("../components/sims/concurrency/DeadlockLab.tsx")),
+  // P7 · Networks (S13)
+  "packet-journey": lazy(() => import("../components/sims/net/PacketJourney.tsx")),
+  "switch-learning": lazy(() => import("../components/sims/net/SwitchLearning.tsx")),
+  "tcp-lab": lazy(() => import("../components/sims/net/TcpLab.tsx")),
+  "udp-vs-tcp-race": lazy(() => import("../components/sims/net/UdpVsTcpRace.tsx")),
+  "url-journey": lazy(() => import("../components/sims/net/UrlJourney.tsx")),
+  "cache-headers": lazy(() => import("../components/sims/net/CacheHeaders.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -104,6 +111,9 @@ const figs: Record<FigKey, LazyComp> = {
   // P6 · Operating Systems (S12)
   "journaling": lazy(() => import("../components/figures/JournalingStepper.tsx")),
   "wait-for-graph": lazy(() => import("../components/figures/WaitForGraph.tsx")),
+  // P7 · Networks (S13)
+  "layer-cake": lazy(() => import("../components/figures/LayerCake.tsx")),
+  "http-evolution": lazy(() => import("../components/figures/HttpEvolution.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

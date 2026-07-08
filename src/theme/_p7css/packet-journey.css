@@ -1,0 +1,490 @@
+/* packet-journey (ch.26 HERO) — one HTTP request across the planet:
+   the DNS side-quest, then the packet hop by hop with IP pinned + MAC rewritten.
+   Prefix: pj-. Shared chrome (.btn, .bit-seg, .ss-field…) comes from global.css. */
+
+.pj-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pj-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* small phase pill reused by both phases */
+.pj-phase-tag {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.pj-phase-tag[data-on="true"] {
+  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ============================ phase 1 — DNS ============================ */
+.pj-dns {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  padding: 12px 14px;
+}
+.pj-anim.pj-dns {
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease;
+}
+.pj-dns--live {
+  border-color: color-mix(in srgb, var(--sem-data) 55%, var(--line));
+}
+.pj-dns--ok {
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+}
+
+.pj-dns-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.pj-dns-title {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--tx2);
+}
+.pj-dns-title b {
+  color: var(--tx);
+}
+.pj-ip {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 14%, transparent);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.pj-dns-chain {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pj-dns-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: var(--r-s);
+  border: 1px solid transparent;
+  opacity: 0.5;
+}
+.pj-anim .pj-dns-step {
+  transition:
+    opacity 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+.pj-dns-step.is-live {
+  opacity: 1;
+  background: color-mix(in srgb, var(--sem-data) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+}
+.pj-dns-step.is-done {
+  opacity: 1;
+}
+.pj-dns-step.is-answer.is-done {
+  background: color-mix(in srgb, var(--sem-ok) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-ok) 40%, var(--line));
+}
+
+.pj-dns-dot {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.pj-dns-step.is-live .pj-dns-dot {
+  color: var(--bg);
+  background: var(--sem-data);
+  border-color: var(--sem-data);
+}
+.pj-dns-step.is-done .pj-dns-dot {
+  color: var(--bg);
+  background: var(--sem-ok);
+  border-color: var(--sem-ok);
+}
+.pj-dns-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.pj-dns-server {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx);
+  font-weight: 600;
+}
+.pj-dns-line {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--tx3);
+}
+.pj-dns-asks {
+  color: var(--sem-data);
+}
+.pj-dns-replies {
+  color: var(--tx2);
+}
+
+/* ============================ phase 2 — map ============================ */
+.pj-map {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  padding: 12px 14px 14px;
+}
+.pj-map-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pj-map-sub {
+  font-size: 0.82rem;
+  color: var(--tx3);
+  font-family: var(--font-mono);
+  min-width: 0;
+}
+
+.pj-svg {
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+.pj-edge {
+  stroke: var(--line);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.pj-anim .pj-edge {
+  transition: stroke 0.3s ease;
+}
+.pj-edge.is-live {
+  stroke: color-mix(in srgb, var(--accent) 70%, var(--line));
+}
+.pj-edge.is-drop {
+  stroke: var(--sem-err);
+  stroke-dasharray: 5 4;
+}
+
+.pj-node-c {
+  fill: var(--surface);
+}
+.pj-anim .pj-node-c {
+  transition:
+    r 0.25s ease,
+    stroke 0.25s ease,
+    stroke-width 0.25s ease,
+    fill 0.25s ease;
+}
+.pj-node-c.is-here {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+.pj-node-c.is-dead {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--sem-err) 70%, transparent));
+}
+.pj-node-glyph {
+  font-size: 15px;
+  fill: var(--tx);
+}
+.pj-node-kind {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.pj-node-name {
+  font-size: 9.5px;
+  fill: var(--tx3);
+}
+
+/* the packet envelope riding the wire */
+.pj-packet {
+  pointer-events: none;
+}
+.pj-anim .pj-packet {
+  transition: transform 0.42s cubic-bezier(0.4, 0.1, 0.25, 1);
+}
+.pj-pkt-body {
+  fill: color-mix(in srgb, var(--accent) 28%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 1.75;
+}
+.pj-pkt-flap {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+.pj-packet.is-dead .pj-pkt-body {
+  fill: color-mix(in srgb, var(--sem-err) 28%, var(--surface));
+  stroke: var(--sem-err);
+}
+.pj-packet.is-dead .pj-pkt-flap {
+  stroke: var(--sem-err);
+}
+.pj-pkt-ttl {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--sem-control);
+}
+.pj-packet.is-dead .pj-pkt-ttl {
+  fill: var(--sem-err);
+}
+
+/* ================= the header-invariance readout ================= */
+.pj-addr {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+.pj-anim .pj-addr {
+  transition: opacity 0.25s ease;
+}
+.pj-addr--idle {
+  opacity: 0.4;
+}
+.pj-addr-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 11px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.pj-addr-col--ip {
+  border-color: color-mix(in srgb, var(--sem-state) 40%, var(--line));
+}
+.pj-addr-col--mac {
+  border-color: color-mix(in srgb, var(--sem-ok) 30%, var(--line));
+}
+.pj-anim .pj-addr-col--mac {
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.pj-addr-col--mac.is-changed {
+  border-color: var(--sem-ok);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sem-ok) 45%, transparent);
+}
+.pj-addr-k {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tx2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pj-pin {
+  font-weight: 600;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sem-state);
+  background: color-mix(in srgb, var(--sem-state) 15%, transparent);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.pj-rewrite {
+  font-weight: 600;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tx3);
+  background: var(--s2);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.is-changed .pj-rewrite {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 16%, transparent);
+}
+.pj-addr-v {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+.pj-addr-v code {
+  color: var(--tx);
+}
+.pj-addr-col--ip .pj-addr-v code {
+  color: var(--sem-state);
+}
+.pj-addr-col--mac .pj-addr-v code {
+  color: var(--sem-ok);
+}
+.pj-arrow,
+.pj-addr-v .pj-arrow {
+  color: var(--tx3);
+}
+.pj-addr-note {
+  font-size: 0.74rem;
+  color: var(--tx3);
+  line-height: 1.35;
+}
+
+/* ============================ footer ============================ */
+.pj-foot {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+/* encapsulation envelope-in-envelope */
+.pj-env {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pj-env-cap {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tx3);
+}
+.pj-env-nest {
+  padding: 8px;
+  border-radius: var(--r-s);
+}
+.pj-env-box {
+  border: 1.5px solid var(--pj-layer, var(--accent));
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--pj-layer, var(--accent)) 8%, var(--surface));
+  padding: 7px 8px 8px;
+}
+.pj-env-box:not(.is-inner) {
+  padding-bottom: 6px;
+}
+/* each layer's box sits nested inside the previous — indent it a touch */
+.pj-env-box .pj-env-box {
+  margin-top: 6px;
+}
+.pj-env-tag {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pj-layer, var(--accent));
+}
+.pj-env-pdu {
+  font-weight: 400;
+  font-size: 9.5px;
+  color: var(--tx3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pj-env-box.is-inner {
+  background: color-mix(in srgb, var(--pj-layer, var(--accent)) 14%, var(--surface));
+}
+.pj-env-payload {
+  display: block;
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx);
+  background: var(--bg);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+
+.pj-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.pj-note-p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.pj-note-p b {
+  color: var(--tx);
+}
+.pj-note-p code {
+  font-family: var(--font-mono);
+  font-size: 0.84em;
+  color: var(--accent);
+}
+.pj-note-hint {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--tx3);
+  padding: 7px 10px;
+  border-left: 2px solid color-mix(in srgb, var(--sem-control) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-control) 8%, transparent);
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+}
+.pj-note-hint b {
+  color: var(--sem-control);
+}
+
+/* ============================ responsive ============================ */
+@media (max-width: 640px) {
+  .pj-foot {
+    grid-template-columns: 1fr;
+  }
+  .pj-addr {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pj-packet,
+  .pj-node-c,
+  .pj-edge,
+  .pj-dns-step,
+  .pj-dns,
+  .pj-addr {
+    transition: none !important;
+  }
+}

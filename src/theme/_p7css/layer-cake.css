@@ -1,0 +1,60 @@
+/* layer-cake (ch.26 fig) — TCP/IP encapsulation as nested envelopes, stepped
+   both directions. Prefix: lcake-. Each layer keeps a distinct semantic tone;
+   the payload core is constant. FigureStepper re-keys the SVG per frame, so the
+   add/strip emphasis rides the per-frame enter animation. */
+
+/* the constant payload at the centre */
+.lcake-core {
+  fill: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.lcake-core-t {
+  fill: var(--tx);
+}
+.lcake-core-s {
+  fill: var(--tx3);
+}
+
+/* a header ring being ADDED this frame pops in from the payload outward */
+.lcake-ring.is-add {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lcake-add 0.42s ease;
+}
+@keyframes lcake-add {
+  0% {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* a header ring being STRIPPED reads as peeling away (dashed + gentle fade) */
+.lcake-ring.is-strip {
+  animation: lcake-strip 0.5s ease;
+}
+@keyframes lcake-strip {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lcake-ring.is-add,
+  .lcake-ring.is-strip {
+    animation: none;
+  }
+}

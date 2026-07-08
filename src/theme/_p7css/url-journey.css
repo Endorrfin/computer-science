@@ -1,0 +1,234 @@
+/* url-journey (ch.28 micro) — the request waterfall from Enter to pixels.
+   Prefix: urlj-. Semantic palette by layer: connection setup = control (orange),
+   TLS = state (violet), server wait = accent, wire bytes = data (cyan),
+   browser work = ok (green). Shared chrome (.btn, .ss-field…) comes from
+   global.css. */
+
+.urlj-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- the URL field in the toolbar ---- */
+.urlj-field {
+  min-width: 0;
+}
+.urlj-input {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 5px 9px;
+  width: 15rem;
+  max-width: 46vw;
+  transition: border-color 0.15s ease;
+}
+.urlj-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.urlj-input::placeholder {
+  color: var(--tx3);
+}
+
+/* ---- the waterfall (SVG) ---- */
+.urlj-wf {
+  display: flex;
+  justify-content: center;
+}
+.urlj-svg {
+  width: 100%;
+  max-width: 660px;
+  font-family: var(--font-mono);
+}
+
+.urlj-total {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.urlj-total-lbl {
+  font-size: 10px;
+  fill: var(--tx3);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.urlj-track {
+  fill: var(--bg);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+/* a phase segment — the whole <g> is a button */
+.urlj-seg {
+  cursor: pointer;
+}
+.urlj-seg:focus {
+  outline: none;
+}
+.urlj-seg:focus-visible .urlj-seg-fill,
+.urlj-seg:focus-visible .urlj-seg-ghost {
+  stroke: var(--tx);
+  stroke-width: 2;
+}
+.urlj-seg-ghost {
+  opacity: 0.16;
+}
+.urlj-seg:hover .urlj-seg-ghost {
+  opacity: 0.26;
+}
+.urlj-seg-fill {
+  opacity: 0.92;
+  stroke: currentColor;
+  stroke-width: 1;
+}
+.urlj-anim .urlj-seg-fill {
+  transition: width 0.09s linear;
+}
+.urlj-seg.is-open .urlj-seg-fill {
+  stroke: var(--tx);
+  stroke-width: 2;
+}
+.urlj-seg.is-open .urlj-seg-ghost {
+  opacity: 0.3;
+}
+.urlj-seg-sep {
+  stroke: var(--bg);
+  stroke-width: 1;
+  opacity: 0.6;
+}
+.urlj-seg-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--tx2);
+}
+.urlj-seg.is-on .urlj-seg-lbl {
+  fill: var(--tx);
+}
+.urlj-seg.is-open .urlj-seg-lbl {
+  fill: currentColor;
+}
+.urlj-seg-ms {
+  font-size: 8.5px;
+  fill: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* the sweeping playhead */
+.urlj-playhead line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.urlj-playhead path {
+  fill: var(--accent);
+}
+
+/* ---- legend ---- */
+.urlj-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.urlj-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.urlj-legend-chip {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+/* ---- footer detail card ---- */
+.urlj-detail {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--urlj-tone, var(--accent));
+  border-radius: var(--r-s);
+  background: var(--s2);
+  padding: 11px 14px;
+  min-height: 3.5rem;
+}
+.urlj-detail.is-empty {
+  display: flex;
+  align-items: center;
+  border-left-color: var(--line);
+  background: transparent;
+}
+.urlj-detail-hint {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+}
+.urlj-detail-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.urlj-detail-name {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--tx);
+}
+.urlj-detail-layer {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--urlj-tone, var(--accent));
+  background: color-mix(in srgb, var(--urlj-tone, var(--accent)) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--urlj-tone, var(--accent)) 40%, var(--line));
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+.urlj-detail-blurb {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.urlj-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.urlj-detail-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-variant-numeric: tabular-nums;
+}
+.urlj-detail-k {
+  color: var(--tx3);
+}
+
+@media (max-width: 560px) {
+  .urlj-input {
+    width: 11rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .urlj-seg-fill,
+  .urlj-input {
+    transition: none;
+  }
+}

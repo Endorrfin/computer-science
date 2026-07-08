@@ -198,24 +198,26 @@
 - [quiz] `concurrency-predict` — smallest lost-update value, "remove any one Coffman condition", the lock-ordering fix
 - [boss] `P6: unfreeze the philosophers` — pick a fix that frees the table **and** name the condition it breaks — badge: 🔓 *Deadlock Breaker*
 
-## P7 · Networks
+## P7 · Networks  — ✅ SHIPPED S13 (engine: `sims/net/{layers,switching,tcp,web}.ts`; tests ch.26–28)
 
 ### ch.26 — How networks work
-- [HERO] `packet-journey` — map: laptop→wifi→router→ISP→backbone→datacenter; DNS side-quest resolves first; packet hops animate, TTL ticks down, each hop unwraps/rewraps frame headers (envelope-in-envelope visual)
-- [micro] `switch-learning` — LAN toy: frames flood, switch learns MAC table entry by entry
-- [fig] `layer-cake` — app→transport→network→link wrapping, stepped both directions
+- [HERO] `packet-journey` ✅ — DNS side-quest resolves first, then a packet hops laptop→wifi switch→home/ISP/backbone/datacenter routers→server; TTL ticks down at each router, MACs rewritten while IP stays pinned, encapsulation envelope; low-TTL drop preset (traceroute)
+- [micro] `switch-learning` ✅ — LAN toy: unknown dest floods, switch learns source MAC→port entry by entry, floods fall as the table fills
+- [fig] `layer-cake` ✅ — app→transport→internet→link wrapping (message→segment→packet→frame), stepped both directions
+- [quiz] `packet-predict` ✅ — TTL after N routers · which address changes at a router · flood vs forward
 - [boss] `P7 boss lives in ch.27`
 
 ### ch.27 — TCP & UDP
-- [micro] `tcp-lab` — 3-way handshake stepper → data phase: loss-injection button → timeout/retransmit; window-size slider → throughput gauge; congestion sawtooth graph running
-- [micro] `udp-vs-tcp-race` — loss slider; file transfer (must be perfect) vs video call (must be *now*) framing
-- [quiz] `seq-puzzle` — fill in the sequence/ack numbers
-- [boss] `P7: debug the broken handshake` (three faulty traces, diagnose each) — badge: *Wire Shark*
+- [HERO] `tcp-lab` ✅ — lab|boss modes; handshake stepper (seq/ack, SYN eats a number) → reliability (window slider + loss-injection → Go-Back-N retransmit) → Reno cwnd **sawtooth** (inject triple-dup/timeout); hosts the boss
+- [micro] `udp-vs-tcp-race` ✅ — loss slider; TCP = file transfer (perfect but late) vs UDP = video call (fast but lossy)
+- [quiz] `seq-puzzle` ✅ — fill in the sequence/ack numbers (why +1)
+- [boss] `P7: debug the broken handshake` ✅ (three faulty traces — missing ACK flag · SYN-ACK off-by-one · wrong final ACK — diagnose each) — badge: 🦈 *Wire Shark* → `markChallengeDone("boss-p7")`
 
 ### ch.28 — The Web
-- [micro] `url-journey` — type a URL → live timeline: DNS→TCP→TLS→request→response→parse→render; click a segment to expand it
-- [fig] `http-evolution` — 1.1 head-of-line vs 2 multiplexing vs 3/QUIC lanes, animated
-- [micro] `cache-headers` — tweak `max-age`/`etag`/`no-store` → fresh/stale/revalidate outcome per request
+- [micro] `url-journey` ✅ — type a URL → live waterfall: DNS→TCP→TLS→request→wait→download→parse→render; click a segment to expand it
+- [fig] `http-evolution` ✅ — 1.1 head-of-line vs 2 multiplex-over-one-TCP (loss stalls all) vs 3/QUIC independent streams (loss stalls one), stepped
+- [micro] `cache-headers` ✅ — tweak `max-age`/`etag`/`no-store` × age → fresh hit / 304 revalidate / full refetch per request
+- [quiz] `web-predict` ✅ — cache freshness · which HTTP version stalls most on loss · what TLS does *not* hide
 
 ## P8 · Data
 
@@ -336,11 +338,13 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 +rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
 **kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
-batch; **38** after S12's +4 files/concurrency batch) · quizzes in every chapter. As of **S12**
-the live build carries **52 sims, 26 figures, 25 quizzes, 130 interview Qs, 38 katas** across
-**25 live chapters** (`npm run qa` prints the running census and enforces the per-chapter
-minimums — CLAUDE.md §6 mandate). **Part 5 · Theory complete** (ch.19–21 + the *Halting Oracle*
-boss inside `turing-machine`). **Part 6 · Operating Systems complete** (ch.22–25): S11 shipped
-ch.22–23 with the `scheduler-sim` HERO; **S12** shipped ch.24 (Files & storage, `inode-explorer`
-HERO) and ch.25 (Concurrency, `deadlock-lab` HERO) with the *Deadlock Breaker* boss inside
-`deadlock-lab`.
+batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch)
+· quizzes in every chapter. As of **S13** the live build carries **58 sims, 28 figures,
+28 quizzes, 141 interview Qs, 44 katas** across **28 live chapters** (`npm run qa` prints the
+running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate). **Part 5 · Theory
+complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · Operating
+Systems complete** (ch.22–25): S11 shipped ch.22–23 with the `scheduler-sim` HERO; **S12** shipped
+ch.24 (Files & storage, `inode-explorer` HERO) and ch.25 (Concurrency, `deadlock-lab` HERO) with
+the *Deadlock Breaker* boss. **Part 7 · Networks complete** (ch.26–28): **S13** shipped ch.26
+(`packet-journey` HERO), ch.27 (TCP & UDP, `tcp-lab` HERO with the Reno sawtooth) and ch.28 (The
+Web) with the 🦈 *Wire Shark* boss inside `tcp-lab` (debug three broken handshakes).
