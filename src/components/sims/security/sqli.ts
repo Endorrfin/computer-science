@@ -24,9 +24,12 @@ export type Where =
   | { kind: "or"; left: Where; right: Where };
 
 export type User = { name: string; pw: string };
+// Fake in-memory demo accounts for the injection-sandbox teaching sim — NOT real
+// credentials. They "authenticate" against this array in the browser only and
+// back no service, so the values are deliberately obvious placeholders.
 export const USERS: readonly User[] = [
-  { name: "admin", pw: "s3cr3t!" },
-  { name: "alice", pw: "hunter2" },
+  { name: "admin", pw: "demo-password" },
+  { name: "alice", pw: "example-password" },
 ];
 
 // ------------------------------ tokenizer ------------------------------
@@ -203,7 +206,7 @@ export function evaluate(built: Built, users: readonly User[] = USERS): QueryOut
 
 /** Payloads the sandbox offers as one-tap demos. */
 export const PAYLOADS: readonly { label: string; input: string; pw: string; note: string }[] = [
-  { label: "Legit login", input: "admin", pw: "s3cr3t!", note: "correct credentials — should succeed either way" },
+  { label: "Legit login", input: "admin", pw: "demo-password", note: "correct credentials — should succeed either way" },
   { label: "Wrong password", input: "admin", pw: "guess", note: "bad password — should fail either way" },
   { label: "Tautology", input: "' OR 1=1--", pw: "anything", note: "closes the string, adds an always-true branch, comments out the rest" },
   { label: "Comment-out", input: "admin'--", pw: "anything", note: "logs in as admin by commenting away the password check" },

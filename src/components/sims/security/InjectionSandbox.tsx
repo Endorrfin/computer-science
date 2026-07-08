@@ -24,7 +24,7 @@ const MODES: readonly { id: Mode; label: string; tag: string }[] = [
 ];
 
 const DEFAULT_NAME = "admin";
-const DEFAULT_PW = "s3cr3t!";
+const DEFAULT_PW = "demo-password";
 
 export default function InjectionSandbox() {
   const [name, setName] = useState(DEFAULT_NAME);

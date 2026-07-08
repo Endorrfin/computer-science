@@ -22,7 +22,7 @@ function ok(name: string, cond: boolean, detail?: string): void {
 // ===================== (A) SQL injection =====================
 {
   console.log("sqli · legit credentials:");
-  const good = evaluate(buildConcatQuery("admin", "s3cr3t!"));
+  const good = evaluate(buildConcatQuery("admin", "demo-password"));
   ok("correct login succeeds", good.loggedIn && good.loggedInAs === "admin");
   ok("...and is NOT flagged as a bypass", good.bypass === false);
   const bad = evaluate(buildConcatQuery("admin", "wrong"));
@@ -44,7 +44,7 @@ function ok(name: string, cond: boolean, detail?: string): void {
   ok("' OR 1=1-- as a bound param does NOT log in", p1.loggedIn === false && p1.bypass === false);
   const p2 = evaluate(buildParamQuery("admin'--", "anything"));
   ok("admin'-- as a bound param does NOT log in", p2.loggedIn === false);
-  const p3 = evaluate(buildParamQuery("admin", "s3cr3t!"));
+  const p3 = evaluate(buildParamQuery("admin", "demo-password"));
   ok("correct login still works when parameterized", p3.loggedIn && !p3.bypass);
   ok("parameterized AST stays name=? AND pw=? (an AND of two comparisons)", buildParamQuery("' OR 1=1--", "x").ast?.kind === "and");
 }
