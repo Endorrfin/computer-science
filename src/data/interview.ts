@@ -1209,6 +1209,106 @@ export const INTERVIEW: InterviewQ[] = [
       "**Confirm**: take a **thread/stack dump** of the hung process (jstack, gdb `thread apply all bt`, pprof) and look for two-plus threads each **blocked acquiring a lock while holding another** — the wait-for cycle is visible in the stacks. Many runtimes and tooling (Java's deadlock detector, TSAN, lock-order validators like the Linux kernel's lockdep) will name the inverted acquisition order directly.\n" +
       "**Fix**: impose a **global lock ordering** and make every path acquire in that order — the structural cure for circular wait. Where that's impractical, use **lock-free** structures or a single coarser lock for the contended invariant, shrink critical sections so locks are held briefly, or use **trylock with timeout + backoff** to break cycles at the cost of retries. Then add a **lockdep/TSAN** gate in CI so a re-introduced inversion fails a test rather than a customer.",
   },
+  // ---- P7 · Networks (S13) ----
+  {
+    id: "iv-ch26-1",
+    chapterId: "ch26",
+    level: "mid",
+    q: "What's the difference between a switch and a router?",
+    a:
+      "They operate at **different layers** on **different addresses**. A **switch** is link-layer: it forwards **frames** within one network by **MAC** address, which is flat and **learned** from traffic (flood the unknown, learn the source, then forward). A **router** is internet-layer: it forwards **packets** *between* networks by **IP** address, which is hierarchical and **routed** via a routing table, and it **decrements the TTL** at each hop.\n" +
+      "Corollary: a switch defines a **broadcast domain**; a router **separates** them. Your home 'router' is really a switch + router + NAT + DHCP + firewall in one box, which is why the line blurs in casual use.",
+  },
+  {
+    id: "iv-ch26-2",
+    chapterId: "ch26",
+    level: "senior",
+    q: "Why doesn't the internet just route on MAC addresses? Why is IP necessary at all?",
+    a:
+      "Because MAC addresses are **flat** — to forward on one you need an entry for *that exact address*, so a global MAC table would need a row per device on Earth. That's why switching stays **local**.\n" +
+      "IP addresses are **hierarchical** (prefix + host), so routers store one route per **prefix** and pick the **longest matching prefix**. A single entry like `93.184.0.0/16` covers 65,536 hosts, which is why the global table is ~1 million prefixes instead of ~20 billion hosts. Hierarchy turns an impossible O(hosts) problem into a tractable O(prefixes) one — the same trick that lets DNS scale.",
+  },
+  {
+    id: "iv-ch26-3",
+    chapterId: "ch26",
+    level: "senior",
+    q: "Type a URL, hit Enter — what happens at the network layers before the first byte of HTML?",
+    a:
+      "**Resolve**: DNS turns the hostname into an IP (recursive resolver → root → TLD → authoritative, heavily cached). **Locate the next hop**: the OS checks whether the destination is on the local subnet; if not, it targets the default gateway, using **ARP** to find that gateway's MAC. **Connect**: a **TCP three-way handshake** (SYN/SYN-ACK/ACK) to the server IP on port 443. **Secure**: a **TLS** handshake negotiates keys. Only *then* does the **HTTP GET** go out.\n" +
+      "Good candidates name the two-address split (IP end-to-end, MAC rewritten per hop), TTL decrementing at each router, and that DNS/TCP/TLS are each a real round trip — which is exactly what caching and connection reuse exist to avoid.",
+  },
+  {
+    id: "iv-ch26-4",
+    chapterId: "ch26",
+    level: "staff",
+    q: "What is NAT, why does it exist, and what does it break?",
+    a:
+      "**NAT** (Network Address Translation) lets many devices share one public IPv4 address: the router rewrites source IP+port on the way out and keeps a **translation table** to reverse it on replies. It exists because **IPv4 has only ~4.3 billion addresses and ran out** — NAT was the stopgap (IPv6 is the real fix).\n" +
+      "What it breaks: it **violates the end-to-end principle** — an outside host can't initiate a connection to a device behind NAT, which is why peer-to-peer needs **hole punching** and relays (STUN/TURN). It makes the router **stateful**, so idle connections get evicted (hence TCP keepalives), and it complicates protocols that embed addresses in their payload. It's a case study in how a pragmatic hack becomes permanent infrastructure.",
+  },
+  {
+    id: "iv-ch27-1",
+    chapterId: "ch27",
+    level: "senior",
+    q: "Explain the TCP three-way handshake. Why three messages and not two?",
+    a:
+      "Client → **SYN** (seq = x). Server → **SYN-ACK** (seq = y, ack = x+1). Client → **ACK** (ack = y+1). It synchronizes **both** directions' initial sequence numbers — each side must announce its own ISN *and* confirm it heard the other's.\n" +
+      "Two messages can't do it: a SYN + SYN-ACK proves the *client's* ISN reached the server and the server's reply reached the client, but the **server has no confirmation that the client received the server's ISN** — the third ACK closes that loop. (Note the +1s: a SYN consumes one sequence number, so each side acks the peer's ISN **plus one**.) Random ISNs also matter for security — predictable ones enable spoofing.",
+  },
+  {
+    id: "iv-ch27-2",
+    chapterId: "ch27",
+    level: "senior",
+    q: "TCP or UDP — when would you deliberately reach for UDP?",
+    a:
+      "When **timeliness beats completeness**. For real-time media (voice, video, games), a retransmitted packet arrives too late to use — you want the *next* frame, not a perfect copy of last second's — so UDP's fire-and-forget (plus app-level concealment of losses) wins. Also for **short request/response** where TCP's handshake overhead dominates (classic **DNS**), and as the base for **QUIC**, which rebuilds its *own* reliability and multiplexing over UDP to escape TCP's head-of-line blocking.\n" +
+      "The tell of a weak answer is 'UDP is just faster.' The real trade is **reliability + ordering vs latency + control** — you pick UDP when you'd rather handle loss yourself than let TCP's in-order guarantee stall you.",
+  },
+  {
+    id: "iv-ch27-3",
+    chapterId: "ch27",
+    level: "staff",
+    q: "Distinguish flow control from congestion control, and explain how TCP Reno probes for bandwidth.",
+    a:
+      "**Flow control** protects the **receiver** from overrun via the advertised **receive window** (rwnd) — 'I have room for this many more bytes.' **Congestion control** protects the **shared network** via the sender's **congestion window** (cwnd) — an estimate of what the *path* can absorb. Bytes in flight ≤ **min(rwnd, cwnd)**; they solve different problems with different signals.\n" +
+      "**Reno**: start small, **slow-start** doubles cwnd per RTT until `ssthresh`, then **congestion avoidance** adds one MSS per RTT (AIMD). On **triple-dup ACKs** (fast retransmit) it halves cwnd and continues (fast recovery); on a **timeout** it collapses to 1 and slow-starts again — the sawtooth. Additive-increase/multiplicative-decrease is provably what drives competing flows toward a **fair, stable** share. Modern stacks use **CUBIC** (default in Linux, cubic growth for high bandwidth-delay paths) or **BBR** (models bandwidth × RTT instead of using loss as the signal).",
+  },
+  {
+    id: "iv-ch27-4",
+    chapterId: "ch27",
+    level: "staff",
+    q: "A large transfer is far slower than the link should allow, with low loss. Where do you look?",
+    a:
+      "With low loss, suspect the connection is **window-limited**, not congestion-limited. Throughput ≈ **window / RTT**, so to fill a path you need a window ≥ the **bandwidth-delay product** (link rate × RTT). A 1 Gbit/s path at 100 ms RTT needs ~**12.5 MB** in flight — if the receive window (or a small socket buffer, or disabled window scaling) caps it lower, you starve the pipe regardless of available bandwidth.\n" +
+      "Check: the advertised **rwnd** and OS **buffer sizes** / window scaling, the **RTT** (a distant server hurts even a fat link), application-level stalls (is the sender actually writing fast enough?), and only then loss/congestion. The senior move is naming BDP and realizing 'slow but no loss' points at the *window*, not the network core.",
+  },
+  {
+    id: "iv-ch28-1",
+    chapterId: "ch28",
+    level: "senior",
+    q: "What security properties does TLS provide, and what does HTTPS NOT protect?",
+    a:
+      "TLS provides three things: **confidentiality** (contents encrypted), **integrity** (tampering detected), and **authentication** (a CA-signed certificate proves the server's identity). TLS 1.3 does this in a **single round trip** (0-RTT on resumption).\n" +
+      "What it does **not** hide: the **destination IP** (on the packet — routers need it), typically the **hostname** (via DNS and the TLS **SNI** field), and traffic **size/timing** (fingerprintable). So HTTPS stops eavesdropping and impersonation but is **not anonymity** — conflating the two is a real-world security error. It also doesn't protect against a compromised endpoint or a maliciously trusted CA.",
+  },
+  {
+    id: "iv-ch28-2",
+    chapterId: "ch28",
+    level: "senior",
+    q: "Why did HTTP go 1.1 → 2 → 3? Explain head-of-line blocking at both layers.",
+    a:
+      "**HTTP/1.1** handles one response at a time per connection, so a slow resource blocks its queue — **application-layer head-of-line blocking** — which browsers hack around by opening ~6 parallel TCP connections. **HTTP/2** multiplexes many streams over **one** TCP connection (plus header compression), killing the app-layer HOL. But those streams share one TCP byte stream, so **one lost packet stalls *every* stream** — **transport-layer** HOL. **HTTP/3** drops TCP for **QUIC** over UDP, giving each stream its **own** reliability, so a loss stalls only that stream; TLS is built in for a faster handshake.\n" +
+      "The nuance interviewers want: HTTP/2 didn't *remove* head-of-line blocking, it **moved it down a layer**, and only QUIC actually eliminates it — at the cost of running on UDP, which some networks throttle.",
+  },
+  {
+    id: "iv-ch28-3",
+    chapterId: "ch28",
+    level: "staff",
+    q: "Set cache headers for (a) a content-hashed JS bundle, (b) the HTML shell, (c) a user's account page — and justify each.",
+    a:
+      "**(a) Hashed bundle** `app.9f3c2.js`: **`Cache-Control: public, max-age=31536000, immutable`** — the filename changes when the content does, so it can cache for a year with no revalidation; deploys are safe because a new build ships a new URL. **(b) HTML shell**: **`Cache-Control: no-cache`** (or a short max-age) + an **ETag** — must revalidate so users get new markup promptly, but a `304` keeps it cheap. **(c) Account page**: **`Cache-Control: private, no-store`** — personalized and sensitive, so it must never land in a shared/CDN cache or on disk.\n" +
+      "The framework: cache **immutable, hashed assets** aggressively (the big win), **revalidate mutable HTML**, and **never store private/personalized** responses. The classic bug is caching the HTML shell as long as the assets — users get stuck on an old app pointing at deleted bundles.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

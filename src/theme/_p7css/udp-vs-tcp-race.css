@@ -1,0 +1,467 @@
+/* udp-vs-tcp-race (ch.27 micro) — two lanes race the same lossy wire: TCP the
+   perfect-but-late file transfer vs UDP the fast-but-glitchy video call. Prefix:
+   uvt-. Semantic palette: TCP/reliability = ok (green), UDP/latency = data
+   (cyan), a lost segment = err (red), a TCP-recovered hole = control (orange).
+   Shared chrome (.btn, .ss-field…) comes from global.css. Reduced motion honored
+   at the foot. */
+
+.uvt-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ------------------------------- controls ------------------------------- */
+.uvt-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.uvt-field {
+  gap: 7px;
+}
+.uvt-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8.5rem;
+  max-width: 36vw;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  outline-offset: 3px;
+  vertical-align: middle;
+}
+.uvt-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.08s ease;
+}
+.uvt-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.uvt-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+}
+.uvt-slider:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+.uvt-numval {
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.2em;
+  display: inline-block;
+}
+
+/* ------------------------------- lanes ------------------------------- */
+/* Both lanes plus the finish label share a two-column grid so the tracks line up
+   and the finish sits at the same x for TCP and UDP. */
+.uvt-lane,
+.uvt-finishline {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+}
+
+.uvt-lane {
+  row-gap: 6px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--s2);
+  transition:
+    border-color 0.28s ease,
+    box-shadow 0.28s ease,
+    background 0.28s ease;
+}
+.uvt-lane--tcp {
+  border-left: 3px solid color-mix(in srgb, var(--sem-ok) 60%, var(--line));
+}
+.uvt-lane--udp {
+  border-left: 3px solid color-mix(in srgb, var(--sem-data) 60%, var(--line));
+}
+.uvt-lane--tcp.is-final {
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sem-ok) 22%, transparent);
+}
+.uvt-lane--udp.is-final {
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sem-data) 22%, transparent);
+}
+
+/* lane header row (spans both grid columns) */
+.uvt-lane-head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.uvt-lane-badge {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 9px;
+  border-radius: var(--r-s);
+  color: var(--bg);
+}
+.uvt-lane--tcp .uvt-lane-badge {
+  background: var(--sem-ok);
+}
+.uvt-lane--udp .uvt-lane-badge {
+  background: var(--sem-data);
+}
+.uvt-lane-role {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  color: var(--tx2);
+}
+.uvt-lane-motto {
+  color: var(--tx);
+  font-weight: 600;
+}
+.uvt-lane--tcp .uvt-lane-motto {
+  color: color-mix(in srgb, var(--sem-ok) 70%, var(--tx));
+}
+.uvt-lane--udp .uvt-lane-motto {
+  color: color-mix(in srgb, var(--sem-data) 72%, var(--tx));
+}
+.uvt-lane-flag {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  white-space: nowrap;
+}
+.uvt-lane-flag.is-lit {
+  color: var(--tx);
+}
+.uvt-lane--tcp .uvt-lane-flag.is-lit {
+  color: var(--sem-ok);
+}
+.uvt-lane--udp .uvt-lane-flag.is-lit {
+  color: var(--sem-data);
+}
+
+/* the track label sits in col 1, the slots in col 2 */
+.uvt-track {
+  grid-column: 2;
+  position: relative;
+  display: flex;
+  gap: 5px;
+  padding: 5px 16px 5px 2px; /* right pad leaves room for the finish tape */
+  min-height: 34px;
+  align-items: center;
+}
+
+/* one segment slot */
+.uvt-slot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 16px;
+  height: 26px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    opacity 0.22s ease;
+}
+.uvt-slot-n {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--tx3);
+  transition: color 0.22s ease;
+}
+/* a landed (delivered) segment */
+.uvt-lane--tcp .uvt-slot.is-landed {
+  background: color-mix(in srgb, var(--sem-ok) 30%, var(--surface));
+  border-color: var(--sem-ok);
+}
+.uvt-lane--tcp .uvt-slot.is-landed .uvt-slot-n {
+  color: color-mix(in srgb, var(--sem-ok) 55%, var(--tx));
+}
+.uvt-lane--udp .uvt-slot.is-landed {
+  background: color-mix(in srgb, var(--sem-data) 30%, var(--surface));
+  border-color: var(--sem-data);
+}
+.uvt-lane--udp .uvt-slot.is-landed .uvt-slot-n {
+  color: color-mix(in srgb, var(--sem-data) 58%, var(--tx));
+}
+/* a TCP slot that was dropped then recovered — flag the retransmit in orange */
+.uvt-slot.is-recovered {
+  background: color-mix(in srgb, var(--sem-control) 26%, var(--surface));
+  border-color: var(--sem-control);
+  border-style: dashed;
+}
+.uvt-slot.is-recovered .uvt-slot-n {
+  color: color-mix(in srgb, var(--sem-control) 60%, var(--tx));
+}
+/* a UDP permanent hole — the glitch */
+.uvt-slot.is-hole {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--sem-err) 16%, var(--surface)),
+    color-mix(in srgb, var(--sem-err) 16%, var(--surface)) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  border-style: dashed;
+  opacity: 0.9;
+}
+.uvt-slot.is-hole .uvt-slot-n {
+  color: var(--sem-err);
+  text-decoration: line-through;
+}
+/* pop as a slot lands */
+.uvt-pop {
+  animation: uvt-pop 0.34s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+@keyframes uvt-pop {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.3;
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* per-lane finish tape at the right edge of the track */
+.uvt-finish {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  right: 4px;
+  width: 6px;
+  border-radius: 3px;
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--tx3),
+    var(--tx3) 3px,
+    var(--surface) 3px,
+    var(--surface) 6px
+  );
+  opacity: 0.6;
+}
+.uvt-lane.is-done .uvt-finish {
+  opacity: 1;
+}
+.uvt-lane--tcp.is-done .uvt-finish {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--sem-ok),
+    var(--sem-ok) 3px,
+    var(--surface) 3px,
+    var(--surface) 6px
+  );
+}
+.uvt-lane--udp.is-done .uvt-finish {
+  background-image: repeating-linear-gradient(
+    45deg,
+    var(--sem-data),
+    var(--sem-data) 3px,
+    var(--surface) 3px,
+    var(--surface) 6px
+  );
+}
+
+/* the "finish" caption strip aligned above the tape */
+.uvt-finishline {
+  row-gap: 0;
+  padding: 0 14px;
+  margin-top: -2px;
+}
+.uvt-finishline-lbl {
+  grid-column: 2;
+  justify-self: end;
+  margin-right: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+/* per-lane live readout (spans both columns, its own row) */
+.uvt-lane-read {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+}
+.uvt-read-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.uvt-read-k {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.uvt-read-v {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+.uvt-read-v.is-ok {
+  color: var(--sem-ok);
+}
+.uvt-read-v.is-warn {
+  color: var(--sem-control);
+}
+.uvt-read-v.is-err {
+  color: var(--sem-err);
+}
+.uvt-read-tot {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--tx3);
+}
+.uvt-read-extra {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+
+/* ------------------------------- verdict (footer) ------------------------------- */
+.uvt-verdict {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.uvt-verdict-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.uvt-vcol {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  padding: 10px 13px;
+}
+.uvt-vcol--tcp {
+  border-top: 2px solid var(--sem-ok);
+}
+.uvt-vcol--udp {
+  border-top: 2px solid var(--sem-data);
+}
+.uvt-vcol-head {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: 8px;
+}
+.uvt-vcol--tcp .uvt-vcol-head {
+  color: color-mix(in srgb, var(--sem-ok) 70%, var(--tx2));
+}
+.uvt-vcol--udp .uvt-vcol-head {
+  color: color-mix(in srgb, var(--sem-data) 72%, var(--tx2));
+}
+.uvt-vcol-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.uvt-vstat {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  color: var(--tx2);
+}
+.uvt-vstat b {
+  font-family: var(--font-mono);
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+.uvt-vstat b.is-ok {
+  color: var(--sem-ok);
+}
+.uvt-vstat b.is-warn {
+  color: var(--sem-control);
+}
+.uvt-vstat b.is-err {
+  color: var(--sem-err);
+}
+.uvt-vsub {
+  font-size: 0.8rem;
+  color: var(--tx3);
+}
+.uvt-verdict-line {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding: 8px 12px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+}
+.uvt-verdict-line b {
+  color: var(--tx);
+}
+
+/* ------------------------------- responsive ------------------------------- */
+@media (max-width: 560px) {
+  .uvt-lane,
+  .uvt-finishline {
+    grid-template-columns: 1fr;
+  }
+  .uvt-lane-head,
+  .uvt-track,
+  .uvt-lane-read,
+  .uvt-finishline-lbl {
+    grid-column: 1;
+  }
+  .uvt-verdict-cols {
+    grid-template-columns: 1fr;
+  }
+  .uvt-read-extra {
+    margin-left: 0;
+  }
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .uvt-lane,
+  .uvt-slot,
+  .uvt-slot-n,
+  .uvt-slider::-webkit-slider-thumb {
+    transition: none;
+  }
+  .uvt-pop {
+    animation: none;
+  }
+}

@@ -1,0 +1,371 @@
+/* switch-learning (ch.26 micro) — a learning Ethernet switch: flood, then
+   forward. Prefix: sw-. Semantic palette: ingress = control (orange),
+   egress/frame = data (cyan), learned = ok (green). */
+
+.sw-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---- the switch fabric (SVG) ---- */
+.sw-fabric {
+  display: flex;
+  justify-content: center;
+}
+.sw-svg {
+  max-width: 620px;
+  font-family: var(--font-mono);
+}
+
+/* transitions only when motion is allowed */
+.sw-anim .sw-wire,
+.sw-anim .sw-port,
+.sw-anim .sw-host {
+  transition:
+    stroke 0.22s ease,
+    stroke-width 0.22s ease,
+    fill 0.22s ease;
+}
+
+.sw-box {
+  fill: var(--s2);
+  stroke: color-mix(in srgb, var(--accent) 55%, var(--line));
+  stroke-width: 2;
+}
+.sw-is-flood .sw-box {
+  stroke: var(--sem-data);
+}
+.sw-box-t {
+  font-size: 14px;
+  font-weight: 700;
+  fill: var(--tx);
+  letter-spacing: 0.05em;
+}
+.sw-box-s {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--tx2);
+  letter-spacing: 0.08em;
+}
+.sw-is-flood .sw-box-s {
+  fill: var(--sem-data);
+}
+.sw-box-mac {
+  font-size: 9.5px;
+  fill: var(--tx3);
+}
+
+/* ports on the switch edge */
+.sw-port {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.sw-port.is-in {
+  fill: color-mix(in srgb, var(--sem-control) 30%, var(--surface));
+  stroke: var(--sem-control);
+}
+.sw-port.is-out {
+  fill: color-mix(in srgb, var(--sem-data) 30%, var(--surface));
+  stroke: var(--sem-data);
+}
+.sw-port-t {
+  font-size: 9px;
+  fill: var(--tx3);
+}
+
+/* wires */
+.sw-wire {
+  stroke-linecap: round;
+}
+.sw-wire-live {
+  stroke-dasharray: 5 5;
+  animation: sw-dash 0.6s linear infinite;
+}
+@keyframes sw-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* the travelling frame */
+.sw-pkt-box {
+  fill: color-mix(in srgb, var(--sem-data) 22%, var(--surface));
+  stroke: var(--sem-data);
+  stroke-width: 1.5;
+}
+.sw-pkt-t {
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--tx);
+}
+.sw-pkt {
+  animation: sw-pkt-in 0.4s ease;
+}
+@keyframes sw-pkt-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* hosts */
+.sw-host {
+  fill: color-mix(in srgb, var(--tx3) 12%, var(--surface));
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.sw-host.is-src {
+  fill: color-mix(in srgb, var(--sem-control) 22%, var(--surface));
+  stroke: var(--sem-control);
+  stroke-width: 2.75;
+}
+.sw-host.is-dst {
+  fill: color-mix(in srgb, var(--sem-data) 22%, var(--surface));
+  stroke: var(--sem-data);
+  stroke-width: 2.75;
+}
+.sw-host.is-learned {
+  filter: drop-shadow(0 0 5px var(--sem-ok));
+}
+.sw-host-id {
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--tx);
+}
+.sw-host-role {
+  font-size: 8.5px;
+  fill: var(--tx3);
+  letter-spacing: 0.04em;
+}
+
+/* learned badge under a host */
+.sw-badge {
+  fill: color-mix(in srgb, var(--sem-ok) 20%, var(--surface));
+  stroke: var(--sem-ok);
+  stroke-width: 1.25;
+}
+.sw-badge-t {
+  font-size: 8.5px;
+  font-weight: 700;
+  fill: var(--sem-ok);
+}
+.sw-badge-pop {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sw-pop 0.4s ease;
+}
+@keyframes sw-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ---- frame strip (timeline of the conversation) ---- */
+.sw-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.sw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--tx2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease,
+    opacity 0.18s ease;
+}
+.sw-chip:hover {
+  border-color: var(--tx3);
+}
+.sw-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.sw-chip.is-future {
+  opacity: 0.5;
+}
+.sw-chip.is-now {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--tx);
+}
+.sw-chip-n {
+  color: var(--tx3);
+  font-size: 10px;
+}
+.sw-chip-flow {
+  font-weight: 700;
+  color: var(--tx);
+}
+.sw-chip-arr {
+  color: var(--tx3);
+}
+.sw-chip-act {
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+.sw-chip.is-flood .sw-chip-act {
+  background: color-mix(in srgb, var(--sem-data) 18%, transparent);
+  color: var(--sem-data);
+}
+.sw-chip.is-fwd .sw-chip-act {
+  background: color-mix(in srgb, var(--sem-ok) 18%, transparent);
+  color: var(--sem-ok);
+}
+.sw-chip.is-past {
+  opacity: 0.78;
+}
+
+/* ---- footer: MAC table + flood meter side by side ---- */
+.sw-foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 620px) {
+  .sw-foot {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* MAC table */
+.sw-mac-head,
+.sw-flood-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sw-mac-title,
+.sw-flood-title {
+  font-family: var(--font-head);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--tx);
+}
+.sw-mac-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.sw-mac-grid {
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  overflow: hidden;
+}
+.sw-mac-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  padding: 7px 12px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  border-top: 1px solid var(--line);
+}
+.sw-mac-row:first-child {
+  border-top: none;
+}
+.sw-mac-hrow {
+  background: var(--s2);
+  color: var(--tx3);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sw-mac-row.is-empty {
+  color: var(--tx3);
+}
+.sw-mac-row.is-set {
+  color: var(--tx);
+}
+.sw-mac-row.is-set .sw-mac-port {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.sw-mac-row.is-active {
+  background: color-mix(in srgb, var(--sem-ok) 14%, transparent);
+  animation: sw-rowflash 0.7s ease;
+}
+@keyframes sw-rowflash {
+  from {
+    background: color-mix(in srgb, var(--sem-ok) 32%, transparent);
+  }
+  to {
+    background: color-mix(in srgb, var(--sem-ok) 14%, transparent);
+  }
+}
+.sw-mac-mac {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* flood meter */
+.sw-flood-num {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--sem-data);
+  line-height: 1;
+}
+.sw-flood-num.is-settled {
+  color: var(--sem-ok);
+}
+.sw-flood-bar {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.sw-flood-tick {
+  flex: 1;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  transition: background 0.2s ease;
+}
+.sw-flood-tick.on {
+  background: var(--sem-data);
+  border-color: var(--sem-data);
+}
+.sw-flood-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sw-wire-live,
+  .sw-pkt,
+  .sw-badge-pop,
+  .sw-mac-row.is-active {
+    animation: none;
+  }
+}

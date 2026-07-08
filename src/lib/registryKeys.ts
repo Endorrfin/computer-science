@@ -67,6 +67,13 @@ export const SIM_KEYS = [
   "disk-allocation", // ch.24 micro — contiguous/linked/indexed allocation, first-fit, external fragmentation
   "race-lab", // ch.25 micro — two threads race on a shared counter (load-inc-store); a mutex repairs the lost update
   "deadlock-lab", // ch.25 HERO — dining philosophers + four fixes mapped to Coffman conditions + Deadlock Breaker boss
+  // P7 · Networks (S13)
+  "packet-journey", // ch.26 HERO — DNS side-quest then a packet hop-by-hop: TTL ticks, MACs rewritten, IP pinned, encapsulation envelope
+  "switch-learning", // ch.26 micro — a switch floods, learns source MAC→port, then forwards; floods fall as the table fills
+  "tcp-lab", // ch.27 HERO — 3-way handshake + Go-Back-N loss/retransmit + Reno sawtooth + the Wire Shark boss (broken handshakes)
+  "udp-vs-tcp-race", // ch.27 micro — same lossy channel: TCP perfect-but-late (file) vs UDP fast-but-lossy (video call)
+  "url-journey", // ch.28 micro — type a URL → DNS→TCP→TLS→request→wait→download→parse→render waterfall, click to expand
+  "cache-headers", // ch.28 micro — max-age/ETag/no-store × age → fresh hit / 304 revalidate / full refetch
 ] as const;
 
 export const FIG_KEYS = [
@@ -108,6 +115,9 @@ export const FIG_KEYS = [
   // P6 · Operating Systems (S12)
   "journaling", // ch.24 — write-ahead log: log → commit → checkpoint; crash before/after commit → discard vs replay
   "wait-for-graph", // ch.25 — resource-allocation → wait-for graph; a cycle IS a deadlock; break an edge to free it
+  // P7 · Networks (S13)
+  "layer-cake", // ch.26 — the TCP/IP stack as encapsulation: wrap HTTP→TCP→IP→Ethernet down, strip back up
+  "http-evolution", // ch.28 — HTTP/1.1 head-of-line vs /2 multiplex-over-one-TCP vs /3 QUIC independent streams under loss
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

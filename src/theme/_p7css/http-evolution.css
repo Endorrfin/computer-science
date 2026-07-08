@@ -1,0 +1,40 @@
+/* http-evolution (ch.28 fig) — HTTP/1.1 → 2 → 3 head-of-line blocking, stepped.
+   Prefix: httpe-. Semantic palette: loss = err (red), stalled = red-tinted,
+   flowing = data (cyan), delivered = ok (green), waiting = muted. FigureStepper
+   re-keys the SVG per frame, so the packet motion rides the per-frame enter. */
+
+/* a flowing packet head drifts along its lane to read as motion */
+.httpe-pkt {
+  animation: httpe-drift 1.15s ease-in-out infinite alternate;
+}
+@keyframes httpe-drift {
+  from {
+    transform: translateX(0);
+    opacity: 0.85;
+  }
+  to {
+    transform: translateX(-7px);
+    opacity: 1;
+  }
+}
+
+/* a blocked/lost lane gives a subtle pulse so "frozen" reads as tension, not off */
+.httpe-blocked {
+  animation: httpe-pulse 1.4s ease-in-out infinite;
+}
+@keyframes httpe-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .httpe-pkt,
+  .httpe-blocked {
+    animation: none;
+  }
+}
