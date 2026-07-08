@@ -3,6 +3,12 @@
 // INTERACTIVES.md is the naming authority: keys are defined there first.
 
 export const SIM_KEYS = [
+  // P0 · Orientation (S17)
+  "discipline-map", // ch.0a HERO — computer science as a linked landscape; click an area to see its neighbours
+  // P0 · Math toolkit (S17)
+  "birthday-paradox", // ch.0b HERO — exact collision curve + a seeded Monte-Carlo that converges to it
+  "combinatorics-counter", // ch.0b HERO — nPr / nCr / nᵏ / stars-and-bars, big-int-exact, with Pascal's triangle
+  "truth-table", // ch.0b micro — parse a boolean expression → full truth table + tautology/contradiction/contingency
   // P1 · Information (S2)
   "bit-inspector", // ch.1 HERO — flip bits on int & float lanes
   "base-converter", // ch.1 micro — positional weights, lit up
@@ -95,9 +101,15 @@ export const SIM_KEYS = [
   "tokenizer-toy", // ch.34 micro — real BPE; token chips, char-vs-token count, why letter-counting fails
   "attention-heatmap", // ch.34 micro — real softmax self-attention; hover a word → attention flows to related words
   "embedding-space", // ch.34 micro — real word2vec vectors; king−man+woman≈queen + nearest neighbours
+  // P11 · Capstone (S17)
+  "grand-traversal", // ch.35 HERO — one keystroke stepped through all 11 layers → pixel; each stop deep-links its hero
+  "boss-gallery", // ch.35 — the ten part bosses gathered; earned badges light up, each links to its host chapter
 ] as const;
 
 export const FIG_KEYS = [
+  // P0 · Orientation (S17)
+  "guide-tour", // ch.0a — how to travel this guide: lens, touchable sims, predict-quizzes, bosses, review
+  "induction-ladder", // ch.0b — proof by induction as dominoes: base case + step ⇒ all n
   // P1 · Information (S2)
   "float-number-line", // ch.1 — representable floats, widening gaps
   "unicode-planes", // ch.2 — the code space from ASCII outward
@@ -148,6 +160,8 @@ export const FIG_KEYS = [
   // P10 · Intelligence (S16)
   "transformer-block", // ch.34 — embeddings → attention → feed-forward → next-token, stepped, with residuals
   "scaling-curves", // ch.34 — test loss vs compute/data/params as power laws; the Chinchilla compute-optimal point
+  // P11 · Capstone (S17)
+  "quantum-coin", // ch.35 — a classical bit vs a qubit: superposition, then measurement collapses it
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

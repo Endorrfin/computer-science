@@ -9,6 +9,11 @@ import type { FigKey, SimKey } from "./registryKeys.ts";
 type LazyComp = LazyExoticComponent<ComponentType>;
 
 const sims: Record<SimKey, LazyComp> = {
+  // P0 · Orientation & Math toolkit
+  "discipline-map": lazy(() => import("../components/sims/orientation/DisciplineMap.tsx")),
+  "birthday-paradox": lazy(() => import("../components/sims/math/BirthdayParadox.tsx")),
+  "combinatorics-counter": lazy(() => import("../components/sims/math/CombinatoricsCounter.tsx")),
+  "truth-table": lazy(() => import("../components/sims/math/TruthTable.tsx")),
   // P1 · Information
   "bit-inspector": lazy(() => import("../components/sims/bit-inspector/BitInspector.tsx")),
   "base-converter": lazy(() => import("../components/sims/BaseConverter.tsx")),
@@ -96,9 +101,15 @@ const sims: Record<SimKey, LazyComp> = {
   "tokenizer-toy": lazy(() => import("../components/sims/ai/TokenizerToy.tsx")),
   "attention-heatmap": lazy(() => import("../components/sims/ai/AttentionHeatmap.tsx")),
   "embedding-space": lazy(() => import("../components/sims/ai/EmbeddingSpace.tsx")),
+  // P11 · Capstone
+  "grand-traversal": lazy(() => import("../components/sims/capstone/GrandTraversal.tsx")),
+  "boss-gallery": lazy(() => import("../components/sims/capstone/BossGallery.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
+  // P0 · Orientation & Math toolkit
+  "guide-tour": lazy(() => import("../components/figures/GuideTour.tsx")),
+  "induction-ladder": lazy(() => import("../components/figures/InductionLadder.tsx")),
   // P1 · Information
   "float-number-line": lazy(() => import("../components/figures/FloatNumberLine.tsx")),
   "unicode-planes": lazy(() => import("../components/figures/UnicodePlanes.tsx")),
@@ -144,6 +155,8 @@ const figs: Record<FigKey, LazyComp> = {
   // P10 · Intelligence
   "transformer-block": lazy(() => import("../components/figures/TransformerBlock.tsx")),
   "scaling-curves": lazy(() => import("../components/figures/ScalingCurves.tsx")),
+  // P11 · Capstone
+  "quantum-coin": lazy(() => import("../components/figures/QuantumCoin.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

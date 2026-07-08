@@ -1226,6 +1226,147 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  // ===================== P0 · Orientation (ch.0a) =====================
+  {
+    id: "cs-map-predict",
+    chapterId: "ch0a",
+    questions: [
+      {
+        prompt: "Which statement best captures what **computer science** studies?",
+        options: [
+          "The operation and repair of computer hardware",
+          "Computation, information, and abstraction — independent of any particular machine",
+          "How to write programs in today's popular languages",
+          "The design of ever-faster microprocessors",
+        ],
+        answer: 1,
+        explain:
+          "CS is about the **ideas** — what can be computed, how to represent information, what a solution costs, how to build reliable systems by layering abstractions. Hardware, programming, and chip design are *tools and applications*, not the subject. \"Computer science is no more about computers than astronomy is about telescopes.\"",
+      },
+      {
+        prompt: "You want to learn **databases** today but haven't read the earlier parts. What does this guide expect?",
+        options: [
+          "You must finish Parts 1–7 first, in order",
+          "You can start at Part 8 — short recap boxes stand in for the prerequisites",
+          "Databases need no background whatsoever",
+          "You should read only the Senior lens",
+        ],
+        answer: 1,
+        explain:
+          "Every part is **self-contained**: 30-second recap boxes replace prerequisites so you can drop into Data or AI directly. The bottom-up order exists because later ideas *build on* earlier ones — but it's a suggestion, not a locked chain. Start where your need is.",
+      },
+      {
+        prompt: "On the discipline map, an edge drawn between **Security** and **Networks** represents…",
+        options: [
+          "that the two areas are really the same field",
+          "an idea that crosses between them — here, *adversaries on the wire*",
+          "a required reading order",
+          "which one is more important",
+        ],
+        answer: 1,
+        explain:
+          "The map's edges are **crossing ideas**, not orderings or hierarchies. Security and Networks touch because messages travel across an untrusted medium where an adversary can listen — which is exactly why cryptography (ch.31) exists. The map shows how areas *relate*; the landing stack shows how they *build*.",
+      },
+    ],
+  },
+  // ===================== P0 · Math toolkit (ch.0b) =====================
+  {
+    id: "logic-predict",
+    chapterId: "ch0b",
+    questions: [
+      {
+        prompt: "The implication **p → q** is FALSE in exactly which case?",
+        options: ["p false, q false", "p true, q true", "p true, q false", "p false, q true"],
+        answer: 2,
+        explain:
+          "An implication only breaks when the premise holds but the conclusion fails: **true → false**. Every other row is true — in particular, a *false premise* makes the implication **vacuously true** (\"if the moon is cheese, then 2+2=5\" is a true statement). This one row is where intuition slips most often.",
+      },
+      {
+        prompt: "Which expression is logically equivalent to **¬(p ∧ q)**?",
+        options: ["¬p ∧ ¬q", "¬p ∨ ¬q", "p ∨ q", "¬p → q"],
+        answer: 1,
+        explain:
+          "**De Morgan's law**: the negation of an *and* is the *or* of the negations — ¬(p ∧ q) ≡ ¬p ∨ ¬q. (The other De Morgan is ¬(p ∨ q) ≡ ¬p ∧ ¬q.) This is the refactor you reach for whenever a tangled `if (!(a && b))` needs untangling.",
+      },
+      {
+        prompt: "\"If it rained, the ground is wet. The ground **is** wet.\" Can you conclude it rained?",
+        options: ["Yes — the rule guarantees it", "No — the ground could be wet for another reason (a sprinkler)"],
+        answer: 1,
+        explain:
+          "No. That's **affirming the consequent** — confusing p → q with q → p. The implication only runs one way; a wet ground is consistent with rain but doesn't prove it. Only the *contrapositive* (¬q → ¬p: \"the ground is dry, so it didn't rain\") is equivalent to the original.",
+      },
+    ],
+  },
+  {
+    id: "counting-predict",
+    chapterId: "ch0b",
+    questions: [
+      {
+        prompt: "How many **4-digit PINs** are there (digits 0–9, repetition allowed)?",
+        options: ["40", "5,040", "10,000", "24"],
+        answer: 2,
+        explain:
+          "Order matters and repetition is allowed, so it's **10⁴ = 10,000** (the product rule: 10 choices in each of 4 independent slots). 5,040 = P(10,4) would be the answer if digits *couldn't* repeat; 40 and 24 aren't in the right ballpark at all.",
+      },
+      {
+        prompt: "How many ways to choose a **3-person committee** from 10 people?",
+        options: ["720 — because order matters", "120", "1,000", "30"],
+        answer: 1,
+        explain:
+          "A committee is **unordered**, so it's a combination: C(10,3) = 10!/(3!·7!) = **120**. The tempting 720 is P(10,3) — the *ordered* count — which overcounts each committee by 3! = 6 (its number of orderings). 'Does rearranging make it different?' is the question that picks the formula.",
+      },
+      {
+        prompt: "Roughly how many people must be in a room for a **>50% chance** two share a birthday?",
+        options: ["About 183", "About 253", "About 23", "About 366"],
+        answer: 2,
+        explain:
+          "Just **23** — the famous birthday paradox. Intuition says ~183 (half of 365), but what matters is the number of *pairs*: 23 people form 253 pairs, and pairs grow as n². 366 is the pigeonhole point where a shared birthday becomes *certain*, not just likely.",
+      },
+    ],
+  },
+  // ===================== P11 · Capstone (ch.35) =====================
+  {
+    id: "whole-stack-predict",
+    chapterId: "ch35",
+    questions: [
+      {
+        prompt: "You press a key in a chat app. Of these, which happens **first**?",
+        options: [
+          "The GPU rasterizes the reply into a lit pixel",
+          "The keystroke becomes a bit — a Unicode code point",
+          "A TCP packet carries it across the network",
+          "A model predicts your next token",
+        ],
+        answer: 1,
+        explain:
+          "The journey starts at **encoding**: the physical keypress becomes a scancode and then a Unicode code point — a pattern of bits — before anything else can touch it. Only later does it ride gates, cross the network, meet a model, and finally return as a rasterized pixel. Bits first; photons last.",
+      },
+      {
+        prompt: "A web page is mysteriously slow. \"Every abstraction leaks\" suggests you should…",
+        options: [
+          "Trust the framework and wait it out",
+          "Be able to descend one layer to find the real cause — a cache miss, a network round-trip, a lock",
+          "Rewrite the whole app from scratch",
+          "Add another abstraction on top to hide it",
+        ],
+        answer: 1,
+        explain:
+          "Leaky-abstraction thinking says the cause is almost always **one layer down** from where you're working. The senior move is to descend — profile the query, inspect the packets, check the cache — not to trust the abstraction blindly nor to nuke everything. Knowing *which* floor to visit is the skill the whole guide trained.",
+      },
+      {
+        prompt: "Which is **true** of quantum computers as of 2026?",
+        options: [
+          "They already replace classical computers for everyday tasks",
+          "They can already break 2048-bit RSA in practice",
+          "They give large speed-ups only for specific problems and aren't fault-tolerant at scale yet",
+          "They make every algorithm exponentially faster",
+        ],
+        answer: 2,
+        explain:
+          "Quantum machines help on a **narrow** set of structured problems (factoring, quantum simulation, some search) and offer nothing for most computing. 'Below-threshold' error correction is a real 2024–2026 milestone, but a machine that runs Shor's algorithm against real RSA needs on the order of a million physical qubits — orders of magnitude beyond today's — and doesn't exist yet, which is why post-quantum crypto matters *now*.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

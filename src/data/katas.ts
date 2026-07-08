@@ -3072,6 +3072,139 @@ It ranges from **1** (same direction) through **0** (orthogonal) to **−1** (op
       { name: "symmetric", body: `assert(Math.abs(cosineSimilarity([1, 3], [2, 1]) - cosineSimilarity([2, 1], [1, 3])) < 1e-12);` },
     ],
   },
+  // ========================================================================
+  // ch0b · Math toolkit — counting made concrete
+  // ========================================================================
+  {
+    id: "n-choose-k",
+    chapterId: "ch0b",
+    title: "n choose k",
+    difficulty: "core",
+    tags: ["combinatorics", "counting", "math"],
+    prompt: `
+Return **C(n, k)** — the number of ways to choose \`k\` items from \`n\` when order does *not* matter — as an exact integer.
+
+Do **not** compute \`n!\` and divide: factorials overflow fast and you'll lose precision. Use the **multiplicative** form, dividing as you go so every partial result stays an integer:
+
+\`\`\`
+C(n,k) = (n / 1) · ((n−1) / 2) · … · ((n−k+1) / k)
+\`\`\`
+
+Use the symmetry \`C(n,k) = C(n, n−k)\` to keep the loop short, and return \`0\` when \`k < 0\` or \`k > n\`.
+
+### Examples
+- \`nChooseK(5, 2)\` → \`10\`
+- \`nChooseK(52, 5)\` → \`2598960\`
+- \`nChooseK(4, 5)\` → \`0\`
+`,
+    signature: `function nChooseK(n: number, k: number): number`,
+    exportName: "nChooseK",
+    starter: `function nChooseK(n, k) {
+  // TODO: multiplicative C(n,k); return 0 if k < 0 or k > n.
+  return 0;
+}`,
+    solution: `function nChooseK(n, k) {
+  if (k < 0 || k > n) return 0;
+  k = Math.min(k, n - k);
+  let result = 1;
+  for (let i = 0; i < k; i++) {
+    result = (result * (n - i)) / (i + 1);
+  }
+  return Math.round(result);
+}`,
+    tests: [
+      { name: "C(5,2) = 10", body: `assertEqual(nChooseK(5, 2), 10);` },
+      { name: "edges: C(n,0) = C(n,n) = 1", body: `assertEqual(nChooseK(10, 0), 1); assertEqual(nChooseK(10, 10), 1);` },
+      { name: "out of range → 0", body: `assertEqual(nChooseK(4, 5), 0); assertEqual(nChooseK(3, -1), 0);` },
+      { name: "poker hands: C(52,5) = 2,598,960", body: `assertEqual(nChooseK(52, 5), 2598960);` },
+      { name: "symmetry C(n,k) = C(n,n−k)", body: `for (const [n,k] of [[9,2],[20,7],[30,11]]) assertEqual(nChooseK(n,k), nChooseK(n,n-k), n+","+k);` },
+      { name: "Pascal's recurrence C(n,k)=C(n−1,k−1)+C(n−1,k)", body: `for (let n=1;n<=15;n++) for (let k=1;k<n;k++) assertEqual(nChooseK(n,k), nChooseK(n-1,k-1)+nChooseK(n-1,k), n+","+k);` },
+    ],
+  },
+  {
+    id: "power-set",
+    chapterId: "ch0b",
+    title: "Power set",
+    difficulty: "core",
+    tags: ["combinatorics", "sets", "recursion"],
+    prompt: `
+Return the **power set** of \`arr\` — every subset, all \`2ⁿ\` of them.
+
+Build it by **doubling**: start from \`[[]]\` (the set containing just the empty subset), then for each element \`x\` in \`arr\`, append \`x\` to a copy of *every subset so far* and add those to the collection. Return the subsets in exactly that order.
+
+- For \`[1, 2]\`: \`[[], [1], [2], [1, 2]]\`
+- Its size is always \`2 ** arr.length\`.
+
+### Examples
+- \`powerSet([])\` → \`[[]]\`
+- \`powerSet([1, 2, 3])\` → \`[[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]\`
+`,
+    signature: `function powerSet<T>(arr: T[]): T[][]`,
+    exportName: "powerSet",
+    starter: `function powerSet(arr) {
+  // TODO: start from [[]] and double for each element.
+  return [];
+}`,
+    solution: `function powerSet(arr) {
+  let subsets = [[]];
+  for (const x of arr) {
+    const withX = subsets.map((s) => s.concat([x]));
+    subsets = subsets.concat(withX);
+  }
+  return subsets;
+}`,
+    tests: [
+      { name: "empty input → [[]]", body: `assertDeepEqual(powerSet([]), [[]]);` },
+      { name: "size is 2^n", body: `assertEqual(powerSet([1,2,3,4]).length, 16); assertEqual(powerSet([1]).length, 2);` },
+      { name: "[1,2] in doubling order", body: `assertDeepEqual(powerSet([1, 2]), [[], [1], [2], [1, 2]]);` },
+      { name: "[1,2,3] in doubling order", body: `assertDeepEqual(powerSet([1, 2, 3]), [[], [1], [2], [1, 2], [3], [1, 3], [2, 3], [1, 2, 3]]);` },
+      { name: "contains the empty set and the full set", body: `const ps = powerSet([1,2,3]); assertDeepEqual(ps[0], []); assertDeepEqual(ps[ps.length-1], [1,2,3]);` },
+    ],
+  },
+  {
+    id: "permutations-of",
+    chapterId: "ch0b",
+    title: "All permutations",
+    difficulty: "stretch",
+    tags: ["combinatorics", "recursion", "backtracking"],
+    prompt: `
+Return **every permutation** of \`arr\` — all \`n!\` orderings.
+
+Build them recursively: for each index \`i\`, take \`arr[i]\` as the first element and prepend it to every permutation of the *remaining* elements (\`arr\` with index \`i\` removed). This produces a deterministic order — for \`[1,2,3]\`: \`123, 132, 213, 231, 312, 321\`.
+
+- The empty array has one permutation: \`[[]]\`.
+- Assume the elements are distinct.
+
+### Examples
+- \`permutationsOf([1, 2])\` → \`[[1, 2], [2, 1]]\`
+- \`permutationsOf([1, 2, 3])\` → \`[[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]\`
+`,
+    signature: `function permutationsOf<T>(arr: T[]): T[][]`,
+    exportName: "permutationsOf",
+    starter: `function permutationsOf(arr) {
+  // TODO: pick each element as head, recurse on the rest.
+  return [];
+}`,
+    solution: `function permutationsOf(arr) {
+  if (arr.length <= 1) return [arr.slice()];
+  const result = [];
+  for (let i = 0; i < arr.length; i++) {
+    const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+    for (const p of permutationsOf(rest)) {
+      result.push([arr[i]].concat(p));
+    }
+  }
+  return result;
+}`,
+    tests: [
+      { name: "empty → [[]]", body: `assertDeepEqual(permutationsOf([]), [[]]);` },
+      { name: "single → [[x]]", body: `assertDeepEqual(permutationsOf([5]), [[5]]);` },
+      { name: "pair", body: `assertDeepEqual(permutationsOf([1, 2]), [[1, 2], [2, 1]]);` },
+      { name: "triple in recursive order", body: `assertDeepEqual(permutationsOf([1, 2, 3]), [[1,2,3],[1,3,2],[2,1,3],[2,3,1],[3,1,2],[3,2,1]]);` },
+      { name: "count is n!", body: `assertEqual(permutationsOf([1,2,3,4]).length, 24); assertEqual(permutationsOf([1,2,3,4,5]).length, 120);` },
+      { name: "every permutation is unique", body: `const ps = permutationsOf([1,2,3,4]).map((p) => p.join(",")); assertEqual(new Set(ps).size, ps.length);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

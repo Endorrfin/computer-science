@@ -1,0 +1,292 @@
+/* truth-table (ch.0b micro) — a boolean expression, its full 2^v table, and a
+   tautology/contradiction/contingency verdict. Prefix: tt-. Semantic palette:
+   true = ok (green), false = err (red, kept muted so the table doesn't scream),
+   the expression column tinted with --accent. Shared chrome (.btn, .ss-field,
+   .muted, .sr-only, .lsb-canvas-hint) comes from global.css. Reduced motion is
+   honored — the only animation lives behind the no-preference query. */
+
+/* --------------------------------- input --------------------------------- */
+.tt-field {
+  gap: 7px;
+}
+.tt-input {
+  min-width: 15rem;
+  max-width: 62vw;
+  padding: 5px 9px;
+  font: 500 0.92rem var(--font-mono);
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  outline-offset: 2px;
+}
+.tt-input:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.tt-input[aria-invalid="true"] {
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+}
+
+/* ------------------------------- presets --------------------------------- */
+.tt-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tt-preset {
+  padding: 3px 10px;
+  font: 500 0.82rem var(--font-mono);
+  color: var(--tx2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.tt-preset:hover {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.tt-preset.on {
+  color: var(--tx);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line));
+}
+.tt-preset:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+  outline-offset: 2px;
+}
+
+/* --------------------------------- table --------------------------------- */
+.tt-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--surface);
+  outline-offset: 2px;
+}
+.tt-table-wrap:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+.tt-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+.tt-th {
+  position: sticky;
+  top: 0;
+  padding: 7px 14px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--tx);
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+.tt-th--var {
+  color: var(--tx2);
+}
+.tt-th--expr {
+  color: var(--tx);
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, var(--s2));
+}
+
+.tt-row:nth-child(even) .tt-td--var {
+  background: color-mix(in srgb, var(--line) 22%, transparent);
+}
+.tt-td {
+  padding: 5px 14px;
+  text-align: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.tt-table tbody tr:last-child .tt-td {
+  border-bottom: none;
+}
+.tt-td--expr {
+  border-left: 2px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  font-weight: 700;
+}
+
+.tt-bool {
+  display: inline-block;
+  min-width: 1ch;
+  font-weight: 700;
+}
+.tt-td.is-t .tt-bool {
+  color: var(--sem-ok);
+}
+.tt-td.is-f .tt-bool {
+  color: color-mix(in srgb, var(--sem-err) 78%, var(--tx3));
+}
+/* the expression column reads louder — that's the answer you came for */
+.tt-td--expr.is-t {
+  background: color-mix(in srgb, var(--sem-ok) 15%, transparent);
+}
+.tt-td--expr.is-f {
+  background: color-mix(in srgb, var(--sem-err) 12%, transparent);
+}
+
+/* -------------------------------- verdict -------------------------------- */
+.tt-verdict-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.tt-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--tx);
+}
+.tt-verdict-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--tx3);
+  flex: 0 0 auto;
+}
+.tt-verdict--tautology {
+  color: var(--sem-ok);
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 12%, var(--surface));
+}
+.tt-verdict--tautology .tt-verdict-dot {
+  background: var(--sem-ok);
+}
+.tt-verdict--contradiction {
+  color: color-mix(in srgb, var(--sem-err) 82%, var(--tx));
+  border-color: color-mix(in srgb, var(--sem-err) 50%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 11%, var(--surface));
+}
+.tt-verdict--contradiction .tt-verdict-dot {
+  background: var(--sem-err);
+}
+.tt-verdict--contingency {
+  color: var(--tx2);
+}
+
+.tt-dual {
+  font-size: 0.84rem;
+  color: var(--tx2);
+}
+.tt-dual code {
+  font-family: var(--font-mono);
+  color: var(--tx);
+}
+.tt-dual--yes {
+  color: var(--sem-ok);
+}
+.tt-dual--no {
+  color: color-mix(in srgb, var(--sem-err) 80%, var(--tx));
+}
+
+/* --------------------------------- error --------------------------------- */
+.tt-error {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px dashed color-mix(in srgb, var(--sem-control) 55%, var(--line));
+  border-radius: var(--r-s);
+  background: color-mix(in srgb, var(--sem-control) 8%, var(--surface));
+}
+.tt-error-mark {
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--sem-control);
+}
+.tt-error-lead {
+  margin: 0 0 3px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.tt-error-hint {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.tt-error-hint code {
+  font-family: var(--font-mono);
+  color: var(--tx2);
+}
+
+/* --------------------------------- legend -------------------------------- */
+.tt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  padding-top: 2px;
+}
+.tt-legend-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.tt-op {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.tt-op-sym {
+  font: 700 0.95rem var(--font-mono);
+  color: var(--tx);
+}
+.tt-op-name {
+  font-size: 0.74rem;
+  letter-spacing: 0.05em;
+  color: var(--tx2);
+}
+.tt-op-also {
+  font: 0.74rem var(--font-mono);
+}
+.tt-op--const .tt-op-sym {
+  color: var(--sem-data);
+}
+
+/* --------------------------------- motion -------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes tt-cell-in {
+    from {
+      opacity: 0.35;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .tt-td--expr.is-t,
+  .tt-td--expr.is-f {
+    animation: tt-cell-in 0.18s ease-out;
+  }
+  .tt-verdict {
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+}
+
+/* -------------------------------- narrow --------------------------------- */
+@media (max-width: 560px) {
+  .tt-table {
+    font-size: 0.82rem;
+  }
+  .tt-th,
+  .tt-td {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+  .tt-input {
+    max-width: 100%;
+  }
+}
