@@ -16,19 +16,18 @@
 
 ---
 
-## P0 · Orientation
+## P0 · Orientation  — ✅ SHIPPED S17 (engines: `sims/orientation/map.ts` + `sims/math/{combinatorics,birthday,logic}.ts`; tests ch.0a–0b)
 
 ### 0a — The Map
 - [HERO] `stack-map` — the landing itself: 11-part glowing stack, hover-expand to chapters, progress rings, boss badges; click = navigate
-- [fig] `discipline-map` — pan/zoom mind-map of the whole CS discipline (what's in/out of this guide)
+- [HERO] `discipline-map` ✅ — a radial map of the ten areas of CS, each node colored by its part; click/focus an area → it and its neighbours light with the crossing-idea labels, the rest dims, and a panel links to `#/part/<id>` (a *relational* view, distinct from the landing's *build* stack)
+- [fig] `guide-tour` ✅ — how to travel this guide, one frame per mechanism: the Depth lens, touchable sims, predict-quizzes, bosses & badges, spaced review
 
 ### 0b — Math toolkit *(optional on-ramp)*
-- [micro] `truth-table-builder` — toggle P/Q inputs, ops (∧∨¬→↔), table fills live
-- [micro] `combinatorics-counter` — n/k sliders on a visual grid: permutations vs combinations counts animate
-- [micro] `birthday-lab` — n-people slider; run 1000 simulated rooms; collision % converges on the curve
-- [micro] `dice-lln` — roll dice ×N; watch the mean converge (law of large numbers)
-- [fig] `induction-dominoes` — base case + step = infinite fall, stepped
-- [fig] `graph-notation` — same graph: drawing ↔ V/E sets ↔ degree table
+- [HERO] `combinatorics-counter` ✅ — n/r inputs + a P(n,r) / C(n,r) / nʳ / stars-and-bars toggle (framed by an order?/repetition? grid); **exact BigInt** counts via `formatBig`, the formula + plain-English meaning, and a Pascal's triangle that highlights C(n,r)
+- [HERO] `birthday-paradox` ✅ — group-size slider; the **exact** collision curve with the 23 / 57 / 70 landmarks computed live; a Monte-Carlo mode whose seeded estimates converge onto the curve (simulation → theory)
+- [micro] `truth-table` ✅ — type a boolean expression (¬∧∨→↔, symbols or words) → a real recursive-descent parse → the full truth table + a tautology/contradiction/contingency verdict; garbage input shows a friendly parse-error state
+- [fig] `induction-ladder` ✅ — proof by induction as dominoes: base case + the k⇒k+1 step ⇒ the whole row falls (tie-in to recursion's stopping case)
 
 ## P1 · Information
 
@@ -268,12 +267,12 @@
 - [fig] `transformer-block` ✅ — embeddings→attention→feed-forward→next-token, stepped, with residuals
 - [fig] `scaling-curves` ✅ — test loss vs compute/data/params power laws + the Chinchilla compute-optimal point
 
-## P11 · Capstone
+## P11 · Capstone  — ✅ SHIPPED S17 (engine: `sims/capstone/traversal.ts`; test ch.35)
 
 ### ch.35 — The whole picture
-- [HERO] `grand-traversal` — press a key in a fake editor → ride the event down the whole stack (keyboard interrupt → OS → process → CPU fetch-decode-execute → memory → back up through runtime → network fetch → render pixel) — every stop deep-links to its chapter; this is the guide's closing argument
-- [fig] `one-page-map` — the entire curriculum as a single poster figure
-- Boss gallery — all badges, replay links
+- [HERO] `grand-traversal` ✅ — one keystroke stepped through **12 layers / all 10 content parts** (keypress→gates→CPU→OS→code→data-structure→automaton→network→cipher→database→model→GPU/pixel); each stop recaps its layer, gives its "you built this" tie-back, and deep-links that chapter's hero; the parts light up as they're covered — the guide's closing argument
+- [sim] `boss-gallery` ✅ — the ten part bosses gathered; earned badges lit from localStorage, each card links to its host chapter (reuses the global boss-card styling)
+- [fig] `quantum-coin` ✅ — a classical bit vs a qubit: superposition, measurement collapse, entanglement (correlation, not signalling), and why the speed-up is narrow — the honest frontier box
 
 ---
 
@@ -341,10 +340,12 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
 batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch;
 **48** after S14's +4 data batch; **52** after S15's +4 security batch; **56** after S16's
-+4 ML/AI batch) · quizzes in every chapter. As of **S16** the live build
-carries **76 sims, 34 figures, 34 quizzes, 171 interview Qs, 56 katas** across **34 live
-chapters** (`npm run qa` prints the running census and enforces the per-chapter minimums —
-CLAUDE.md §6 mandate). **Part 5 · Theory
++4 ML/AI batch) · quizzes in every chapter. As of **S17 the guide is CONTENT-COMPLETE** — the live build
+carries **82 sims, 37 figures, 38 quizzes, 183 interview Qs, 59 katas** across **all 37
+chapters (11 parts)** (`npm run qa` prints the running census and enforces the per-chapter
+minimums — CLAUDE.md §6 mandate). S17 closed the book-ends: **P0 · Orientation** (the
+`discipline-map` HERO + the `combinatorics-counter` / `birthday-paradox` math heroes + a
+`truth-table` evaluator) and **P11 · Capstone** (the `grand-traversal` HERO + `boss-gallery`). **Part 5 · Theory
 complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · Operating
 Systems complete** (ch.22–25): S11 shipped ch.22–23 with the `scheduler-sim` HERO; **S12** shipped
 ch.24 (Files & storage, `inode-explorer` HERO) and ch.25 (Concurrency, `deadlock-lab` HERO) with

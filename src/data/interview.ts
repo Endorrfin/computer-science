@@ -1556,6 +1556,131 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "**RLHF** (reinforcement learning from human feedback) aligns a pretrained model to human preferences: collect human rankings of outputs, train a **reward model** to predict them, then fine-tune the LLM (e.g. with PPO, or newer preference-optimization methods) to maximize that reward — turning a raw next-token predictor into an instruction-following assistant (InstructGPT, 2022). **Alignment is hard** because human values are hard to specify completely, reward models are **proxies** that can be gamed (reward hacking / Goodhart), feedback doesn't cover every situation, and we lack strong **interpretability** to verify *why* a model behaves as it does. **Fundamental limits**: an LLM has no built-in notion of **truth** (it optimizes plausibility, hence hallucination), no guarantee of consistency, tokenization blind spots, and — the link to computability (ch.20) — no escape from what's **uncomputable**: no scale lets it decide the halting problem. The honest framing is a powerful, fallible pattern machine, not an oracle — use it with verification and tooling.",
   },
+  // ===================== P0 · Orientation (ch.0a) =====================
+  {
+    id: "iv-ch0a-1",
+    chapterId: "ch0a",
+    level: "mid",
+    q: "Is computer science the same as programming? How would you explain the difference?",
+    a:
+      "No — programming is a **tool** used in CS, the way arithmetic is a tool used in physics. **Computer science** is the study of *computation, information, and abstraction*: what can be computed at all, how to represent and transform information, what a solution costs in time and space, and how to build reliable systems by layering abstractions. Its objects — an algorithm, a complexity bound, a proof of undecidability, a protocol — are independent of any language or machine and outlive both.\n" +
+      "A useful tell: you can be a fluent programmer with shallow CS (you ship features but can't say why the app is slow) or a strong computer scientist who writes little code (you design the algorithm someone else implements). The two overlap heavily in practice, but conflating them is why people think 'learn CS' means 'learn Python' — it doesn't.",
+  },
+  {
+    id: "iv-ch0a-2",
+    chapterId: "ch0a",
+    level: "senior",
+    q: "What does it mean to call computer science 'a stack of abstractions,' and why does that framing matter when you debug?",
+    a:
+      "Every layer of computing is a **machine built to be taken for granted by the layer above**: transistors hide physics, gates hide transistors, a CPU hides gates, a language hides the CPU, an algorithm hides the language, an OS/network/database/model each hides everything beneath. Each abstraction exposes a simple interface and hides a complex implementation — that's what lets a web developer ignore cache-coherency protocols.\n" +
+      "Why it matters for debugging: abstractions **leak** (Spolsky's law). A symptom at your layer often has its cause one or more layers *down* — a slow query is really a missing index; a flaky request is really packet loss; a memory 'leak' is really a retained reference the GC can't free. The senior skill is knowing the stack well enough to **descend to the right floor** instead of thrashing at the top. You don't need to work at every layer daily; you need to know they exist and how to drop into one on demand.",
+  },
+  {
+    id: "iv-ch0a-3",
+    chapterId: "ch0a",
+    level: "mid",
+    q: "Name the major areas of computer science, and give one idea that connects two of them.",
+    a:
+      "A reasonable decomposition (this guide's): **information/representation, hardware/architecture, programming/languages, algorithms & data structures, theory of computation, operating systems, networks, data/databases, security, and AI/ML.** They aren't silos — they're lenses on the same questions, wired by crossing ideas.\n" +
+      "Examples of a connecting idea: **hashing** links algorithms (hash tables), databases (hash indexes/joins), and security (cryptographic hashes) — with the *birthday paradox* explaining collisions in all three. **Automata** link theory to compilers (lexing/parsing) and networking (protocol state machines). **Optimization/gradient descent** links algorithms to machine learning. Interviewers like this question because naming the areas is easy; showing you see the *edges* between them signals real understanding.",
+  },
+  // ===================== P0 · Math toolkit (ch.0b) =====================
+  {
+    id: "iv-ch0b-1",
+    chapterId: "ch0b",
+    level: "mid",
+    q: "Permutations vs combinations: when do you use each? Count the number of 5-card poker hands from a 52-card deck.",
+    a:
+      "Ask one question: **does order matter?** If yes (a race podium, a PIN, an arrangement) it's a **permutation** P(n,r) = n!/(n−r)!. If no (a committee, a hand of cards, a subset) it's a **combination** C(n,r) = n!/(r!(n−r)!). The combination divides out the r! orderings the permutation counts as distinct.\n" +
+      "A poker hand is unordered — you hold the same hand however the cards are dealt — so it's **C(52,5) = 52!/(5!·47!) = 2,598,960**. If you (wrongly) used P(52,5) you'd get 311,875,200, exactly 5! = 120 times too big, because you'd count every hand once per shuffle order.",
+  },
+  {
+    id: "iv-ch0b-2",
+    chapterId: "ch0b",
+    level: "senior",
+    q: "Explain the birthday paradox — why 23? — and name two places it shows up in computer science.",
+    a:
+      "With 23 people the probability that **some** pair shares a birthday exceeds 50%, which feels impossible until you count **pairs**, not people: 23 people form C(23,2) = 253 pairs, and each pair collides with probability 1/365. Formally, P(share) = 1 − (365/365)(364/365)…(343/365) ≈ 0.507. The count of pairs grows as ~n²/2, so the crossover happens around n ≈ 1.18·√days — far sooner than the ~183 intuition suggests.\n" +
+      "In CS it shows up as: (1) **hash-table collisions** — with a table of m slots you expect a collision after only ~√m insertions, which is why good hashing and load-factor management matter (ch.14); and (2) the **birthday attack** on cryptographic hashes — finding *any* two colliding inputs takes ~2^(n/2) work, not 2^n, so a 256-bit hash offers only ~128 bits of *collision* resistance (ch.31). Same √ law, two very different stakes.",
+  },
+  {
+    id: "iv-ch0b-3",
+    chapterId: "ch0b",
+    level: "senior",
+    q: "Given p → q, define its converse, inverse, and contrapositive. Which are equivalent, and what bug comes from confusing them?",
+    a:
+      "For **p → q**: the **converse** is q → p, the **inverse** is ¬p → ¬q, and the **contrapositive** is ¬q → ¬p. The original is logically equivalent to its **contrapositive** only; the converse and inverse are equivalent to *each other* but **not** to the original. (Converse and inverse are contrapositives of each other.)\n" +
+      "The classic bug is **affirming the consequent** — treating q → p as if it followed from p → q. In code: 'a valid token implies the request is authenticated' does **not** mean 'authenticated implies the token is valid,' and reasoning as if it did produces broken auth logic. The safe rewrite is always the contrapositive: 'if the request isn't authenticated, the token isn't valid' — same truth value, and often easier to check.",
+  },
+  {
+    id: "iv-ch0b-4",
+    chapterId: "ch0b",
+    level: "senior",
+    q: "Prove by induction that 1 + 2 + … + n = n(n+1)/2. Where does this sum show up in algorithm analysis?",
+    a:
+      "**Claim:** for all n ≥ 0, ∑ᵢ₌₀ⁿ i = n(n+1)/2.\n" +
+      "**Base (n = 0):** the empty/zero sum is 0, and 0·1/2 = 0. ✓\n" +
+      "**Step:** assume ∑ᵢ₌₀ᵏ i = k(k+1)/2 (the induction hypothesis). Then ∑ᵢ₌₀ᵏ⁺¹ i = k(k+1)/2 + (k+1) = (k+1)(k+2)/2, which is the formula at n = k+1. ✓ By induction it holds for all n.\n" +
+      "It's everywhere in analysis because **nested loops that shrink** sum this way: the inner work 1+2+…+n in selection sort, insertion sort, or the naive 'compare every pair' is n(n+1)/2 ≈ n²/2 = **Θ(n²)**. Recognizing the triangular sum is how you turn a double loop into a Big-O bound on sight.",
+  },
+  {
+    id: "iv-ch0b-5",
+    chapterId: "ch0b",
+    level: "staff",
+    q: "What is linearity of expectation, and why is it such a powerful tool? Use it to find the expected number of collisions when hashing.",
+    a:
+      "**Linearity of expectation:** E[X + Y] = E[X] + E[Y] for *any* random variables, **even when they're dependent**. That independence-free property is what makes it so powerful — you decompose a messy count into indicator variables, take each tiny expectation, and just add, never touching the joint distribution.\n" +
+      "**Hashing example:** throw n keys into m buckets uniformly. Let X be the number of colliding pairs. For each of the C(n,2) pairs, define an indicator Iₚ = 1 if that pair lands in the same bucket; E[Iₚ] = 1/m. Then E[X] = ∑ E[Iₚ] = C(n,2)/m = n(n−1)/(2m). Setting E[X] ≈ 1 gives n ≈ √(2m) — the birthday bound again. The same indicator-and-add trick gives the expected length of a hash chain (n/m, the load factor) and underpins why hash operations are **O(1) expected**, and it's how you analyze randomized algorithms like QuickSort's expected comparisons without wrestling a single joint distribution.",
+  },
+  // ===================== P11 · Capstone (ch.35) =====================
+  {
+    id: "iv-ch35-1",
+    chapterId: "ch35",
+    level: "senior",
+    q: "Walk me through what happens, across the whole stack, when you press a key in a chat app and it appears on a friend's screen.",
+    a:
+      "This is the guide's grand traversal, and the strong answer names the **layer** at each step, not just the mechanism:\n" +
+      "1. **Encoding (P1):** the key matrix produces a scancode; software maps it to a Unicode code point — the letter is now bits.\n" +
+      "2. **Hardware (P2):** those bits are voltages settling through logic gates in the keyboard controller.\n" +
+      "3. **CPU (P2):** a hardware interrupt; the CPU fetch-decode-executes the handler.\n" +
+      "4. **OS (P6):** the kernel fields the interrupt, schedules your process, and delivers the event via a syscall; virtual memory maps the buffer.\n" +
+      "5. **Code (P3):** your event handler runs — compiled from a language to bytecode/machine code, a frame on the call stack.\n" +
+      "6. **Data structures (P4):** the character enters a text buffer and an event queue.\n" +
+      "7. **Networks (P7):** on send, it's framed into packets and routed hop-by-hop to the server (after DNS, TCP).\n" +
+      "8. **Security (P9):** TLS (via a key exchange) encrypts and authenticates it in flight.\n" +
+      "9. **Data (P8):** the server persists it — a B-tree index, a durable transaction, replication.\n" +
+      "10. **Intelligence (P10), optional:** a model may autocomplete or moderate it.\n" +
+      "11. **Output (P2/GPU):** on your friend's device the reply is rasterized — triangles to fragments to lit pixels — and a photon reaches their eye.\n" +
+      "The point interviewers listen for is that it's **one causal chain through every layer**, and that you can go deeper on *any* rung on request (how TCP recovers a lost packet, how the scheduler picks the process, how TLS derives keys).",
+  },
+  {
+    id: "iv-ch35-2",
+    chapterId: "ch35",
+    level: "senior",
+    q: "What is the 'law of leaky abstractions,' and how does it change the way you debug a hard problem?",
+    a:
+      "Joel Spolsky's law: **all non-trivial abstractions are, to some degree, leaky** — the simplifying interface eventually exposes the complexity it was meant to hide. TCP presents a reliable byte stream, but underlying packet loss leaks through as latency spikes. An ORM hides SQL until an N+1 query pattern tanks performance. Virtual memory hides the disk until a page fault stalls you for milliseconds. `a[i]` looks O(1) until a cache miss makes one access 100× another.\n" +
+      "It changes debugging in two ways. First, **the cause usually lives one layer below the symptom**, so you develop the habit of descending — profile the query behind the slow endpoint, packet-capture behind the flaky request, check GC behind the 'memory leak.' Second, it argues for **learning down the stack proactively**: you can't descend into a layer you don't understand at all. You don't need daily expertise everywhere, but you need enough of each floor to recognize its fingerprints when it leaks.",
+  },
+  {
+    id: "iv-ch35-3",
+    chapterId: "ch35",
+    level: "staff",
+    q: "Where do quantum computers actually help, what's the rough state as of 2026, and what should a security team do about it now?",
+    a:
+      "**Where they help:** only a *narrow* set of structured problems — **Shor's algorithm** factors integers and computes discrete logs in polynomial time (breaking RSA/ECC); **Grover's** gives a quadratic (not exponential) speed-up for unstructured search; and **quantum simulation** helps with chemistry and materials. For the overwhelming majority of computing they offer no advantage, and even at scale they'll be a *coprocessor* called from a classical machine, not a replacement.\n" +
+      "**State ~2026 (a dated snapshot):** the milestone of the last two years is **below-threshold error correction** — Google's Willow showed that adding physical qubits to a surface code *lowers* the logical error rate — and several groups now run **dozens of logical qubits**. But a machine that can run Shor against real 2048-bit RSA needs on the order of a **million** physical qubits (Google's Gidney cut the estimate from ~20 million in 2019 to under a million by 2025) — still orders of magnitude beyond today's dozens of logical qubits; roadmaps target fault tolerance around **2029–2030** and useful cryptographic threats later. It's an engineering problem now, not just physics — but not an operational threat yet.\n" +
+      "**What a security team does now:** treat **'harvest now, decrypt later'** as real — adversaries can record encrypted traffic today and decrypt it once a quantum computer exists. So begin migrating to **NIST post-quantum algorithms** (ML-KEM/Kyber for key exchange, ML-DSA/Dilithium for signatures), prioritize long-lived secrets, and adopt **crypto-agility** so algorithms can be swapped without re-architecting. Grover just means doubling symmetric key sizes (AES-256) — the real pressure is on public-key crypto.",
+  },
+  {
+    id: "iv-ch35-4",
+    chapterId: "ch35",
+    level: "staff",
+    q: "How do you decide how deep into the stack you need to understand a given problem?",
+    a:
+      "Depth is a **cost/benefit** call, not a badge. My heuristics: (1) **Go as deep as the leak.** Debug at the layer where the symptom's *cause* lives — usually one below where it appears — and stop once you can explain and fix it. (2) **Match depth to leverage and blast radius.** A hot path, a security boundary, or a decision that's expensive to reverse justifies going down to cache lines or protocol details; a one-off script does not. (3) **Know the interfaces everywhere, the internals where it pays.** You should always understand the *contract* of each adjacent layer (what it guarantees, what it costs) even if you rarely open the implementation. (4) **Let recurring pain pull you down.** If the same class of bug keeps biting, that's the signal to invest in the layer beneath it.\n" +
+      "The failure modes are symmetric: too shallow and you cargo-cult fixes and get surprised by leaks; too deep and you rebuild the world to change a button. The whole-stack literacy this guide builds is precisely what lets you make that call quickly — you know what's *down there*, so you can choose when it's worth the trip.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

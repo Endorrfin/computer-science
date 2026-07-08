@@ -1,0 +1,210 @@
+/* birthday-paradox ([HERO] ch.0b, Math toolkit) — the exact collision curve
+   with landmark reference lines and a seeded Monte-Carlo that converges onto it.
+   The SVG carries its functional color inline from the semantic palette in
+   BirthdayParadox.tsx; this sheet only lays out the stage, the read-out and the
+   controls, and adds the reduced-motion-aware dot/cursor transitions. Every
+   class is prefixed `.bp-` so nothing collides with another part's CSS. */
+
+/* --------------------------------- stage --------------------------------- */
+.bp-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bp-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 320 / 190;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+/* converging Monte-Carlo dots + current-n cursor */
+@media (prefers-reduced-motion: no-preference) {
+  .bp-mc-dot {
+    transition:
+      cx 0.2s ease,
+      cy 0.35s ease;
+  }
+  .bp-mc-dot.is-last {
+    animation: bp-pop 0.3s ease;
+  }
+  .bp-cursor {
+    transition:
+      cx 0.12s ease,
+      cy 0.12s ease;
+  }
+  @keyframes bp-pop {
+    from {
+      r: 1.6;
+    }
+    to {
+      r: 3.2;
+    }
+  }
+}
+
+/* --------------------------------- read-out --------------------------------- */
+.bp-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  padding: 10px 14px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.bp-ro-main {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.bp-ro-n {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx2);
+}
+.bp-ro-p {
+  font-family: var(--font-head);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--bp-p-color, var(--tx));
+}
+.bp-ro-sub {
+  font-size: 11px;
+  color: var(--tx3);
+}
+.bp-ro-side {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: right;
+}
+.bp-ro-item {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx2);
+}
+.bp-ro-item b {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+/* --------------------------------- controls --------------------------------- */
+.bp-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.bp-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bp-field-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.bp-range {
+  width: 160px;
+  max-width: 42vw;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.bp-num {
+  width: 4.5rem;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 4px 6px;
+}
+.bp-num:focus-visible,
+.bp-range:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* --------------------------------- footer --------------------------------- */
+.bp-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bp-landmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+.bp-lm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.bp-lm-swatch {
+  width: 12px;
+  height: 3px;
+  border-radius: 2px;
+}
+.bp-lm-p {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bp-lm-txt {
+  color: var(--tx2);
+}
+.bp-lm-txt b {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+.bp-lesson {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.bp-lesson b {
+  color: var(--tx);
+}
+
+/* --------------------------------- responsive --------------------------------- */
+@media (max-width: 560px) {
+  .bp-readout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .bp-ro-side {
+    text-align: left;
+  }
+  .bp-ro-p {
+    font-size: 26px;
+  }
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .bp-mc-dot,
+  .bp-cursor {
+    transition: none;
+    animation: none;
+  }
+}

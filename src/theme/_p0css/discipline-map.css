@@ -1,0 +1,254 @@
+/* discipline-map (ch.0a HERO) — the ten areas of CS on a ring, wired by their
+   crossing ideas, with a side panel for the selected area. Prefix: dm-. Each
+   node carries its part accent via a local --node custom property set inline;
+   selection lights self + neighbors and dims the rest. Shared chrome (.btn,
+   .btn-primary, .muted) comes from global.css. Reduced motion honored — the
+   only transitions/animation live behind the no-preference query. */
+
+.dm-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(15rem, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* --------------------------------- svg ----------------------------------- */
+.dm-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 68vh;
+  overflow: visible;
+}
+
+/* ---- edges ---- */
+.dm-edge-line {
+  stroke: var(--line);
+  stroke-width: 2;
+  fill: none;
+}
+.dm-svg.has-sel .dm-edge:not(.is-hot) .dm-edge-line {
+  stroke: color-mix(in srgb, var(--line) 60%, transparent);
+}
+.dm-edge.is-hot .dm-edge-line {
+  stroke: color-mix(in srgb, var(--accent) 70%, var(--tx3));
+  stroke-width: 3;
+}
+.dm-edge.is-dim .dm-edge-line {
+  opacity: 0.35;
+}
+.dm-edge-label {
+  fill: var(--tx2);
+  font: 600 12.5px var(--font-body);
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* ---- nodes ---- */
+.dm-node {
+  cursor: pointer;
+  outline: none;
+}
+.dm-node-ring {
+  fill: color-mix(in srgb, var(--node) 15%, var(--surface));
+  stroke: color-mix(in srgb, var(--node) 72%, var(--line));
+  stroke-width: 2.5;
+}
+.dm-node-slot {
+  fill: color-mix(in srgb, var(--node) 85%, var(--tx));
+  font: 700 15px var(--font-mono);
+  pointer-events: none;
+  user-select: none;
+}
+.dm-node-name {
+  fill: var(--tx);
+  font: 600 14px var(--font-head);
+  pointer-events: none;
+  user-select: none;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.dm-node:hover .dm-node-ring {
+  fill: color-mix(in srgb, var(--node) 26%, var(--surface));
+  stroke: var(--node);
+}
+.dm-node.is-active .dm-node-ring {
+  fill: color-mix(in srgb, var(--node) 34%, var(--surface));
+  stroke: var(--node);
+  stroke-width: 3.5;
+}
+.dm-node.is-active .dm-node-name {
+  fill: color-mix(in srgb, var(--node) 30%, var(--tx));
+}
+.dm-node.is-dim {
+  opacity: 0.32;
+}
+/* focus ring drawn on the circle so it tracks the node, not the bbox */
+.dm-node:focus-visible .dm-node-ring {
+  stroke: var(--node);
+  stroke-width: 3.5;
+}
+.dm-node:focus-visible {
+  outline: none;
+}
+.dm-node:focus-visible .dm-node-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* -------------------------------- panel ---------------------------------- */
+.dm-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  padding: 16px 16px 18px;
+  min-height: 14rem;
+}
+.dm-panel-head {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.dm-panel-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex: 0 0 auto;
+  background: var(--node);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--node) 22%, transparent);
+}
+.dm-panel-title {
+  margin: 0;
+  font: 700 1.18rem var(--font-head);
+  color: var(--tx);
+}
+.dm-panel-part {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  color: var(--tx2);
+}
+.dm-panel-blurb {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.dm-panel-sub {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+.dm-links {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dm-link-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--node);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  color: inherit;
+}
+.dm-link-btn:hover {
+  background: color-mix(in srgb, var(--node) 12%, var(--s2));
+  border-color: color-mix(in srgb, var(--node) 45%, var(--line));
+  border-left-color: var(--node);
+}
+.dm-link-btn:focus-visible {
+  outline: 2px solid var(--node);
+  outline-offset: 2px;
+}
+.dm-link-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--tx);
+}
+.dm-link-why {
+  font-size: 0.8rem;
+}
+
+.dm-panel-go {
+  display: inline-block;
+}
+.dm-panel-empty .dm-panel-lead {
+  margin: 0 0 8px;
+  font: 600 1.02rem var(--font-head);
+  color: var(--tx);
+}
+.dm-panel-empty p.muted {
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+/* ------------------------------- controls -------------------------------- */
+.dm-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.dm-ctl-hint {
+  font-size: 0.82rem;
+}
+
+/* --------------------------------- motion -------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .dm-node-ring,
+  .dm-node-name,
+  .dm-node,
+  .dm-edge-line {
+    transition: fill 0.16s ease, stroke 0.16s ease, opacity 0.16s ease, stroke-width 0.16s ease;
+  }
+  .dm-link-btn {
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+  @keyframes dm-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .dm-panel-head,
+  .dm-panel-blurb,
+  .dm-links {
+    animation: dm-panel-in 0.2s ease-out both;
+  }
+}
+
+/* -------------------------------- narrow --------------------------------- */
+@media (max-width: 760px) {
+  .dm-stage {
+    grid-template-columns: 1fr;
+  }
+  .dm-svg {
+    max-height: none;
+  }
+  .dm-panel {
+    min-height: 0;
+  }
+}

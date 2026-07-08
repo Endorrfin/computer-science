@@ -1,0 +1,64 @@
+/* boss-gallery (ch.35, Capstone micro) — the trophy shelf. The cards themselves
+   reuse the global .boss-card / .boss-grid styling (see global.css); this file
+   only styles the self-contained wrapper and the "N / 10 badges" header.
+   Prefix: bg-. Colours via theme tokens only. */
+
+.bg-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bg-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+}
+
+.bg-head-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+.bg-count {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--tx2);
+  letter-spacing: 0.02em;
+}
+.bg-count strong {
+  font-size: 22px;
+  color: var(--tx);
+  font-weight: 700;
+}
+.bg-count.is-full strong {
+  color: var(--sem-ok);
+}
+
+.bg-head-note {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--tx3);
+}
+
+/* The header re-uses the global .boss-grid below it; nudge the shelf down a hair
+   so it doesn't crowd the header (global .boss-grid already adds margin-top). */
+.bg-wrap .boss-grid {
+  margin-top: 8px;
+}
+
+@media (max-width: 560px) {
+  .bg-head-note {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}

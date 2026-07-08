@@ -20,23 +20,6 @@ export const PARTS: Part[] = [
   { id: "p11", order: 11, name: "Capstone", accent: "#94A3B8", tagline: "The whole picture", blurb: "One grand traversal of the entire stack — keypress to pixel — and where to go next." },
 ];
 
-/** Compact stub factory — chapters get real content in their session (§12). */
-function stub(
-  id: string,
-  part: string,
-  order: number,
-  title: string,
-  tagline: string,
-  plannedSession: number,
-  readMins: { foundations: number; senior: number } = { foundations: 15, senior: 25 },
-): Chapter {
-  return {
-    id, part, order, title, tagline, readMins, plannedSession,
-    assumes: [], mentalModel: "", sections: [], keyPoints: [], pitfalls: [],
-    interviewIds: [], kataIds: [], seeAlso: [], sources: [],
-  };
-}
-
 // ---------------------------------------------------------------
 // ch.4 — From electricity to gates  (GOLDEN CHAPTER, built in S1)
 // ---------------------------------------------------------------
@@ -5394,10 +5377,375 @@ const ch34: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.0a — The Map  (Orientation, built in S17)
+// ---------------------------------------------------------------
+const ch0a: Chapter = {
+  id: "ch0a",
+  part: "p0",
+  order: 1,
+  title: "The Map",
+  tagline: "What computer science actually is, how its ten areas connect, and how to travel this guide — the lens, the bosses, the review",
+  readMins: { foundations: 10, senior: 12 },
+  storyHook: {
+    md:
+      "A century ago, *computer* was a job title — a person, usually a woman, who did arithmetic by hand. There was no discipline called computer science; there were only calculating machines and the people who ran them. Then in the 1930s a few logicians asked a strange question — *what can be computed, in principle, by any machine at all?* — and out of the answer came the general-purpose computer, and with it a genuinely new science: not of any one machine, but of **computation** and **information** themselves. The line usually quoted to make the point — *\"computer science is no more about computers than astronomy is about telescopes\"* (often attributed to Dijkstra, though the attribution is disputed) — is exactly right. The computer is the telescope. The sky is what this guide is about.",
+  },
+  assumes: [],
+  mentalModel:
+    "Computer science is one climb from the electron to the idea. Each layer builds a machine that the next layer gets to take for granted: gates hide transistors, a CPU hides gates, a language hides the CPU, an algorithm hides the language, and so on up to an AI that hides almost everything below it. This guide is that climb — bottom-up, but every part self-contained, so you can enter wherever you like. The discipline is not a list of topics; it is a stack of abstractions, and the through-line is learning to move up and down it on purpose.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## What computer science actually is\n" +
+        "It helps to say what it is *not*. It is not programming (that's a tool, the way arithmetic is a tool for physics), and it is not the study of any particular computer (those change every few years). **Computer science is the study of computation, information, and abstraction**: what problems can be solved by a mechanical process, how to represent and transform information, how much time and space a solution costs, and how to build reliable systems by layering simple ideas into complex ones. Its objects — an algorithm, a proof that a problem is unsolvable, a protocol, a data structure — outlive any hardware that runs them.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The discipline as a landscape\n" +
+        "The stack-map on the landing page shows CS as a vertical climb. Here is the other useful view: CS as a **connected landscape** of about ten areas, each a lens on the same core questions, wired together by the ideas that cross between them — *bits run on gates*, *adversaries live on the wire*, *models learn from data*. Click an area to see what it studies and which areas it leans on:",
+    },
+    { kind: "sim", sim: "discipline-map" },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Two views, one subject",
+      md:
+        "The **map** (here) shows how the areas *relate*; the **stack** (the landing page) shows how they *build*. Neither is the territory — both are scaffolding you'll internalize and then forget you needed. If you only remember one thing from this chapter, remember that every box on either diagram is an **abstraction over the box below it**, and the whole of CS is the art of choosing those boxes well.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## How this guide works\n" +
+        "This is a **bottom-up journey** — electron → gate → CPU → code → algorithms → theory → OS → networks → data → security → AI — closed by a capstone that traverses the whole stack in a single keystroke. But every part is **self-contained**: short recap boxes stand in for prerequisites, so you can drop into Networks or AI without having read everything below it first. And nothing here is a wall of text — every core idea is something you can **touch**:",
+    },
+    { kind: "figure", fig: "guide-tour" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The Depth lens — one guide, two courses",
+      lens: "senior",
+      md:
+        "A global **Foundations / Senior** toggle (top bar) re-renders every chapter. In **Foundations** you get the visual-first intuition; in **Senior** the hidden blocks open up — internals, trade-offs, interview-grade depth, and the collapsible *Formal corners* with the actual math. Foundations mode still shows a count of what's hidden (\"3 senior blocks hidden\") so you always know the deeper cut is there. Flip it as you read this very sentence.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Bosses, quizzes, katas, review\n" +
+        "Four devices turn this from a wiki into a course. **Predict-quizzes** ask you to commit an answer *before* the reveal — prediction is what makes an idea stick. **Boss challenges** end each part with a hands-on task inside that part's hero simulator; clear it and its badge lights up on your map. **Katas** are tiny coding exercises that run in your browser with instant tests. And a **spaced-repetition review** hub turns each chapter's key points into flashcards. Everything you do — progress, badges, lens choice — lives only in your browser; there is no account and no server.",
+    },
+    { kind: "quiz", quiz: "cs-map-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Where to start\n" +
+        "If your math feels rusty, the next chapter — the **Math toolkit** — is a short, optional on-ramp: the logic, sets, counting, and probability that quietly power everything ahead. If you'd rather dive into the machine, skip straight to **Part 1 · Information**, where everything becomes bits. Either way, the climb ends at the same summit: the capstone, where one keypress falls through every layer you're about to build.",
+    },
+  ],
+  keyPoints: [
+    "Computer science is not about computers — it's the study of computation, information, and abstraction; the machine is the telescope, not the sky.",
+    "The discipline is a stack of abstractions — each layer builds a machine the next layer takes for granted, from transistors up to AI.",
+    "Two maps, one subject — the landing 'stack' shows how areas build; the discipline map shows how they relate; both are scaffolding for the same ideas.",
+    "Every part is self-contained — recap boxes replace prerequisites, so you can enter at Networks or AI without reading everything below first.",
+    "Prediction is what makes it stick — commit to a quiz answer before the reveal; that's why every chapter asks you to predict, not just read.",
+    "The Depth lens is one guide as two courses — a Foundations/Senior toggle re-renders every chapter, hiding or revealing internals and the Formal corners.",
+    "Everything is touchable and private — live sims, bosses, katas, and review, with all progress kept only in your browser.",
+  ],
+  pitfalls: [
+    {
+      title: "Confusing computer science with programming",
+      body: "Programming is a craft you use in CS the way you use arithmetic in physics — essential, but not the subject. The subject is the ideas: what's computable, what's efficient, what's provably correct. You can be a fluent programmer with shallow CS, and a strong computer scientist who writes little code. This guide teaches the ideas and makes you touch them; picking a language is a separate, smaller task.",
+      lens: "both",
+    },
+    {
+      title: "Believing you must climb strictly bottom-to-top",
+      body: "The parts are ordered for a reason — later ideas lean on earlier ones — but they're deliberately self-contained. If you need Databases today, start at Part 8; the recap boxes will catch you up on just what you need. Treating the order as a locked prerequisite chain is the fastest way to never start.",
+      lens: "both",
+    },
+    {
+      title: "Reading passively",
+      body: "The temptation is to skim the prose and skip the sims. But the sims are the point — the prose only frames them. If you read a chapter without running its hero, predicting its quiz, or clearing its boss, you'll feel like you understood and discover next week that you didn't. Build the XOR gate; watch the packet route; train the net.",
+      lens: "both",
+    },
+    {
+      title: "Mistaking the map for the territory",
+      body: "Diagrams like the stack and the discipline map are scaffolding — useful until the ideas are yours, then quietly discarded. Don't over-invest in memorizing the exact boxes and arrows; invest in being able to redraw the one mental model each chapter gives you. The models, not the maps, are what you keep.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch0a-1", "iv-ch0a-2", "iv-ch0a-3"],
+  kataIds: [],
+  seeAlso: ["ch0b", "ch1", "ch35"],
+  sources: [
+    { title: "E. W. Dijkstra archive (EWD manuscripts)", url: "https://www.cs.utexas.edu/~EWD/" },
+    { title: "Peter Denning — Great Principles of Computing", url: "https://en.wikipedia.org/wiki/Great_Principles_of_Computing" },
+    { title: "Computer science — overview (Wikipedia)", url: "https://en.wikipedia.org/wiki/Computer_science" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.0b — Math toolkit  (Orientation, built in S17)
+// ---------------------------------------------------------------
+const ch0b: Chapter = {
+  id: "ch0b",
+  part: "p0",
+  order: 2,
+  title: "Math toolkit",
+  tagline: "Logic, sets & functions, counting, probability, and induction — the small kit of mathematics that quietly powers every part of computer science",
+  readMins: { foundations: 25, senior: 35 },
+  storyHook: {
+    md:
+      "In **1854**, a self-taught English mathematician named **George Boole** published *An Investigation of the Laws of Thought*, in which he argued that reasoning itself — *and*, *or*, *not*, *if* — obeys an **algebra**, as lawful as the algebra of numbers. It was regarded as elegant and largely useless for the better part of a century. Then in **1937** a young Claude Shannon noticed that Boole's true/false algebra described exactly the behavior of electrical switches, and the whole of digital hardware fell out of it. That is the pattern of the mathematics in this chapter: a handful of quiet ideas — logic, sets, counting, probability, induction — that look abstract and turn out to be the load-bearing walls of everything ahead.",
+  },
+  assumes: [{ chapterId: "ch0a", oneLiner: "You saw the map of the whole discipline; this is the small mathematical kit that recurs across every area on it." }],
+  mentalModel:
+    "Four tools recur everywhere in this guide. LOGIC is the algebra of true/false — the gates in Part 2 and the branches in every program. SETS & FUNCTIONS are the vocabulary of structure — the way we say what a thing is and how it maps to another. COUNTING answers 'how many?' — and 'how many?' is exactly the size of a search space, i.e. how hard a problem is. PROBABILITY answers 'how likely?' — the beating heart of hashing, machine learning, and cryptography. INDUCTION is the proof technique that justifies every loop and every recursion. Learn to reach for the right one and the rest of CS reads like a language you already speak.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Logic: the algebra of true and false\n" +
+        "A **proposition** is a statement that is either true or false. The connectives combine them: **¬** (not), **∧** (and), **∨** (or), **→** (implies), **↔** (if-and-only-if). Their entire meaning is captured by a **truth table** — every combination of inputs and the resulting output. Two subtleties trip everyone up. First, **→ is false in exactly one case**: a true premise with a false conclusion (`true → false`); an implication with a false premise is *vacuously true*. Second, **or is inclusive** — `p ∨ q` is true when *either or both* hold. Type an expression and read its whole truth table live:",
+    },
+    { kind: "sim", sim: "truth-table" },
+    { kind: "quiz", quiz: "logic-predict" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Logic is gates is branches",
+      lens: "senior",
+      md:
+        "This isn't a detour from CS — it's the ground floor. The `∧ ∨ ¬` you're evaluating are literally the **logic gates** of Part 2 (ch.4), etched millions of times into silicon. They're also the `&& || !` in the `if` statements of every program you'll ever write, and **De Morgan's laws** — `¬(p ∧ q) ≡ ¬p ∨ ¬q` — are the refactor you reach for when a conditional gets tangled. A **tautology** (always true) is a law you can rely on; a **contradiction** (always false) is a bug or an impossibility. Same algebra, three floors of the stack.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Sets & functions\n" +
+        "A **set** is an unordered collection of distinct things; the toolkit is small — union **∪**, intersection **∩**, difference **∖**, and the **Cartesian product** A×B of all ordered pairs. A **function** f: A→B assigns each input exactly one output, and three properties matter constantly: **injective** (no two inputs collide — the ideal for a hash key), **surjective** (every output is hit), and **bijective** (both — a perfect, reversible pairing, which is what makes lossless encoding and decoding possible). The size of a set is its **cardinality**, and one cardinality fact is the bridge to the next section: a set of *n* elements has exactly **2ⁿ subsets** (its *power set*).",
+    },
+    {
+      kind: "table",
+      head: ["Idea", "Notation", "In this guide"],
+      rows: [
+        ["Union / intersection", "A ∪ B, A ∩ B", "SQL joins & indexes (ch.29); set-based query planning"],
+        ["Cartesian product", "A × B", "nested-loop join = every pair (ch.29); relations"],
+        ["Function / mapping", "f: A → B", "hash functions (ch.14), encodings (ch.2)"],
+        ["Injective (one-to-one)", "no collisions", "the ideal hash; a lossless code (ch.3)"],
+        ["Power set (2ⁿ subsets)", "|℘(A)| = 2ⁿ", "why brute force explodes (ch.21); feature subsets"],
+      ],
+      caption: "The set/function vocabulary and where it resurfaces later in the climb.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Counting: how many?\n" +
+        "Counting is not trivial arithmetic — it's the mathematics of **how big a problem is**. Two rules generate almost everything: the **product rule** (independent choices multiply) and the **sum rule** (mutually exclusive alternatives add). From them come the four fundamental cases: do we care about **order**, and do we allow **repetition**? Ordered-without-repetition is **permutations** P(n,r) = n!/(n−r)!; unordered-without-repetition is **combinations** C(n,r) = n!/(r!(n−r)!); ordered-with-repetition is **nʳ**; unordered-with-repetition is **stars-and-bars**. Turn the knobs and watch the counts — and how fast they explode:",
+    },
+    { kind: "sim", sim: "combinatorics-counter" },
+    {
+      kind: "prose",
+      md:
+        "## Probability: how likely?\n" +
+        "Probability is counting's twin: the chance of an event is (roughly) the favorable outcomes over the total, each in **[0, 1]**. Two habits of thought pay off endlessly. The first is the **complement trick** — when *at least one* is hard to count directly, compute *none* and subtract from 1. The second is **independence**: for independent events, probabilities multiply — and, crucially, independent events have **no memory** (a fair coin that landed heads ten times is still 50/50). The classic demonstration of how badly our intuition misjudges all this is the **birthday paradox**: how many people must be in a room before two share a birthday?",
+    },
+    { kind: "sim", sim: "birthday-paradox" },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Why the birthday paradox runs the stack",
+      md:
+        "It feels like you'd need ~183 people for a 50% chance of a shared birthday. The real answer is **23** — because what matters is the number of *pairs* (23 people make 253 pairs), and pairs grow as n². This isn't a party trick: it's why **hash tables collide** far sooner than you'd guess (ch.14), and why the **birthday attack** halves the effective security of a hash — a 256-bit hash gives only ~128 bits of collision resistance (ch.31). Counting and probability aren't decoration on CS; they're the cost model and the threat model.",
+    },
+    { kind: "quiz", quiz: "counting-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Induction: proving it for all n\n" +
+        "How do you prove something holds for *every* natural number, when there are infinitely many? **Mathematical induction**: show it holds for a **base case** (n = 0 or 1), then show that *if* it holds for n *then* it holds for n+1 (the **inductive step**). Those two facts together topple the whole infinite line — like dominoes, or like climbing a ladder where you can reach the first rung and can always step from any rung to the next. This is not an obscure proof technique; it is the exact justification for why a **recursive** function terminates with the right answer and why a **loop invariant** holds on every iteration.",
+    },
+    { kind: "figure", fig: "induction-ladder" },
+    {
+      kind: "formal",
+      title: "The induction schema (and a worked sum)",
+      md:
+        "To prove ∀n≥0. P(n): (1) **base** — prove P(0); (2) **step** — assume P(k) (the *induction hypothesis*) and prove P(k+1). Conclude P(n) for all n. *Worked example:* prove 0+1+…+n = n(n+1)/2. **Base:** n=0 gives 0 = 0·1/2 = 0. ✓ **Step:** assume ∑ᵢ₌₀ᵏ i = k(k+1)/2. Then ∑ᵢ₌₀ᵏ⁺¹ i = k(k+1)/2 + (k+1) = (k+1)(k+2)/2. ✓ **Strong induction** assumes P(0..k) (all previous), not just P(k) — needed when a case leans on more than its immediate predecessor (e.g. the correctness of merge sort's two half-sized recursions, ch.16). Induction on n and recursion on n are the same shape seen from two directions.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That's the kit: **logic** (the gates and the branches), **sets & functions** (the vocabulary of structure), **counting** (the size of a problem), **probability** (the odds that run hashing, ML, and crypto), and **induction** (why loops and recursion are correct). You don't need to memorize it — you need to recognize which tool a situation is asking for. From here the climb begins in earnest: **Part 1 · Information**, where everything you've just counted and encoded becomes bits.",
+    },
+  ],
+  keyPoints: [
+    "Logic is an algebra of true/false — ¬ ∧ ∨ → ↔ are fully defined by truth tables, and they are literally the gates of Part 2 and the branches of every program.",
+    "Implication is false in exactly one case — true → false; a false premise makes an implication vacuously true, which is where intuition usually slips.",
+    "A set of n elements has 2ⁿ subsets — the power-set explosion is why brute force over subsets becomes hopeless fast (ch.21).",
+    "Counting has four cases — order? repetition? — giving permutations n!/(n−r)!, combinations n!/(r!(n−r)!), tuples nʳ, and stars-and-bars.",
+    "The complement trick is the probabilist's reflex — to get P(at least one), compute P(none) and subtract from 1.",
+    "The birthday paradox is a collision law — only 23 people for 50%, because pairs grow as n²; it drives hash collisions (ch.14) and the birthday attack (ch.31).",
+    "Induction proves a claim for all n — a base case plus a step from k to k+1; it is exactly why recursion and loop invariants are correct.",
+  ],
+  pitfalls: [
+    {
+      title: "Confusing permutations with combinations",
+      body: "If order matters it's a permutation (a race podium: gold-silver-bronze); if it doesn't it's a combination (a committee of three). Using n!/(n−r)! when you meant n!/(r!(n−r)!) overcounts by exactly r!, the number of orderings you double-counted. Always ask 'does rearranging the same items make it a different outcome?' before reaching for a formula.",
+      lens: "both",
+    },
+    {
+      title: "The gambler's fallacy — forgetting independence",
+      body: "Independent events have no memory. A fair coin that came up heads ten times running is still exactly 50/50 on the next toss; the coin cannot 'owe' you a tail. Confusing 'unlikely to get eleven heads in a row' (true, in advance) with 'the eleventh is unlikely to be heads' (false) is the same slip that produces bad retry logic and bogus 'due for a win' reasoning.",
+      lens: "both",
+    },
+    {
+      title: "Affirming the consequent (p → q is not q → p)",
+      body: "'If it rained, the ground is wet' does not license 'the ground is wet, so it rained' — the sprinkler exists. An implication and its converse are different propositions; only the contrapositive (¬q → ¬p) is equivalent to the original. This is the single most common reasoning bug in code review and in proofs alike.",
+      lens: "both",
+    },
+    {
+      title: "Botching induction: no base case, or a hand-wave step",
+      body: "A proof with a flawless inductive step but no base case proves nothing (you can 'prove' all numbers are equal that way). Equally, the step must genuinely use the induction hypothesis for n to establish n+1, not silently re-assume what you're proving. Missing base cases and circular steps are exactly the bugs that show up as off-by-one errors and non-terminating recursion in code.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch0b-1", "iv-ch0b-2", "iv-ch0b-3", "iv-ch0b-4", "iv-ch0b-5"],
+  kataIds: ["n-choose-k", "power-set", "permutations-of"],
+  seeAlso: ["ch0a", "ch14", "ch31", "ch10"],
+  sources: [
+    { title: "Lehman, Leighton & Meyer — Mathematics for Computer Science (MIT 6.042)", url: "https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2010/" },
+    { title: "Graham, Knuth & Patashnik — Concrete Mathematics", url: "https://en.wikipedia.org/wiki/Concrete_Mathematics" },
+    { title: "The Birthday Problem", url: "https://en.wikipedia.org/wiki/Birthday_problem" },
+    { title: "George Boole — The Laws of Thought (1854)", url: "https://en.wikipedia.org/wiki/The_Laws_of_Thought" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.35 — The whole picture  (Capstone, built in S17)
+// ---------------------------------------------------------------
+const ch35: Chapter = {
+  id: "ch35",
+  part: "p11",
+  order: 37,
+  title: "The whole picture",
+  tagline: "One keystroke traced through every layer you built — bit, gate, CPU, process, program, packet, cipher, stored row, model, pixel — the whole of computer science in a single causal chain, plus the frontier beyond it",
+  readMins: { foundations: 15, senior: 20 },
+  storyHook: {
+    md:
+      "You began this guide with an **electron** — a voltage on a wire, deciding between two values. You are ending it at the top of a stack tall enough to hold a **language model**. Everything between was one idea applied over and over: **build a machine, then hide it behind a simpler one**. A transistor hides physics; a gate hides transistors; a CPU hides gates; a language hides the CPU; an algorithm, an operating system, a network, a database, a cipher, a neural network — each a machine that lets the next layer stop thinking about the one below. This last chapter does the opposite of hiding. It takes a single keystroke and follows it **all the way down and all the way back up**, so you can see, at last, the whole stack at once.",
+  },
+  assumes: [
+    { chapterId: "ch1", oneLiner: "Everything is bits — the keystroke starts life as a Unicode code point, a pattern of 0s and 1s." },
+    { chapterId: "ch33", oneLiner: "A model is a trained network doing a forward pass — the intelligence layer near the top of the stack." },
+  ],
+  mentalModel:
+    "Press one key and it falls through every layer this guide built: it becomes a BIT, rides on GATES, is handled by a CPU cycle, gets scheduled by the OS, runs your CODE, lands in a DATA STRUCTURE, is recognized by an AUTOMATON, crosses the NETWORK, is sealed by a CIPHER, is stored by a DATABASE, is answered by a MODEL — and then the GPU rasterizes the reply and a PIXEL lights up and a photon reaches your eye. Eleven parts, one unbroken causal chain from silicon to intelligence and back. That chain is computer science: not a pile of topics, but a single traversal you can now make in either direction.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## The view from the summit\n" +
+        "Eleven parts ago, a switch was the whole story. Since then you've built — and *touched* — a full 8-bit CPU, a compiler, a B-tree, a Turing machine, a TCP handshake, a key exchange, and a neural network that learns before your eyes. Each sat one layer above the last. Standing here at the top, the point of the climb finally comes into view: none of these layers is *the* computer. The computer is the **whole stack**, and understanding it means being able to travel the stack on purpose — to drop from a slow web page down to the cache miss causing it, or from a security bug up to the abstraction that hid it.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## One keystroke, the whole stack\n" +
+        "So let's travel it. You press a single key in a chat box and hit send. Watch that one event fall through every layer you built — each stop names the part it belongs to, recaps what happens there, and links you straight back to the hero simulator where you first met it. Step it, or let it play:",
+    },
+    { kind: "sim", sim: "grand-traversal" },
+    {
+      kind: "prose",
+      md:
+        "## The ten trials you cleared\n" +
+        "Each part ended in a **boss** — an applied challenge inside its hero sim, not a multiple-choice quiz. Programming Fibonacci onto raw emulated silicon; breaking Vigenère by hand and then performing a real key exchange; training a network past 95% on the spiral within a three-layer budget. Here they all are. The ones you've cleared wear their badge; the rest are waiting:",
+    },
+    { kind: "sim", sim: "boss-gallery" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Every abstraction leaks",
+      lens: "senior",
+      md:
+        "The stack works because each layer lets you ignore the one below — until it doesn't. Joel Spolsky's **Law of Leaky Abstractions**: *all non-trivial abstractions, to some degree, are leaky.* TCP promises a reliable stream, but a dropped Wi-Fi packet makes the latency leak through. An ORM hides SQL, until the N+1 query melts your database. Virtual memory hides the disk, until a page fault stalls you for 10 ms. This is precisely why a senior engineer learns **down** the stack: not to work at every layer daily, but so that when an abstraction leaks — and it will — you know which floor to descend to. That descent is the skill this whole guide was quietly training.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The frontier: quantum & beyond\n" +
+        "The stack you climbed is the **classical** one, and it is not finished — but there is also a genuinely different machine on the horizon. A **quantum computer** replaces the bit with a **qubit**, which can be in a **superposition** of 0 and 1 at once; entangle many qubits and the machine explores a vast space of possibilities in superposition, using **interference** to make the right answers reinforce. It is *not* a faster classical computer and *not* a replacement for your laptop — it offers dramatic speed-ups for a **narrow** set of problems (factoring, which threatens the RSA of ch.31; simulating quantum chemistry; certain search and optimization), and no advantage at all for most everyday computing. The catch is that qubits are exquisitely fragile, so the real work is **error correction**:",
+    },
+    { kind: "figure", fig: "quantum-coin" },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "State of the frontier — mid-2026 (a dated snapshot)",
+      md:
+        "Concepts last; the leaderboard doesn't — so, timestamped **July 2026**. The headline of the last two years is **quantum error correction crossing 'below threshold'**: Google's **Willow** chip (105 physical qubits) showed that *adding* physical qubits to a surface code *lowers* the logical error rate instead of raising it — the behavior fault tolerance requires — and several groups now operate **dozens of logical qubits** built from hundreds of physical ones. Roadmaps (IBM's is the most explicit) target a **fault-tolerant** machine around **2029–2030**, scaling toward thousands of logical qubits in the 2030s. The honest reading: error correction has turned from a physics question into an engineering one, but a machine that can run **Shor's algorithm against real 2048-bit RSA** still needs on the order of a **million physical qubits** — and while that estimate keeps *falling* fast (Google's Gidney cut it from ~20 million in 2019 to *under a million* by 2025), it's still orders of magnitude beyond the dozens of logical qubits that exist today, so it is **not here yet**. Which is exactly why 'harvest-now, decrypt-later' is pushing the post-quantum cryptography of ch.31 today. Treat the qubit counts as a snapshot; the *ideas* — superposition, interference, error correction — are what last.",
+    },
+    { kind: "quiz", quiz: "whole-stack-predict" },
+    {
+      kind: "prose",
+      md:
+        "## Where to go next\n" +
+        "This guide is a **map, not a destination**. You've now seen every major region of computer science and touched its core ideas — enough to read the field, hold a senior conversation in any part, and know which layer a problem lives on. From here, go **deep where you feel the pull**: rebuild a database, implement a TCP stack, train a bigger model, prove a small theorem, ship a compiler for a toy language. Depth in one part teaches you more than breadth across ten, and every deep dive re-illuminates the whole stack. The climb is done; the exploration is yours.",
+    },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "The one idea to keep",
+      md:
+        "If everything else fades, keep this: **computer science is the art of building the right abstractions and knowing how to see through them.** Every chapter here was one layer of that art — a machine built to be taken for granted by the next. You can now build those layers, use them, and — when they leak — descend to fix them. That is what it means to understand the whole picture.",
+    },
+  ],
+  keyPoints: [
+    "The computer is the whole stack, not any one layer — a keystroke becomes a bit, a gate signal, a CPU cycle, a scheduled process, your code, a data structure, a packet, a cipher, a stored row, a model's guess, and finally a pixel.",
+    "Every layer is an abstraction over the one below — transistor→gate→CPU→language→algorithm→OS→network→data→AI; the discipline is the art of choosing and building those layers.",
+    "Abstractions leak — TCP, ORMs, and virtual memory all leak their internals under stress, which is why a senior engineer learns down the stack to know where to descend.",
+    "Quantum computers are different, not just faster — a qubit superposes 0 and 1; they help on a narrow set of problems (factoring, chemistry) and don't replace classical machines.",
+    "Fault-tolerant quantum computing is an engineering problem now — 'below-threshold' error correction has been demonstrated; a machine that could break RSA-2048 still needs on the order of a million physical qubits (an estimate that keeps falling) and is years away.",
+    "Go deep where you feel the pull — breadth gives you the map, but depth in one part re-illuminates the whole stack; the guide ends, the exploration continues.",
+  ],
+  pitfalls: [
+    {
+      title: "Thinking abstractions are free",
+      body: "Each layer buys simplicity with a cost that's invisible until it isn't: a hidden allocation, a network round-trip, a lock. The trap is trusting the abstraction so completely you can't diagnose it when it leaks. Know one layer down from wherever you work — not to micro-optimize, but so a leak is a puzzle you can solve rather than magic you can't.",
+      lens: "both",
+    },
+    {
+      title: "Believing quantum computers replace classical ones",
+      body: "A quantum computer is not a faster laptop. It offers exponential speed-ups only for specific structured problems (factoring, quantum simulation, some search) and is useless or slower for the overwhelming majority of computing. Even at scale it will be a specialized coprocessor called from a classical machine — the stack you just climbed isn't going anywhere.",
+      lens: "both",
+    },
+    {
+      title: "Assuming you must master every layer to be useful",
+      body: "You can't hold all eleven parts in working depth, and you don't need to. The goal is to know the layers exist, understand the interfaces between them, and be able to go deep on demand. Breadth is a map; you travel it by descending into one region at a time. Trying to be expert everywhere at once is how people freeze instead of building.",
+      lens: "both",
+    },
+    {
+      title: "Treating the current stack as permanent",
+      body: "The specific technologies churn — languages, frameworks, and even hardware paradigms come and go. What persists is the shape: representation, computation, cost, correctness, communication, and abstraction. Anchor on the enduring ideas this guide taught, not on today's tools, and the next decade's changes will read as variations on themes you already know.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch35-1", "iv-ch35-2", "iv-ch35-3", "iv-ch35-4"],
+  kataIds: [],
+  seeAlso: ["ch0a", "ch1", "ch33"],
+  sources: [
+    { title: "Joel Spolsky — The Law of Leaky Abstractions", url: "https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/" },
+    { title: "What happens when you type google.com and press Enter", url: "https://github.com/alex/what-happens-when" },
+    { title: "Google Quantum AI — Quantum error correction below the surface code threshold (Nature, 2024)", url: "https://www.nature.com/articles/s41586-024-08449-y" },
+    { title: "IBM Quantum roadmap", url: "https://www.ibm.com/roadmaps/quantum/" },
+    { title: "Gidney (2025) — How to factor 2048-bit RSA integers with less than a million noisy qubits", url: "https://arxiv.org/abs/2505.15917" },
+    { title: "Charles Petzold — Code: The Hidden Language of Computer Hardware and Software", url: "https://en.wikipedia.org/wiki/Code:_The_Hidden_Language_of_Computer_Hardware_and_Software" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
-  // P0 · Orientation
-  stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
-  stub("ch0b", "p0", 2, "Math toolkit", "Logic, sets, counting, probability — the on-ramp", 17, { foundations: 25, senior: 35 }),
+  // P0 · Orientation & Math toolkit (built in S17)
+  ch0a,
+  ch0b,
   // P1 · Information (built in S2)
   ch1,
   ch2,
@@ -5442,8 +5790,8 @@ export const CHAPTERS: Chapter[] = [
   // P10 · Intelligence (built in S16)
   ch33,
   ch34,
-  // P11 · Capstone
-  stub("ch35", "p11", 37, "The whole picture", "The entire stack in one animated traversal", 17, { foundations: 15, senior: 20 }),
+  // P11 · Capstone (built in S17)
+  ch35,
 ];
 
 // ---- helpers (shared by app + qa gate) ----

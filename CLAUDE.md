@@ -389,7 +389,9 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
 - **S15 · P9 Security** — ch.31–32 (**dh-color-lab HERO**, injection-sandbox) + P9 boss.
 - **S16 · P10 Intelligence** — ch.33–34 (**neural-playground HERO**) + P10 boss.
   *(web-verify AI landscape facts.)*
-- **S17 · P0 + P11** — ch.0a/0b (math toolkit) + ch.35 grand traversal + boss gallery.
+- **S17 · P0 + P11** — ch.0a/0b (math toolkit) + ch.35 grand traversal + boss gallery. ✅ **CONTENT-COMPLETE:
+  all 11 parts / 37 units live** (discipline-map, combinatorics-counter, birthday-paradox, truth-table,
+  grand-traversal HERO + boss-gallery; 82 sims · 37 figs · 38 quizzes · 183 interview Qs · 59 katas).
 - **S18 · Learning engine completion** — SRS review hub, interview bank filled (~60 Q),
   remaining katas, progress export/import, global search.
 - **S19 · Polish & ship** — a11y/mobile/perf pass, OG image, About page, QA integrity gate,
@@ -1304,3 +1306,64 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   is blocked by an unremovable `.git/index.lock` (the §10 unlink constraint), so finalize on the Mac. Suggested
   branch `feat/s16-p10-intelligence`. Next: S17 — P0 + P11: ch.0a/0b (math toolkit) + ch.35 grand traversal +
   boss gallery.**
+- **2026-07-08 · S17 (P0 + P11 — GUIDE CONTENT-COMPLETE, all 37 units live)** — the two book-ends: the
+  orientation/math on-ramp at the bottom and the capstone at the top. **Kickoff (4 AskUserQuestion):** (1) ch.35's
+  grand traversal = a **full stepped HERO** (a real, Node-tested pipeline, each stop deep-linking that part's hero),
+  not scrollytelling; (2) ch.0a "The Map" = a **full chapter + a new discipline-map sim** distinct from the landing
+  stack; (3) ch.0b math depth = **two real tested heroes + a truth-table micro + an induction figure**; (4) full
+  scope in one pass, Claude builds, user finalizes git on the Mac. **ch.0a The Map** (story: *computer* was a job
+  title → a new science of computation; the "no more about computers than astronomy is about telescopes" line kept
+  and **honestly hedged as disputed attribution**): what CS actually is (computation/information/abstraction, not
+  programming), the discipline as a landscape, how the guide works (lens, touchable sims, predict-quizzes, bosses,
+  SRS), where to start — **discipline-map HERO** (radial 10-area landscape colored by part accent; click an area →
+  light its neighbours + the crossing-idea labels + a link to `#/part/<id>`), **guide-tour** figure (5 mechanisms),
+  cs-map-predict quiz, 7 keyPoints, 4 pitfalls, 3 interview Qs, 3 sources. **ch.0b Math toolkit** (story: **Boole
+  1854** *Laws of Thought* → **Shannon 1937** switches): logic (¬∧∨→↔, truth tables, De Morgan), sets & functions
+  (∪∩×, injective/bijective, 2ⁿ power set), counting (product/sum rules, the four cases), probability (complement
+  trick, independence, the birthday paradox), induction (base + step ⇒ all n; strong induction; worked ∑ = n(n+1)/2)
+  — **truth-table micro** (a real recursive-descent parser/evaluator with tautology/contradiction/contingency
+  classification + a friendly parse-error state), **combinatorics-counter HERO** (P/C/nʳ/stars-and-bars, **exact
+  BigInt**, with Pascal's triangle highlighting C(n,r)), **birthday-paradox HERO** (exact curve + a seeded
+  **Monte-Carlo that converges onto it**, landmarks 23/57/70 computed live), **induction-ladder** figure (dominoes),
+  logic-predict + counting-predict quizzes, a Formal corner, 7 keyPoints, 4 pitfalls, 5 interview Qs, **3 katas**
+  (n-choose-k, power-set, permutations-of), 4 sources. **ch.35 The whole picture** (story: from an electron to an
+  LLM — the summit): **grand-traversal HERO** — one keystroke traced through **12 stages / all 10 content parts**
+  (keypress→gates→CPU→OS→code→data-structure→automaton→network→cipher→database→model→GPU/pixel), each stop recapping
+  its layer, its "you built this" tie-back, and a deep-link to that chapter's hero; **boss-gallery** sim (the ten
+  part bosses, earned badges lit from localStorage, links to each host); a **leaky-abstractions** senior beat
+  (Spolsky); the frontier (quantum: qubit/superposition/interference, narrow speed-ups, error correction) with a
+  **quantum-coin** figure and a **web-verified, dated mid-2026 snapshot** (Willow's 105-qubit *below-threshold* QEC;
+  IBM roadmap fault tolerance ~2029–2030; RSA-2048 needs ~a **million** physical qubits — falling from ~20M (2019)
+  to <1M (Gidney 2025) — so *not here yet*, hence harvest-now-decrypt-later → PQC); whole-stack-predict quiz,
+  6 keyPoints, 4 pitfalls, 4 interview Qs, 5 sources. **5 pure engines** — `sims/math/{combinatorics,birthday,logic}.ts`
+  (exact BigInt counting; exact birthday curve + seeded mulberry32 MC; a full propositional parser/evaluator with
+  equivalence), `sims/capstone/traversal.ts` (the 12-stage pipeline as data with an integrity contract),
+  `sims/orientation/map.ts` (the area graph) — plus **`scripts/test-ch0a.ts` / `test-ch0b.ts` / `test-ch35.ts`**
+  (map connectivity & part-coverage; factorial/nCr/nPr/stars-bars/Pascal identities, birthday exact vs MC,
+  truth-table classification + De Morgan/contrapositive/precedence + parser rejection; traversal referential
+  integrity + all-parts coverage + live boss wiring) wired into `npm test`; test-katas whitelist → ch0b. **9
+  components delegated to 4 parallel subagents** (6 sims + 3 figures) built against the already-tested engines +
+  SimShell/FigureStepper; per-sim CSS in `src/theme/_p0css`/`_p11css` namespaced `.bp-/.cc-/.tt-/.dm-/.gt-/.bg-`,
+  figures inline-SVG; deep-links verified (traversal/boss → `#/chapter/…`, map → `#/part/…`). **+3 katas → batch
+  59** (307 cases), **+12 interview Qs** (iv-ch0a ×3, iv-ch0b ×5, iv-ch35 ×4) → 183, **+4 quizzes** → 38.
+  registryKeys/registry → **82 sims, 37 figs**. **Adversarial review** (self, independent **Python-stdlib oracle**
+  + web): combinatorics & birthday match `math.comb/perm/factorial` and a hand-derived birthday curve **exactly**;
+  logic classifications, the classic equivalences, precedence (¬>∧>∨>→>↔, → right-assoc) and parser rejection all
+  correct; kata doubling/recursive orderings and the float-nCr solution exact for all n≤40; every new quiz key
+  recomputed; traversal/map integrity + component deep-links confirmed. **One [BLOCKING] fixed** — the RSA-2048
+  cost was stated as *millions* of physical qubits; the leading 2025 estimate is **under a million** (Gidney, down
+  20× from ~20M), so it was corrected across the ch.35 callout, keyPoint, quiz and interview, and the Gidney source
+  added. **verify = typecheck ✓ · lint ✓ (fixed 1 unused import) · qa ✓ (37 chapters, 37 live; 82 sims · 37 figs ·
+  38 quizzes · 183 interview Qs · 59 katas · 10 bosses; mandate holds) · test ✓ (30 suites; +test-ch0a/0b/35, +3
+  katas → 307 cases) · build ✓** (fresh `dist-s17`: GrandTraversal 9.0 KB · TruthTable 8.9 · GuideTour 13.1 ·
+  QuantumCoin 12.0 · react-vendor 190 · index 913 KB/331 gzip — the S18/S19 lazy-load note still stands). Sandbox
+  `unlink` still blocks the default `dist/` (build to a fresh `--outDir` per §10); `.git` locks remain, so finalize
+  on the Mac. NOT sandbox-testable: real-browser pass — **5-min manual QA after deploy** (discipline-map: click an
+  area → neighbours light + "open part" link; combinatorics-counter: toggle P/C/nʳ/multiset, watch Pascal
+  highlight; birthday-paradox: drag n, run Monte-Carlo → dots converge on the curve; truth-table: type `not (p and
+  q)` → classification + table, then a garbage string → friendly error; grand-traversal: play → the token walks all
+  12 layers, each deep-links its hero, parts light up; boss-gallery: earned badges reflect your progress;
+  guide-tour/induction-ladder/quantum-coin auto-step). **PART 0 + PART 11 COMPLETE — the guide is CONTENT-COMPLETE:
+  all 11 parts, all 37 units, live.** S17 CLOSED pending user commit. Suggested branch `feat/s17-p0-p11-capstone`.
+  Next: S18 — learning-engine completion (SRS review hub, interview bank fill ~60 Q, remaining katas, progress
+  export/import, global search).**
