@@ -1,0 +1,22 @@
+{
+  // The Node-run tooling (test-*.ts, qa-interactivity.ts, gen-*) lives outside
+  // the app's tsconfig (which is `include: ["src"]`). These scripts are executed
+  // with `node --experimental-strip-types`, so they import with explicit `.ts`
+  // extensions and use Node globals (process, console). This config gives editors
+  // and `tsc -p scripts` the right options for them; the app build is unaffected.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts", "../src/vite-env.d.ts"]
+}
