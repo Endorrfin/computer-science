@@ -1,0 +1,399 @@
+/* hash-avalanche ([micro] ch.31) — the avalanche heat-map + a proof-of-work
+   mining toy. Two side-by-side panels, mono readouts, semantic palette:
+   flipped bits use --sem-err on a --sem-control-tinted grid; the mined zero
+   digits use --sem-ok. Prefix: hav-. Motion gated at the foot. */
+
+.hav-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.hav-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.hav-panel-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hav-panel-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 0.98rem;
+  color: var(--tx);
+  letter-spacing: 0.01em;
+}
+.hav-panel-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--tx3);
+}
+
+/* --------------------------- fields / inputs --------------------------- */
+.hav-field {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+}
+.hav-field--block {
+  width: 100%;
+}
+.hav-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.hav-lbl b {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.hav-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px 10px;
+}
+.hav-input--sm {
+  width: 8.5rem;
+}
+.hav-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* --------------------------- character picker --------------------------- */
+.hav-charrow {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.hav-chars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.hav-charbtn {
+  min-width: 20px;
+  padding: 3px 4px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.2;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.hav-charbtn:hover {
+  border-color: var(--accent);
+  color: var(--tx);
+}
+.hav-charbtn.is-sel {
+  color: var(--bg);
+  background: var(--sem-control);
+  border-color: var(--sem-control);
+  font-weight: 700;
+}
+.hav-charbtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.hav-empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  font-style: italic;
+}
+
+/* --------------------------- hash readouts --------------------------- */
+.hav-hashes {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.hav-hashrow {
+  display: grid;
+  grid-template-columns: 3.4rem 1fr;
+  align-items: baseline;
+  gap: 8px;
+}
+.hav-hashrow dt {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.hav-hashrow dd {
+  margin: 0;
+}
+.hav-hash {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--tx);
+  word-break: break-all;
+  letter-spacing: 0.01em;
+}
+.hav-hash--after {
+  color: var(--sem-data);
+}
+
+/* --------------------------- avalanche map --------------------------- */
+.hav-mapwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hav-map {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  margin-inline: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 6px;
+}
+.hav-cell {
+  fill: color-mix(in srgb, var(--sem-control) 12%, var(--s2));
+  stroke: var(--line);
+  stroke-width: 0.75;
+}
+.hav-cell.is-flip {
+  fill: var(--sem-err);
+  stroke: color-mix(in srgb, var(--sem-err) 60%, var(--line));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hav-map--anim .hav-cell.is-flip {
+    animation: hav-pop 0.32s ease both;
+  }
+}
+@keyframes hav-pop {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.72);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  60% {
+    transform: scale(1.08);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+}
+
+.hav-legend {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+.hav-legkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+}
+.hav-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+.hav-swatch--flip {
+  background: var(--sem-err);
+}
+.hav-swatch--same {
+  background: color-mix(in srgb, var(--sem-control) 12%, var(--s2));
+}
+
+.hav-metric {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--tx2);
+  padding: 9px 11px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+}
+.hav-metric b {
+  color: var(--sem-err);
+  font-variant-numeric: tabular-nums;
+}
+.hav-metric-pct {
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.hav-metric-note {
+  color: var(--tx3);
+}
+
+/* --------------------------- mining toy --------------------------- */
+.hav-minerow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+.hav-field--slider {
+  flex: 1 1 160px;
+  min-width: 150px;
+}
+.hav-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.hav-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.hav-mine {
+  white-space: nowrap;
+}
+
+.hav-mineout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 11px 12px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  min-height: 3rem;
+}
+.hav-mineout--idle,
+.hav-mineout--miss {
+  align-items: flex-start;
+  justify-content: center;
+}
+.hav-mineidle {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  font-style: italic;
+}
+.hav-minemiss {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--sem-err);
+}
+
+.hav-minestats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hav-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.hav-stat-k {
+  color: var(--tx3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 10px;
+}
+.hav-stat-v {
+  color: var(--tx);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.hav-stat.is-ok {
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 12%, var(--surface));
+}
+.hav-stat.is-ok .hav-stat-v {
+  color: var(--sem-ok);
+}
+
+.hav-minehash {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hav-minehash-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.hav-hash--mine {
+  display: block;
+}
+.hav-zeros {
+  color: var(--sem-ok);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--sem-ok) 16%, transparent);
+  border-radius: 3px;
+  padding: 1px 1px;
+}
+.hav-rest {
+  color: var(--tx2);
+}
+
+.hav-note {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding: 9px 11px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--s2));
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+}
+.hav-note b {
+  color: var(--tx);
+}
+.hav-note sup {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------- reduced motion --------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .hav-map--anim .hav-cell,
+  .hav-charbtn {
+    animation: none;
+    transition: none;
+  }
+}

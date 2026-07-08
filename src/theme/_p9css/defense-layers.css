@@ -1,0 +1,246 @@
+/* defense-layers ([fig] ch.32) — defense in depth as concentric rings around a
+   data core. Intact controls are drawn in the semantic OK green; the one missing
+   ring (parameterized queries) is the semantic ERR red, dashed and broken; the
+   attacker and its attack ray ride the semantic CONTROL orange; the crown-jewels
+   core uses the contextual accent until it is breached. FigureStepper re-keys the
+   SVG per frame, so the attacker's inward advance and every state change ride the
+   per-frame enter — all motion is gated behind prefers-reduced-motion, with the
+   static step state as the fallback. Prefix: def-. */
+
+/* --------------------------------- rings --------------------------------- */
+.def-ring circle {
+  transition:
+    stroke 0.2s ease,
+    stroke-width 0.2s ease,
+    opacity 0.2s ease;
+}
+.def-ring-chip {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.92;
+}
+.def-ring-lbl {
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+/* an intact ring: solid green, calm */
+.def-ring.is-intact circle {
+  opacity: 0.9;
+}
+
+/* the ring the attacker is currently pressing against — emphasised glow */
+.def-ring.is-focus circle {
+  opacity: 1;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--sem-ok) 60%, transparent));
+}
+.def-ring.is-focus .def-ring-chip {
+  stroke: var(--sem-ok);
+}
+
+/* the missing / broken ring — red, dashed, and it pulses to read as a live gap */
+.def-ring.is-breached circle {
+  opacity: 1;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--sem-err) 55%, transparent));
+}
+.def-ring.is-breached .def-ring-chip {
+  stroke: var(--sem-err);
+  fill: color-mix(in srgb, var(--sem-err) 10%, var(--surface));
+}
+
+/* a ring not yet reached in the walk sits muted */
+.def-ring.is-pending circle {
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .def-ring.is-breached circle {
+    animation: def-gap-pulse 1.5s ease-in-out infinite;
+  }
+}
+@keyframes def-gap-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    opacity: 0.6;
+    stroke-dashoffset: -15;
+  }
+}
+
+/* --------------------------------- data core --------------------------------- */
+.def-core circle {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  transition:
+    stroke 0.25s ease,
+    fill 0.25s ease;
+}
+.def-core-lbl {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.def-core-sub {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.03em;
+  fill: var(--tx3);
+}
+.def-core.is-breached circle {
+  fill: color-mix(in srgb, var(--sem-err) 20%, var(--surface));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .def-core.is-breached circle {
+    animation: def-breach-flash 1.1s ease-in-out infinite;
+  }
+}
+@keyframes def-breach-flash {
+  0%,
+  100% {
+    filter: none;
+  }
+  50% {
+    filter: drop-shadow(0 0 7px color-mix(in srgb, var(--sem-err) 70%, transparent));
+  }
+}
+
+/* --------------------------------- attacker --------------------------------- */
+.def-ray {
+  stroke: var(--sem-control);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+  opacity: 0.75;
+}
+.def-atk-dot {
+  fill: color-mix(in srgb, var(--sem-control) 28%, var(--surface));
+  stroke: var(--sem-control);
+  stroke-width: 2.25;
+  transition:
+    fill 0.2s ease,
+    stroke 0.2s ease;
+}
+.def-atk-glyph {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--sem-control);
+}
+.def-atk-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  fill: var(--sem-control);
+}
+
+/* once inside the core the attacker turns red — the breach */
+.def-attacker.is-in .def-atk-dot {
+  fill: color-mix(in srgb, var(--sem-err) 32%, var(--surface));
+  stroke: var(--sem-err);
+}
+.def-attacker.is-in .def-atk-glyph,
+.def-attacker.is-in .def-atk-lbl {
+  fill: var(--sem-err);
+}
+
+/* the ray crawls to suggest the attacker probing inward; the dot ticks in */
+@media (prefers-reduced-motion: no-preference) {
+  .def-ray {
+    animation: def-ray-crawl 0.9s linear infinite;
+  }
+  .def-atk-dot {
+    animation: def-atk-tick 1.6s ease-in-out infinite;
+  }
+  .def-attacker.is-in .def-atk-dot {
+    animation: def-atk-breach 1s ease-in-out infinite;
+  }
+}
+@keyframes def-ray-crawl {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+@keyframes def-atk-tick {
+  0%,
+  100% {
+    r: 9;
+  }
+  50% {
+    r: 10.5;
+  }
+}
+@keyframes def-atk-breach {
+  0%,
+  100% {
+    r: 9;
+    filter: none;
+  }
+  50% {
+    r: 11;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--sem-err) 70%, transparent));
+  }
+}
+
+/* --------------------------------- status panel --------------------------------- */
+.def-panel-title {
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 800;
+  fill: var(--tx);
+  letter-spacing: 0.02em;
+}
+.def-panel-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  fill: var(--tx3);
+}
+.def-pill-box {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1;
+  transition:
+    stroke 0.18s ease,
+    fill 0.18s ease;
+}
+.def-pill-box.is-focus {
+  fill: color-mix(in srgb, var(--sem-ok) 12%, var(--s2));
+  stroke: var(--sem-ok);
+}
+.def-pill-box.is-passed {
+  fill: color-mix(in srgb, var(--sem-control) 8%, var(--s2));
+  stroke: color-mix(in srgb, var(--sem-control) 45%, var(--line));
+}
+.def-pill-box.is-gap {
+  fill: color-mix(in srgb, var(--sem-err) 12%, var(--s2));
+  stroke: var(--sem-err);
+}
+.def-pill-lbl {
+  font-family: var(--font-mono);
+  fill: var(--tx2);
+}
+.def-pill-lbl.is-gap {
+  fill: var(--sem-err);
+  font-weight: 700;
+  text-decoration: line-through;
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .def-ring circle,
+  .def-core circle,
+  .def-atk-dot,
+  .def-pill-box {
+    transition: none;
+  }
+  .def-ring.is-breached circle,
+  .def-core.is-breached circle,
+  .def-ray,
+  .def-atk-dot,
+  .def-attacker.is-in .def-atk-dot {
+    animation: none;
+  }
+}

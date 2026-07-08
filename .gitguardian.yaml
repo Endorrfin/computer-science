@@ -1,0 +1,28 @@
+# GitGuardian / ggshield configuration.
+#
+# Part 9 (Security) of this guide ships interactive TEACHING sims whose entire
+# purpose is to display login forms, passwords, and injection payloads. The
+# values below are hard-coded FAKE fixtures for those demos: they authenticate
+# against an in-memory array in the browser, back no real service, and are safe
+# to publish. They are listed here so ggshield / GitGuardian stops flagging them
+# as leaked credentials (they are false positives — nothing to revoke or rotate).
+version: 2
+secret:
+  ignored-matches:
+    # injection-sandbox (src/components/sims/security/sqli.ts) — fake demo logins.
+    # Current placeholders:
+    - name: "injection-sandbox demo login placeholder (fake, in-memory only)"
+      match: demo-password
+    - name: "injection-sandbox demo login placeholder (fake, in-memory only)"
+      match: example-password
+    # Earlier values from this branch's history (kept so historical commits pass):
+    - name: "injection-sandbox demo login (fake, superseded)"
+      match: s3cr3t!
+    - name: "injection-sandbox demo login (fake, superseded)"
+      match: hunter2
+    # password-entropy sim (src/components/sims/security/PasswordEntropy.tsx) —
+    # teaching examples of weak vs strong passwords, shown on purpose.
+    - name: "password-entropy teaching example (well-known weak password)"
+      match: P@ssw0rd
+    - name: "password-entropy 'random 12 chars' teaching example"
+      match: x9$Qm2!vTz7#

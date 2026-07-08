@@ -1,0 +1,199 @@
+/* tls-replay ([fig] ch.31) — the TLS 1.3 one-RTT handshake, one frame per step,
+   each labelled with the crypto PRIMITIVE it relies on. Each primitive owns a
+   colour from the shared semantic palette (key agreement = contextual accent,
+   authentication = control/orange, key derivation = state/violet, integrity =
+   data/cyan, symmetric AEAD = ok/green). Components receive that colour through
+   an inline `color`, and the SVG paints with `currentColor`, so the active
+   endpoint, wire, primitive chip and legend cell always agree. FigureStepper
+   re-keys the SVG per frame, so any motion rides the per-frame enter.
+   Prefix: tls-. */
+
+/* --------------------------------- step badge --------------------------------- */
+.tls-badge-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  fill: currentColor;
+  opacity: 0.85;
+}
+.tls-badge-title {
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 800;
+  fill: var(--tx);
+}
+
+/* --------------------------------- endpoints --------------------------------- */
+.tls-node rect {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.75;
+  transition:
+    stroke 0.2s ease,
+    fill 0.2s ease;
+}
+.tls-node-title {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--tx2);
+}
+.tls-node-sub {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--tx3);
+}
+.tls-node.is-active rect {
+  fill: color-mix(in srgb, currentColor 10%, var(--surface));
+  stroke: currentColor;
+  stroke-width: 2.25;
+}
+.tls-node.is-active .tls-node-title {
+  fill: var(--tx);
+}
+
+/* --------------------------------- handshake wire --------------------------------- */
+.tls-wire-base {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.tls-wire-msg {
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+.tls-wire-name {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: currentColor;
+}
+.tls-wire-dir {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.03em;
+  fill: var(--tx3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tls-wire-msg {
+    stroke-dasharray: 8 5;
+    animation: tls-flow 0.9s linear infinite;
+  }
+}
+@keyframes tls-flow {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+/* --------------------------------- primitive chip --------------------------------- */
+.tls-chip rect {
+  fill: color-mix(in srgb, currentColor 10%, var(--surface));
+  stroke: currentColor;
+  stroke-width: 1.75;
+}
+.tls-chip-kicker {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  fill: currentColor;
+  opacity: 0.9;
+}
+.tls-chip-label {
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 800;
+  fill: var(--tx);
+}
+
+/* --------------------------------- ties note --------------------------------- */
+.tls-ties rect {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.25;
+}
+.tls-ties-kicker {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  fill: currentColor;
+  opacity: 0.9;
+}
+.tls-ties-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--tx2);
+}
+
+/* --------------------------------- legend --------------------------------- */
+.tls-legend-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  fill: var(--tx3);
+}
+.tls-leg rect {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.25;
+  transition:
+    stroke 0.2s ease,
+    fill 0.2s ease;
+}
+.tls-leg-swatch {
+  fill: currentColor;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+.tls-leg-name {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--tx3);
+}
+.tls-leg-count {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  fill: var(--tx3);
+}
+.tls-leg.is-on rect {
+  fill: color-mix(in srgb, currentColor 12%, var(--surface));
+  stroke: currentColor;
+  stroke-width: 2;
+}
+.tls-leg.is-on .tls-leg-swatch {
+  opacity: 1;
+}
+.tls-leg.is-on .tls-leg-name {
+  fill: currentColor;
+}
+.tls-leg.is-on .tls-leg-count {
+  fill: var(--tx2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tls-leg.is-on .tls-leg-swatch {
+    animation: tls-pulse 1.6s ease-in-out infinite;
+  }
+}
+@keyframes tls-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tls-node rect,
+  .tls-leg rect,
+  .tls-leg-swatch,
+  .tls-wire-msg {
+    transition: none;
+    animation: none;
+    stroke-dasharray: none;
+  }
+}

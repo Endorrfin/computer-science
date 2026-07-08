@@ -4776,6 +4776,322 @@ const ch30: Chapter = {
   ],
 };
 
+const ch31: Chapter = {
+  id: "ch31",
+  part: "p9",
+  order: 33,
+  title: "Cryptography",
+  tagline: "The math that lets strangers keep secrets and prove identity over a wire everyone can read — from Caesar's shift to the handshake behind every padlock icon",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "For most of history, secret writing was a game of hidden methods — and every clever method eventually fell to a cleverer analyst. Then in **1976**, two Stanford researchers, **Whitfield Diffie** and **Martin Hellman**, published *\"New Directions in Cryptography\"* and did something that had been considered impossible: they showed how two strangers could agree on a shared secret **in full view of an eavesdropper**, exchanging only public messages. It broke the ancient assumption that to share a secret you must first share a secret. What almost no one knew for two decades: cryptographers at Britain's **GCHQ** (James Ellis, Clifford Cocks, Malcolm Williamson) had discovered the same ideas between **1969 and 1973** — and kept them classified until **1997**. Public-key cryptography was invented twice: once in secret, once in the open that rewired the world.",
+  },
+  assumes: [
+    { chapterId: "ch28", oneLiner: "The padlock in ch.28 was TLS; this chapter opens it up and shows which piece of math each step of that handshake actually runs." },
+    { chapterId: "ch3", oneLiner: "Entropy measured information; here it measures unpredictability — the raw material of keys, and why a guessable key dooms even perfect math." },
+  ],
+  mentalModel:
+    "Cryptography is a small toolbox aimed at four goals: confidentiality, integrity, authentication, and non-repudiation — and Kerckhoffs's rule says all of the security must live in the KEY, never in the secrecy of the method. Classical ciphers (Caesar, Vigenère) fail because they leak the plaintext's statistics to frequency analysis. Symmetric encryption (AES) fixes secrecy with one shared key and is fast — but leaves the key-distribution problem: how do both sides get that key? Hashes go one way: a fixed-size, collision-resistant digest with an avalanche (one input bit flips half the output), used for integrity, password storage, and proof-of-work. The public-key breakthrough uses trapdoor functions: Diffie–Hellman lets two parties derive a shared secret over a public channel (hard problem: discrete log), and RSA gives a public lock / private key pair (hard problem: factoring) that also runs backwards as a signature. Because public-key math is slow, real systems are hybrid: use it once to agree a symmetric key, then switch to AES for bulk data. TLS is that hybrid assembled — ephemeral key agreement + a certificate signature + a hash-based key schedule + an AEAD cipher — which is why 'the padlock' is really every tool in this chapter working at once.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "In Part 7 you sent data across a network anyone can tap, and ch.28 put a **padlock** on it called TLS. This chapter is what's inside that padlock. Cryptography is the math of communicating with an **adversary on the line** — someone who can read, copy, and alter every byte. It aims at four guarantees: **confidentiality** (only the intended reader understands it), **integrity** (you'd detect any tampering), **authentication** (you know who you're talking to), and **non-repudiation** (they can't later deny it).\n" +
+        "One rule governs all of it — **Kerckhoffs's principle** (1883): a system must remain secure **even if the attacker knows everything about it except the key**. The algorithm is public; only the key is secret. \"Security through obscurity\" — hoping no one figures out your method — is not security, because methods always leak.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## The classical world, and why it always fell\n" +
+        "The oldest ciphers are **substitutions**: replace each letter by another. **Caesar** shifted every letter by three (`A→D`); a general substitution permutes the whole alphabet, giving `26!` ≈ 4×10²⁶ keys — hopeless to brute-force, yet trivially broken. Why? Because it **preserves structure**: the most common ciphertext letter is almost certainly `E`, the pattern of a three-letter word ending in the commonest letter is probably `the`. **Frequency analysis** — first written down by the Arab polymath **al-Kindi** in the 9th century — reads the plaintext straight through the cipher. **Vigenère** (16th c.) fought back with a repeating keyword so one letter maps to many, and was called *le chiffre indéchiffrable* for 300 years — until **Kasiski** (1863) showed that finding the key **length** collapses it into several Caesar ciphers, each broken by frequency again. Crack one yourself:",
+    },
+    { kind: "sim", sim: "cipher-cracker" },
+    {
+      kind: "callout",
+      tone: "story",
+      title: "The one cipher that is provably unbreakable — and why you still can't use it",
+      md:
+        "The **one-time pad** — XOR the message with a truly random key **as long as the message**, used once — has *perfect secrecy*: Claude **Shannon proved in 1949** the ciphertext reveals literally nothing about the plaintext. So why isn't everything a one-time pad? Because the key is as long as all the data you'll ever send and can never be reused, so distributing and storing it is as hard as the original problem. Perfect secrecy exists; it's just impractical. Everything modern is a deliberate trade of *perfect* for *practical*.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Symmetric encryption: one shared key, and the problem it leaves\n" +
+        "Modern **symmetric** ciphers use **one key** to encrypt and decrypt. The standard is **AES** (Rijndael, standardized as **FIPS 197 in 2001**) — a **block cipher** scrambling 128 bits at a time through repeated rounds of substitution and permutation, realizing Shannon's **confusion** (hide the key–ciphertext relationship) and **diffusion** (spread each input bit across the whole block). It's fast, hardware-accelerated, and unbroken. But symmetric crypto has an Achilles' heel named in its own definition: **both sides need the same secret key**. How do you get that key to the other party over a channel you already assume is tapped? Mail it? Meet in person? For the open internet — a browser talking to a server it's never met — that **key-distribution problem** was the wall. For decades it looked fundamental.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Block ciphers in practice: modes and AEAD",
+      lens: "senior",
+      md:
+        "AES encrypts one fixed block; a **mode** extends it to real messages. Never **ECB** (identical blocks → identical ciphertext; the infamous 'ECB penguin' stays visible). Modern TLS uses **AEAD** modes — **AES-GCM** or **ChaCha20-Poly1305** — which encrypt **and** authenticate in one pass, producing a tag that detects any tampering. Two senior landmines: a **nonce** must never repeat under the same key (GCM nonce reuse is catastrophic — it can leak the authentication key), and encryption alone gives **confidentiality, not integrity** — without a MAC/AEAD tag an attacker can flip ciphertext bits and you won't know. This is why 'just AES it' is not a security design.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Hashing: a one-way street\n" +
+        "A **cryptographic hash** takes any input and returns a fixed-size **digest** (SHA-256 → 256 bits) with three properties: it's **deterministic**, **one-way** (you can't invert the digest back to the input), and **collision-resistant** (you can't find two inputs with the same digest). The signature behavior is the **avalanche effect**: change a single input bit and about **half** the output bits flip, unpredictably — the digest is a chaotic fingerprint, not a summary. Hashes power integrity checks, commitments, content addressing (git), proof-of-work, and password storage. Not every hash survives: **MD5** fell to practical collisions in the 2000s and **SHA-1** was broken in **2017** (the *SHAttered* attack: two different PDFs, one SHA-1 digest, ≈2⁶³ work). **SHA-256** is today's default. Flip one character and watch the avalanche — then try to mine a digest with leading zeros:",
+    },
+    { kind: "sim", sim: "hash-avalanche" },
+    {
+      kind: "prose",
+      md:
+        "## The breakthrough: agreeing on a secret in public\n" +
+        "Here is the idea that broke the key-distribution wall. Some operations are **easy one way, hard to reverse** — a **trapdoor**. Mixing two paint colors is easy; un-mixing them to recover the originals is not. **Diffie–Hellman** turns that asymmetry into a key exchange. Both parties start from a **public** base, each stirs in a **private** secret, they swap the (public) mixes, then each stirs their **own** secret into the other's mix. Because mixing is order-independent, both arrive at the **same** final color — while an eavesdropper who saw the base and both public mixes cannot produce it. Swap paint for numbers (public prime `p`, generator `g`; secrets `a`, `b`; exchange `gᵃ` and `gᵇ`; both compute `g^(ab) mod p`) and 'un-mixing' becomes the **discrete-logarithm problem** — believed hard. Do it both ways in the lab:",
+    },
+    { kind: "sim", sim: "dh-color-lab" },
+    {
+      kind: "prose",
+      md:
+        "## RSA: a public lock, a private key — and signatures\n" +
+        "Diffie–Hellman agrees a **shared** secret; **RSA** (Rivest, Shamir & Adleman, **1977**) gives each person a **key pair**: a **public** key anyone can encrypt ('lock') with, and a **private** key only the owner can decrypt ('unlock') with. Its trapdoor is **factoring**: multiplying two large primes `p·q = n` is easy, but recovering `p` and `q` from `n` — needed to derive the private key — is infeasibly hard at real sizes. The magic twist: run it **backwards** and you get a **digital signature**. Sign a message with your **private** key and anyone can verify it with your **public** key — proving it came from you (**authentication**), that it wasn't altered (**integrity**), and that you can't disown it (**non-repudiation**). Step the lock-and-key metaphor through real small numbers:",
+    },
+    { kind: "figure", fig: "rsa-locks" },
+    {
+      kind: "formal",
+      title: "Formal corner — modular exponentiation and the hard problems",
+      md:
+        "Both systems live in **modular arithmetic** (clock arithmetic mod a prime `p`). The easy direction is **modular exponentiation**: `y = gˣ mod p`, computable in ~`log₂ x` multiplications by square-and-multiply. The hard directions are the security assumptions:\n\n" +
+        "- **Discrete log** (breaks Diffie–Hellman): given `g`, `p`, and `y = gˣ mod p`, find `x`. No efficient classical algorithm is known.\n" +
+        "- **Factoring** (breaks RSA): given `n = p·q`, recover the primes. Likewise believed hard.\n\n" +
+        "RSA keygen: pick primes `p, q`; `n = p·q`; `φ = (p−1)(q−1)`; public exponent `e` coprime to `φ`; private `d = e⁻¹ mod φ`. Encrypt `c = mᵉ mod n`, decrypt `m = c^d mod n` — inverses because `e·d ≡ 1 (mod φ)` and Euler's theorem. 'Hard' here means **computationally**, not impossibly: enough compute (or a quantum computer, see below) changes the game.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Putting it together: TLS is every tool at once\n" +
+        "Now the padlock from ch.28 opens up. A TLS 1.3 handshake (**RFC 8446, 2018**) is not one cipher — it's **all of this chapter** in sequence: an **ephemeral Diffie–Hellman** exchange agrees a shared secret (key agreement); the server's **certificate + signature** proves identity (authentication, public-key backwards); a **hash-based KDF** (HKDF) stretches the shared secret into traffic keys (hashing); and from there an **AEAD symmetric cipher** (AES-GCM) encrypts the actual bytes fast (confidentiality + integrity). Replay the handshake and watch which primitive each step uses:",
+    },
+    { kind: "figure", fig: "tls-replay" },
+    {
+      kind: "compare",
+      a: "Symmetric (AES)",
+      b: "Asymmetric (RSA / DH / ECC)",
+      rows: [
+        ["Keys", "one shared secret key", "a public/private key pair"],
+        ["Speed", "very fast (bulk data)", "slow (hundreds–thousands× slower)"],
+        ["Solves", "confidentiality, once a key is shared", "key distribution & signatures over a public channel"],
+        ["Weakness", "getting the key to both sides", "slow; large keys; broken by a quantum computer"],
+        ["Real use", "encrypt the actual traffic", "agree the symmetric key, then step aside"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Forward secrecy, ECC, and the quantum clock",
+      lens: "senior",
+      md:
+        "Three senior beats. **Forward secrecy**: TLS 1.3 makes the DH keys **ephemeral** (new per session), so stealing the server's long-term key **can't** decrypt past traffic — a recording of yesterday's session stays safe. **ECC** (elliptic-curve crypto) gives the same security as RSA with far smaller keys (a 256-bit curve ≈ 3072-bit RSA), because the elliptic-curve discrete log is harder per bit — which is why modern TLS prefers **X25519**. And the clock: **Shor's algorithm** on a large quantum computer would break RSA, DH, **and** ECC by making factoring and discrete log easy. That's why **NIST finalized post-quantum standards in August 2024** — **FIPS 203 (ML-KEM/Kyber)** for key exchange, **204 (ML-DSA)** and **205 (SLH-DSA)** for signatures — built on lattice and hash problems quantum computers don't obviously crack, with migration guidance pointing at ~2030. (Symmetric AES and hashes only need bigger sizes, not replacement.)",
+    },
+    { kind: "quiz", quiz: "crypto-predict" },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You now hold the toolbox: **Kerckhoffs's** rule, the fall of classical ciphers, **symmetric** speed vs the **key-distribution** problem, one-way **hashes** and their avalanche, the public-key trapdoors of **Diffie–Hellman** and **RSA**, **signatures**, and the **hybrid** handshake that is TLS. But cryptography is only one wall of a fortress, and attackers rarely charge the strongest wall. **Chapter 32 — Security** puts on the adversary's hat: threat modeling, the attack classes that actually breach systems (injection, XSS, supply chain, the human), and defense in depth — because perfect crypto around a leaky login helps no one.",
+    },
+  ],
+  keyPoints: [
+    "Kerckhoffs's principle — a cryptosystem must stay secure even if the attacker knows everything about it except the key; security through obscurity is not security.",
+    "Classical substitution ciphers leak the plaintext's letter statistics — frequency analysis (al-Kindi) breaks Caesar, and finding the key length (Kasiski) collapses Vigenère back into Caesars.",
+    "Symmetric encryption (AES) is fast and uses one shared key — its unsolved half is key distribution: getting that key to both parties over a tapped channel.",
+    "A cryptographic hash is one-way and collision-resistant — a fixed digest with an avalanche (one input bit flips ~half the output); MD5 and SHA-1 are broken, SHA-256 is the standard.",
+    "Diffie–Hellman (1976) lets two strangers agree a shared secret over a public channel — its security rests on the discrete-logarithm problem being hard.",
+    "RSA is a trapdoor key pair — a public key locks, a private key unlocks; security rests on the hardness of factoring n = p·q.",
+    "Digital signatures run public-key crypto backwards — sign with the private key, verify with the public — giving authentication, integrity, and non-repudiation.",
+    "TLS is a hybrid of every primitive — ephemeral key agreement + a certificate signature + a hash-based KDF + a symmetric AEAD cipher, assembled into one handshake.",
+    "Use asymmetric crypto only to agree a symmetric key, then switch to AES — public-key math is too slow for bulk data, so real systems are hybrid.",
+  ],
+  pitfalls: [
+    {
+      title: "Rolling your own crypto",
+      body: "Textbook-correct crypto is still insecure in practice: padding oracles, timing side channels, nonce reuse, weak randomness, and bad key management break implementations that pass every functional test. Use vetted, maintained libraries and standard protocols (TLS, libsodium, the platform's crypto). The rule isn't 'don't learn how it works' — it's 'don't ship your own primitive.'",
+      lens: "both",
+    },
+    {
+      title: "Confusing encryption with integrity and authentication",
+      body: "Encryption hides content; it does not prove the content wasn't altered or who sent it. An attacker can tamper with ciphertext, and plain encryption won't notice. Use AEAD (AES-GCM/ChaCha20-Poly1305) for encryption-with-integrity, and signatures/MACs for authentication. Three different goals, three different tools.",
+      lens: "senior",
+    },
+    {
+      title: "Hashing passwords with a fast hash",
+      body: "SHA-256 is designed to be fast — exactly wrong for passwords, where a GPU tries billions of guesses per second. Store passwords with a slow, salted password-hashing function: Argon2id (OWASP's current default), bcrypt, or scrypt. A plain (even salted) SHA-256 password store is one breach away from mass account compromise.",
+      lens: "both",
+    },
+    {
+      title: "Reusing keys and nonces, and skipping forward secrecy",
+      body: "A nonce that repeats under the same key can shatter a cipher (GCM nonce reuse can leak the auth key); a long-term key used for everything means one theft decrypts all history. Use fresh nonces, rotate keys, and prefer ephemeral (forward-secret) key exchange so a future key compromise can't decrypt past sessions.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch31-1", "iv-ch31-2", "iv-ch31-3", "iv-ch31-4", "iv-ch31-5"],
+  kataIds: ["caesar-decrypt", "mod-exp"],
+  seeAlso: ["ch28", "ch32", "ch3"],
+  sources: [
+    { title: "Diffie & Hellman, 'New Directions in Cryptography', 1976 (Stanford PDF)", url: "https://ee.stanford.edu/~hellman/publications/24.pdf" },
+    { title: "The TLS 1.3 Protocol — RFC 8446, 2018 (IETF)", url: "https://datatracker.ietf.org/doc/html/rfc8446" },
+    { title: "The first collision for full SHA-1 — 'SHAttered', Stevens et al., 2017", url: "https://shattered.io/" },
+    { title: "NIST releases first 3 finalized post-quantum encryption standards (FIPS 203/204/205), Aug 2024", url: "https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards" },
+    { title: "Kerckhoffs's principle (Wikipedia)", url: "https://en.wikipedia.org/wiki/Kerckhoffs%27s_principle" },
+    { title: "Advanced Encryption Standard (AES) — FIPS 197 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Advanced_Encryption_Standard" },
+  ],
+};
+
+const ch32: Chapter = {
+  id: "ch32",
+  part: "p9",
+  order: 34,
+  title: "Security",
+  tagline: "Cryptography is a strong lock — security is realizing the attacker will use the window; the adversarial mindset, the attack classes that actually breach systems, and defense in depth",
+  readMins: { foundations: 20, senior: 35 },
+  storyHook: {
+    md:
+      "On **2 November 1988**, a Cornell graduate student named **Robert Tappan Morris** released a small self-replicating program — to measure the size of the internet, he later said. A bug made it re-infect machines far too aggressively, and within hours it had crippled an estimated **10% of the ~60,000 computers** then online. The **Morris Worm** spread through three holes that still define security today: a **buffer overflow** in a network service, **weak and reused passwords**, and machines that **over-trusted** each other. It triggered the creation of the first **CERT**, produced the first felony conviction under the U.S. Computer Fraud and Abuse Act — and taught the lesson this whole chapter orbits: a system is only as secure as its **weakest** component, and the attacker always aims there.",
+  },
+  assumes: [
+    { chapterId: "ch31", oneLiner: "Cryptography gave us strong locks; this chapter is about everything around the lock — because attackers pick the weakest point, not the strongest." },
+    { chapterId: "ch29", oneLiner: "You wrote SQL queries against a database; here we see how a query built from untrusted input becomes a break-in." },
+  ],
+  mentalModel:
+    "Security is the discipline of thinking like an adversary: enumerate assets, imagine who wants them and how (threat modeling), then reduce the attack surface and stack independent defenses so no single failure is fatal (defense in depth). A recurring root cause is confusing DATA with CODE — SQL injection and XSS both come from untrusted input being interpreted as instructions, and the fix is the same shape both times: keep input as data (parameterize queries, output-encode HTML). Authentication (who are you) is distinct from authorization (what may you do), and broken access control is the #1 web risk. But most real breaches don't defeat the cryptography — they walk through the window crypto doesn't cover: memory-safety bugs, vulnerable dependencies (supply chain), misconfiguration, and the human via phishing. So the mindset is: assume breach, apply least privilege, validate every input, patch relentlessly, and design so that when one layer fails another still holds.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Chapter 31 built strong locks. This chapter is the uncomfortable sequel: **locks don't matter if the attacker uses the window.** Security is less a feature than a **mindset** — thinking like an adversary about the system you just built. It starts with **threat modeling**: what are the **assets** worth stealing (data, money, access)? Who are the **threat actors** and what can they do? Where is the **attack surface** — every input, endpoint, and dependency an attacker can touch? You don't secure 'everything'; you find where an attacker gets the most leverage for the least effort, because **that** is where they'll go.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Injection: when data becomes code\n" +
+        "The most enduring web vulnerability comes from one confusion: **treating untrusted input as code**. Your login builds a query by pasting the username into SQL text: `... WHERE name = '` + input + `'`. Feed it `' OR 1=1--` and the quote **closes the string**, `OR 1=1` adds an always-true condition, and `--` **comments out** the password check — the query now returns every row and you're logged in as admin. The bug isn't the database; it's that the input **crossed from data into the query's grammar**. The fix is not to 'escape quotes' (attackers find gaps) but to keep data as **data**: **parameterized queries** send the SQL structure and the values on separate channels, so input can never become syntax. Watch the AST change — and stop changing — as you switch modes:",
+    },
+    { kind: "sim", sim: "injection-sandbox" },
+    {
+      kind: "prose",
+      md:
+        "## The browser's twin: cross-site scripting\n" +
+        "The same data-becomes-code bug lives in the **page** instead of the query. If a site takes a user's comment and drops it **raw** into HTML, a comment of `<script>…</script>` becomes a **script that runs in every other visitor's browser** — stealing session cookies, acting as them, defacing the page. That's **stored XSS**. The fix is symmetric to injection: treat the comment as **data** by **output-encoding** it, so `<script>` renders as the literal text `&lt;script&gt;` and never executes. Toggle escaping and see inert text become an active payload:",
+    },
+    { kind: "sim", sim: "xss-demo" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "XSS's cousin: CSRF, and why cookies need SameSite",
+      lens: "senior",
+      md:
+        "**XSS** abuses a site's trust in **user input**; **CSRF** (cross-site request forgery) abuses a browser's trust in a **logged-in session**. A malicious page can make your browser fire a request to your bank — and the browser helpfully attaches your bank cookies. Defenses: **anti-CSRF tokens** (a secret the attacker's page can't read), the **SameSite** cookie attribute (don't send cookies on cross-site requests), and checking the Origin. Note the pairing: XSS can **defeat** CSRF tokens (a script on the page can read them), which is why XSS is considered so severe — it undermines other defenses.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Who are you, and what may you do\n" +
+        "Two words that get conflated and must not be: **authentication** (proving **who** you are) and **authorization** (deciding **what** you may do). **Broken access control** — a logged-in user reaching data or actions they shouldn't, by changing an ID in a URL or calling an admin endpoint directly — is the **#1 web risk** on the current OWASP list. Authentication leans on cryptography from ch.31, but the human layer is where it usually cracks: passwords are **reused** and **guessable**, and naive **entropy** overestimates strength because people aren't random. `P@ssw0rd` looks like ~53 bits but dies instantly to a wordlist. Measure the gap between apparent and real strength:",
+    },
+    { kind: "sim", sim: "password-entropy" },
+    {
+      kind: "prose",
+      md:
+        "## The classes cryptography can't fix\n" +
+        "Most breaches never break the crypto — they walk around it. **Memory-safety** bugs: in C/C++, a **buffer overflow** lets input spill past its bounds and overwrite control data (the Morris Worm and **Heartbleed** both live here) — the reason memory-safe languages (Rust, and managed runtimes) are a security argument, not just an ergonomic one. **Supply chain**: your app is mostly **other people's code**, and a poisoned or vulnerable dependency (Log4Shell in 2021, the near-miss **xz backdoor** in 2024) is now its own OWASP category. And the perennial champion — **social engineering**: phishing, pretexting, and MFA-fatigue attacks defeat perfect technology by targeting the **human**. No cipher stops an employee from typing their password into a convincing fake.",
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Memory safety and the supply chain, by the numbers",
+      lens: "senior",
+      md:
+        "Microsoft and Google have each reported that **~70% of their severe vulnerabilities** are memory-safety bugs — a decades-old class C/C++ can't structurally prevent, which is why CISA now urges memory-safe languages for new code. On the supply-chain side, **Log4Shell** (CVE-2021-44228) was a single logging library that let attackers run code on a staggering fraction of the internet via a crafted string; the **2024 xz-utils** backdoor was a multi-year social-engineering operation to plant a backdoor in a core Linux compression library, caught almost by accident. This is why **Software Supply Chain Failures** is a top-tier risk in the OWASP Top 10:2025 — and why SBOMs, pinned/verified dependencies, and least-privilege builds matter.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Defense in depth\n" +
+        "Because any one control can fail, security is layered so that a breach of one doesn't breach the system: **defense in depth**. Validate input at the edge, parameterize at the database, encode at output, encrypt in transit and at rest, enforce **least privilege** (every component gets the minimum access it needs), **fail secure** (an error denies rather than grants), authenticate then authorize on every request, log and monitor, and patch relentlessly. No single layer is trusted to be perfect; the attacker must defeat **all** of them. Walk an attacker through a system and watch a missing layer become the whole breach:",
+    },
+    { kind: "figure", fig: "defense-layers" },
+    {
+      kind: "table",
+      caption: "OWASP Top 10:2025 — the industry's consensus ranking of web application risks (released January 2026), drawn from 175,000+ CVEs. Two categories are new since 2021: Software Supply Chain Failures and Mishandling of Exceptional Conditions.",
+      head: ["#", "Category (2025)", "In one line"],
+      rows: [
+        ["A01", "Broken Access Control", "logged-in users reaching what they shouldn't (SSRF folded in here)"],
+        ["A02", "Security Misconfiguration", "defaults, verbose errors, open buckets, unhardened services"],
+        ["A03", "Software Supply Chain Failures", "vulnerable or poisoned dependencies and build systems (expanded, up sharply)"],
+        ["A04", "Cryptographic Failures", "weak/missing crypto, bad key or secret handling"],
+        ["A05", "Injection", "untrusted input becomes code — SQL, XSS, command injection"],
+        ["A06", "Insecure Design", "the flaw is in the design, not a bug — threat-model earlier"],
+        ["A07", "Authentication Failures", "weak login, session, and credential handling"],
+        ["A08", "Software & Data Integrity Failures", "unverified updates, deserialization, tampered pipelines"],
+        ["A09", "Security Logging & Alerting Failures", "breaches you can't see, detect, or respond to"],
+        ["A10", "Mishandling of Exceptional Conditions", "errors handled insecurely — new in 2025"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Frameworks: STRIDE, least privilege, zero trust",
+      lens: "senior",
+      md:
+        "To threat-model systematically, teams use **STRIDE** (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege) — walk each asset against each threat. **Least privilege** and **zero trust** ('never trust, always verify' — authenticate and authorize every request, even inside the network) are the structural defaults now. And the meta-point behind the whole chapter: security is a **process, not a product** — a posture of assuming breach, reducing blast radius, and designing so failures are contained. The strongest cryptography in the world sits behind a login form; secure the whole system, or you've secured nothing.",
+    },
+    { kind: "quiz", quiz: "spot-the-vuln" },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That closes **Part 9 — Security**, and with it the defensive core of the discipline: cryptography's tools and the adversarial mindset that deploys them wisely. You've seen the data-becomes-code family (**injection**, **XSS**), **authentication vs authorization**, the classes crypto can't fix (**memory safety**, **supply chain**, the **human**), and **defense in depth**. Now the journey turns from protecting computation to a different frontier — making machines **learn**. **Part 10 — Intelligence** asks how a program can improve from data rather than explicit rules, from a single neuron to the transformers behind modern AI.",
+    },
+  ],
+  keyPoints: [
+    "The adversarial mindset — security means enumerating assets, threats, and attack surface (threat modeling), then defending the weakest point, because that's where attackers go.",
+    "Injection is data becoming code — untrusted input interpreted as SQL/HTML/commands; the fix is keeping input as data (parameterized queries), not escaping it by hand.",
+    "XSS is injection in the page — raw user input rendered as HTML runs attacker script in other users' browsers; output-encode to render it as inert text.",
+    "Authentication (who you are) is not authorization (what you may do) — broken access control is the #1 web risk on the OWASP Top 10:2025.",
+    "Naive password entropy overestimates strength — 'P@ssw0rd' looks strong by charset math but is a wordlist hit; store passwords with a slow, salted hash (Argon2id/bcrypt).",
+    "Most breaches bypass the crypto — memory-safety bugs, vulnerable dependencies (supply chain), misconfiguration, and phishing are how systems actually fall.",
+    "Memory-safety bugs are ~70% of severe vulnerabilities at major vendors — a class C/C++ can't prevent, which is the security case for memory-safe languages.",
+    "Defense in depth — layer independent controls (validate, parameterize, encode, least privilege, fail secure, monitor, patch) so no single failure is fatal.",
+    "Security is a process, not a product — assume breach, minimize blast radius, apply least privilege and zero trust, and design so failures stay contained.",
+  ],
+  pitfalls: [
+    {
+      title: "Trusting input because it 'came from our form'",
+      body: "Client-side validation is a UX nicety, not a security control — an attacker bypasses your form and calls the endpoint directly with anything. Every input crossing a trust boundary must be validated and handled as data on the server: parameterize queries, output-encode HTML, check types and ranges. Never assume input is well-formed because your UI tried to make it so.",
+      lens: "both",
+    },
+    {
+      title: "Blocklisting attacks instead of allowlisting good input",
+      body: "Trying to strip 'bad' patterns (a blocklist) is a losing game — attackers have endless encodings and variants. Prefer allowlists (accept only known-good shapes) and structural fixes (parameterized queries, contextual output encoding) that make whole vulnerability classes impossible, rather than filtering known payloads one by one.",
+      lens: "senior",
+    },
+    {
+      title: "Confusing authentication with authorization",
+      body: "Verifying who a user is says nothing about what they may access. Systems that authenticate at login but then trust a user-supplied ID or role are wide open — change the id in the URL and read someone else's invoice. Enforce authorization on every request, server-side, against the actual resource and the actual user's rights.",
+      lens: "both",
+    },
+    {
+      title: "Treating dependencies and config as someone else's problem",
+      body: "Your code is a small fraction of what ships; the rest is dependencies and configuration, and both are prime targets. Unpatched libraries (Log4Shell), poisoned packages (xz), default credentials, and open storage buckets breach systems that had perfectly good application code. Track your software bill of materials, pin and verify dependencies, and harden defaults.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch32-1", "iv-ch32-2", "iv-ch32-3", "iv-ch32-4", "iv-ch32-5"],
+  kataIds: ["html-escape", "constant-time-eq"],
+  seeAlso: ["ch31", "ch29", "ch12"],
+  sources: [
+    { title: "OWASP Top 10:2025 (released January 2026)", url: "https://owasp.org/Top10/2025/" },
+    { title: "OWASP Password Storage Cheat Sheet (Argon2id / bcrypt guidance)", url: "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html" },
+    { title: "OWASP SQL Injection Prevention Cheat Sheet", url: "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html" },
+    { title: "OWASP Cross Site Scripting (XSS)", url: "https://owasp.org/www-community/attacks/xss/" },
+    { title: "The Morris Worm, 1988 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Morris_worm" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -4818,9 +5134,9 @@ export const CHAPTERS: Chapter[] = [
   // P8 · Data (built in S14)
   ch29,
   ch30,
-  // P9 · Security
-  stub("ch31", "p9", 33, "Cryptography", "Hashes, key exchange, RSA/ECC intuition, TLS", 15, { foundations: 22, senior: 38 }),
-  stub("ch32", "p9", 34, "Security", "Threat modeling, attack classes, defense in depth", 15, { foundations: 20, senior: 35 }),
+  // P9 · Security (built in S15)
+  ch31,
+  ch32,
   // P10 · Intelligence
   stub("ch33", "p10", 35, "Machine learning", "Features, loss, gradient descent, overfitting", 16, { foundations: 22, senior: 38 }),
   stub("ch34", "p10", 36, "Modern AI & frontiers", "Transformers, embeddings, capabilities & limits", 16, { foundations: 20, senior: 35 }),

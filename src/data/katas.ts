@@ -2758,6 +2758,165 @@ Return the clock value **after each event**.
       { name: "a chain of receives", body: `assertDeepEqual(lamportClock([{type:"recv",ts:10},{type:"recv",ts:3},{type:"send"}]), [11,12,13]);` },
     ],
   },
+  // ========================================================================
+  // ch.31 · Cryptography
+  // ========================================================================
+  {
+    id: "caesar-decrypt",
+    chapterId: "ch31",
+    title: "Break the Caesar shift",
+    difficulty: "core",
+    tags: ["crypto", "ciphers", "strings"],
+    prompt: `
+Decrypt a **Caesar cipher**: shift every letter *back* by \`shift\` positions (wrapping around the alphabet), preserving case and leaving non-letters (spaces, punctuation) untouched.
+
+### Examples
+- \`caesarDecrypt("Khoor", 3)\` → \`"Hello"\`
+- \`caesarDecrypt("Bcd, xyz!", 1)\` → \`"Abc, wxy!"\`
+- \`caesarDecrypt("A", 1)\` → \`"Z"\`  (wraps)
+`,
+    signature: `function caesarDecrypt(text: string, shift: number): string`,
+    exportName: "caesarDecrypt",
+    starter: `function caesarDecrypt(text, shift) {
+  // TODO: shift each letter back by \`shift\` (mod 26); keep case; leave other chars.
+  return text;
+}`,
+    solution: `function caesarDecrypt(text, shift) {
+  const s = ((shift % 26) + 26) % 26;
+  let out = "";
+  for (const ch of text) {
+    const c = ch.charCodeAt(0);
+    if (c >= 65 && c <= 90) out += String.fromCharCode(((c - 65 + 26 - s) % 26) + 65);
+    else if (c >= 97 && c <= 122) out += String.fromCharCode(((c - 97 + 26 - s) % 26) + 97);
+    else out += ch;
+  }
+  return out;
+}`,
+    tests: [
+      { name: "basic decrypt", body: `assertEqual(caesarDecrypt("Khoor", 3), "Hello");` },
+      { name: "preserves punctuation and spaces", body: `assertEqual(caesarDecrypt("Bcd, xyz!", 1), "Abc, wxy!");` },
+      { name: "wraps A back to Z", body: `assertEqual(caesarDecrypt("A", 1), "Z");` },
+      { name: "shift 0 is identity", body: `assertEqual(caesarDecrypt("Hello, World!", 0), "Hello, World!");` },
+      { name: "shift ≥ 26 is taken mod 26", body: `assertEqual(caesarDecrypt("Khoor", 29), "Hello");` },
+      { name: "round-trips a sentence", body: `assertEqual(caesarDecrypt("Wkh txlfn eurzq ira", 3), "The quick brown fox");` },
+    ],
+  },
+  {
+    id: "mod-exp",
+    chapterId: "ch31",
+    title: "Modular exponentiation",
+    difficulty: "core",
+    tags: ["crypto", "math", "diffie-hellman"],
+    prompt: `
+Compute \`base^exp mod m\` — the core operation of Diffie–Hellman and RSA. The catch: \`base^exp\` is astronomically large, so you **cannot** compute it then take the remainder (\`Math.pow(3, 100000)\` is \`Infinity\`). Use **square-and-multiply**: reduce mod \`m\` at every step so the numbers stay small.
+
+### Examples
+- \`modExp(5, 6, 23)\` → \`8\`
+- \`modExp(2, 10, 1000)\` → \`24\`  (1024 mod 1000)
+- \`modExp(3, 100000, 19)\` → \`16\`  (never overflows)
+`,
+    signature: `function modExp(base: number, exp: number, mod: number): number`,
+    exportName: "modExp",
+    starter: `function modExp(base, exp, mod) {
+  // TODO: square-and-multiply, reducing mod \`mod\` each step so nothing overflows.
+  return 0;
+}`,
+    solution: `function modExp(base, exp, mod) {
+  let result = 1;
+  base = base % mod;
+  while (exp > 0) {
+    if (exp & 1) result = (result * base) % mod;
+    exp = Math.floor(exp / 2);
+    base = (base * base) % mod;
+  }
+  return result;
+}`,
+    tests: [
+      { name: "5^6 mod 23 = 8", body: `assertEqual(modExp(5, 6, 23), 8);` },
+      { name: "5^15 mod 23 = 19", body: `assertEqual(modExp(5, 15, 23), 19);` },
+      { name: "2^10 mod 1000 = 24", body: `assertEqual(modExp(2, 10, 1000), 24);` },
+      { name: "anything^0 = 1", body: `assertEqual(modExp(7, 0, 13), 1);` },
+      { name: "7^256 mod 13 = 9", body: `assertEqual(modExp(7, 256, 13), 9);` },
+      { name: "huge exponent never overflows (naive Math.pow can't)", body: `assertEqual(modExp(3, 100000, 19), 16);` },
+    ],
+  },
+  // ========================================================================
+  // ch.32 · Security
+  // ========================================================================
+  {
+    id: "html-escape",
+    chapterId: "ch32",
+    title: "Neutralize an XSS payload",
+    difficulty: "core",
+    tags: ["security", "xss", "strings"],
+    prompt: `
+Output-encode a string so it's safe to drop into HTML: replace the five metacharacters with their entities — \`&\`→\`&amp;\`, \`<\`→\`&lt;\`, \`>\`→\`&gt;\`, \`"\`→\`&quot;\`, \`'\`→\`&#39;\`. **Escape \`&\` first**, or you'll double-encode the entities you just produced.
+
+### Examples
+- \`escapeHtml("<script>")\` → \`"&lt;script&gt;"\`
+- \`escapeHtml("a & b")\` → \`"a &amp; b"\`
+- \`escapeHtml("&lt;")\` → \`"&amp;lt;"\`  (& first!)
+`,
+    signature: `function escapeHtml(s: string): string`,
+    exportName: "escapeHtml",
+    starter: `function escapeHtml(s) {
+  // TODO: replace & < > " ' with entities — ampersand FIRST.
+  return s;
+}`,
+    solution: `function escapeHtml(s) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}`,
+    tests: [
+      { name: "escapes angle brackets", body: `assertEqual(escapeHtml("<script>"), "&lt;script&gt;");` },
+      { name: "escapes ampersand", body: `assertEqual(escapeHtml("a & b"), "a &amp; b");` },
+      { name: "ampersand goes first (no double-encoding)", body: `assertEqual(escapeHtml("&lt;"), "&amp;lt;");` },
+      { name: "escapes both quote types", body: `assertEqual(escapeHtml("\\"'"), "&quot;&#39;");` },
+      { name: "leaves plain text alone", body: `assertEqual(escapeHtml("hello world"), "hello world");` },
+      { name: "a full attribute-injection payload", body: `assertEqual(escapeHtml("<img src=x onerror=\\"go()\\">"), "&lt;img src=x onerror=&quot;go()&quot;&gt;");` },
+    ],
+  },
+  {
+    id: "constant-time-eq",
+    chapterId: "ch32",
+    title: "Constant-time comparison",
+    difficulty: "core",
+    tags: ["security", "timing", "auth"],
+    prompt: `
+Compare two strings for equality **without leaking timing**. A normal \`===\`/loop returns on the *first* mismatched byte, so an attacker measuring response time can recover a secret token one character at a time. Instead, compare **every** character and accumulate the difference (XOR the codes, OR into an accumulator), then report equality at the end.
+
+Return \`false\` immediately if the lengths differ; otherwise scan the whole string regardless of where mismatches occur.
+
+### Examples
+- \`constantTimeEqual("token", "token")\` → \`true\`
+- \`constantTimeEqual("token", "toker")\` → \`false\`
+- \`constantTimeEqual("ab", "abc")\` → \`false\`
+`,
+    signature: `function constantTimeEqual(a: string, b: string): boolean`,
+    exportName: "constantTimeEqual",
+    starter: `function constantTimeEqual(a, b) {
+  // TODO: no early return on mismatch — OR up the per-char XORs, then compare to 0.
+  return false;
+}`,
+    solution: `function constantTimeEqual(a, b) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}`,
+    tests: [
+      { name: "equal strings", body: `assertEqual(constantTimeEqual("token", "token"), true);` },
+      { name: "last-char mismatch", body: `assertEqual(constantTimeEqual("token", "toker"), false);` },
+      { name: "first-char mismatch is still detected", body: `assertEqual(constantTimeEqual("Xoken", "token"), false);` },
+      { name: "different lengths", body: `assertEqual(constantTimeEqual("ab", "abc"), false);` },
+      { name: "empty strings are equal", body: `assertEqual(constantTimeEqual("", ""), true);` },
+      { name: "long identical secrets", body: `assertEqual(constantTimeEqual("a3f9c1e0b7", "a3f9c1e0b7"), true);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

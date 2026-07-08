@@ -1,0 +1,425 @@
+/* injection-sandbox ([micro] ch.32) — SQL injection made concrete: a login form,
+   the query built two ways, and the parsed WHERE AST that tells the story. Layout
+   + the accents that aren't inline-styled from theme vars in InjectionSandbox.tsx.
+   Every class is prefixed `.inj-` so nothing here collides with another part's CSS.
+   Palette: columns → --sem-data · injected input → --sem-control · or/tautology &
+   bypass → --sem-err · params/safe & authenticated → --sem-ok · accent → --accent.
+   Animated transitions live behind prefers-reduced-motion: no-preference. */
+
+/* ------------------------------- controls ------------------------------- */
+.inj-seg .bit-segbtn {
+  min-width: 0;
+}
+
+/* --------------------------------- stage --------------------------------- */
+.inj-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.inj-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .inj-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.inj-panel-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: 8px;
+}
+
+/* --------------------------------- login form --------------------------------- */
+.inj-login,
+.inj-sql-panel,
+.inj-ast-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+.inj-login {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.inj-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.inj-input {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 7px 9px;
+}
+.inj-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.inj-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--tx3);
+}
+
+/* --------------------------------- SQL view --------------------------------- */
+.inj-sql-panel {
+  display: flex;
+  flex-direction: column;
+}
+.inj-sql {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.inj-sql code {
+  font-family: inherit;
+}
+.inj-inject {
+  color: var(--sem-control);
+  background: color-mix(in srgb, var(--sem-control) 16%, transparent);
+  border-radius: 3px;
+  padding: 0 2px;
+  font-weight: 700;
+}
+.inj-ph {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+
+.inj-params {
+  margin-top: 10px;
+}
+.inj-params-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.inj-params-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.inj-params-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.inj-param-idx {
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.inj-param-val {
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 1px 6px;
+  word-break: break-word;
+}
+.inj-params-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--sem-ok) 80%, var(--tx3));
+}
+
+/* --------------------------------- AST tree --------------------------------- */
+.inj-ast-panel {
+  padding-bottom: 14px;
+}
+.inj-ast {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inj-ast-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tx3);
+}
+.inj-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inj-node-head,
+.inj-node--cmp {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 26px;
+}
+.inj-node-kids {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inj-branch {
+  color: var(--tx3);
+  white-space: pre;
+  user-select: none;
+}
+.inj-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.inj-tag--cmp {
+  color: var(--tx2);
+  background: var(--s2);
+}
+.inj-tag--and {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+.inj-tag--or {
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 15%, transparent);
+  border-color: color-mix(in srgb, var(--sem-err) 50%, var(--line));
+}
+.inj-node-head.is-or {
+  padding: 3px 0;
+}
+.inj-taut {
+  font-size: 10.5px;
+  color: var(--sem-err);
+  letter-spacing: 0.02em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .inj-node-head.is-or .inj-tag--or {
+    animation: inj-pulse 1.4s ease-in-out infinite;
+  }
+}
+@keyframes inj-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--sem-err) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--sem-err) 0%, transparent);
+  }
+}
+
+.inj-cmp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.inj-op {
+  color: var(--tx3);
+  font-weight: 700;
+}
+.inj-oper {
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  font-size: 12px;
+}
+.inj-oper--col {
+  color: var(--sem-data);
+  background: color-mix(in srgb, var(--sem-data) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-data) 35%, var(--line));
+}
+.inj-oper--lit {
+  color: var(--tx);
+  background: var(--s2);
+  border-color: var(--line);
+}
+.inj-oper--num {
+  color: var(--tx);
+  background: var(--s2);
+  border-color: var(--line);
+  font-variant-numeric: tabular-nums;
+}
+.inj-oper--num.is-taut {
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 14%, transparent);
+  border-color: color-mix(in srgb, var(--sem-err) 45%, var(--line));
+  font-weight: 700;
+}
+.inj-oper--param {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-ok) 38%, var(--line));
+  font-weight: 700;
+}
+.inj-oper-bound {
+  margin-left: 4px;
+  color: var(--tx2);
+  font-weight: 400;
+}
+
+/* --------------------------------- verdict --------------------------------- */
+.inj-verdict {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inj-verdict.is-bypass {
+  border-color: color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 10%, var(--surface));
+}
+.inj-verdict.is-auth {
+  border-color: color-mix(in srgb, var(--sem-ok) 50%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 8%, var(--surface));
+}
+.inj-verdict.is-denied {
+  border-color: color-mix(in srgb, var(--sem-ok) 40%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 6%, var(--surface));
+}
+.inj-verdict-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.inj-verdict-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.inj-verdict.is-bypass .inj-verdict-icon {
+  color: var(--sem-err);
+}
+.inj-verdict.is-auth .inj-verdict-icon,
+.inj-verdict.is-denied .inj-verdict-icon {
+  color: var(--sem-ok);
+}
+.inj-verdict-headline {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.inj-verdict.is-bypass .inj-verdict-headline {
+  color: var(--sem-err);
+}
+.inj-verdict.is-auth .inj-verdict-headline,
+.inj-verdict.is-denied .inj-verdict-headline {
+  color: var(--sem-ok);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .inj-verdict.is-bypass {
+    animation: inj-alarm 0.4s ease both;
+  }
+}
+@keyframes inj-alarm {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+.inj-verdict-note {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+
+/* --------------------------------- footer --------------------------------- */
+.inj-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inj-foot-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.inj-payloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+.inj-payload {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  height: auto;
+  padding: 8px 11px;
+  white-space: normal;
+}
+.inj-payload-lbl {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.inj-payload-note {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--tx3);
+  font-weight: 400;
+}
+.inj-payload.btn-primary .inj-payload-note {
+  color: color-mix(in srgb, var(--bg) 70%, var(--tx2));
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .inj-node-head.is-or .inj-tag--or,
+  .inj-verdict.is-bypass {
+    animation: none;
+  }
+}

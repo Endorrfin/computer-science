@@ -1392,6 +1392,88 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "**Replication lag** produces **stale reads**, and two classic violations: **read-your-writes** (you don't see your own just-committed write) and **monotonic reads** (successive reads hit different replicas and appear to go *backward* in time). Mitigations without paying for full strong consistency: **read-your-writes routing** (send a client's own reads to the primary or a replica known to be caught up), **sticky sessions** to one replica for monotonic reads, and bounded-staleness reads. When correctness truly requires it, use **synchronous / quorum** replication for those operations — at a latency cost, exactly the PACELC trade.",
   },
+  // ---- ch.31 · Cryptography ----
+  {
+    id: "iv-ch31-1",
+    chapterId: "ch31",
+    level: "mid",
+    q: "Explain Diffie–Hellman key exchange, and what an eavesdropper who records the entire exchange still can't do.",
+    a:
+      "Both parties agree on a public prime `p` and generator `g`. Each picks a private secret (`a`, `b`), sends `gᵃ mod p` and `gᵇ mod p`, then raises the other's value to their own secret: Alice computes `(gᵇ)ᵃ`, Bob `(gᵃ)ᵇ` — both equal `g^(ab) mod p`, the **shared secret**. An eavesdropper sees `p`, `g`, `gᵃ`, `gᵇ` but to get `g^(ab)` must recover `a` or `b` — the **discrete-logarithm problem**, with no known efficient classical algorithm. The staff-level add: use **ephemeral** DH (new secrets per session) for **forward secrecy**, and remember DH gives you a shared secret but **not authentication** — unauthenticated DH is wide open to a man-in-the-middle, which is why TLS pairs it with a certificate signature.",
+  },
+  {
+    id: "iv-ch31-2",
+    chapterId: "ch31",
+    level: "mid",
+    q: "What properties define a cryptographic hash, and why is SHA-256 unsuitable for storing passwords?",
+    a:
+      "A cryptographic hash is **deterministic**, **one-way** (infeasible to invert), **collision-resistant** (infeasible to find two inputs with the same digest), and exhibits the **avalanche effect** (a one-bit input change flips ~half the output bits). Those make it ideal for integrity, commitments, and content addressing. But for **passwords** its greatest strength — **speed** — is the flaw: a GPU computes billions of SHA-256/sec, so a stolen hash database is brute-forced fast, and without a salt one precomputed table cracks everyone. Store passwords with a **slow, salted, memory-hard** function: **Argon2id** (current OWASP default), bcrypt, or scrypt, tuned so each guess is expensive.",
+  },
+  {
+    id: "iv-ch31-3",
+    chapterId: "ch31",
+    level: "senior",
+    q: "Walk through a TLS 1.3 handshake and name the cryptographic primitive behind each step.",
+    a:
+      "Client and server exchange **key_share** values — an **ephemeral Diffie–Hellman** (ECDHE) agreement that yields a shared secret (**key agreement**, and forward secrecy because the keys are per-session). The server sends its **certificate** and a **CertificateVerify** signature over the transcript — a **public-key signature** (RSA/ECDSA) proving identity (**authentication**). Both sides run the DH secret through **HKDF**, a hash-based **key-derivation** function, to produce traffic keys. A **Finished** message carries an HMAC over the transcript (**integrity**). Then application data flows under an **AEAD** symmetric cipher — AES-GCM or ChaCha20-Poly1305 (**confidentiality + integrity**, fast bulk encryption). The point: TLS is every primitive in the chapter assembled, and 1.3 cut it to **one round trip** and made forward secrecy mandatory by removing static-RSA key transport.",
+  },
+  {
+    id: "iv-ch31-4",
+    chapterId: "ch31",
+    level: "senior",
+    q: "What is forward secrecy, why does it matter, and how does TLS 1.3 provide it?",
+    a:
+      "**Forward secrecy** means compromising a server's long-term private key **cannot** decrypt past recorded sessions. Without it, an attacker who records ciphertext today and steals the RSA key next year decrypts everything retroactively (the 'harvest now, decrypt later' threat — acute with quantum on the horizon). TLS 1.3 provides it by making key agreement **ephemeral**: each session uses fresh, single-use Diffie–Hellman keys (ECDHE) that are discarded afterward, so there's no long-term secret whose theft unlocks history. TLS 1.3 removed the old static-RSA key-transport mode precisely because it lacked forward secrecy.",
+  },
+  {
+    id: "iv-ch31-5",
+    chapterId: "ch31",
+    level: "staff",
+    q: "Why does quantum computing threaten RSA and ECC but not (much) AES or SHA-256, and what's the response?",
+    a:
+      "**Shor's algorithm** on a large fault-tolerant quantum computer solves **integer factoring** and **discrete log** in polynomial time — which breaks **RSA, Diffie–Hellman, and ECC**, since their hardness *is* those problems. Symmetric primitives face only **Grover's algorithm**, a quadratic speedup that effectively halves the security level: AES-256 → ~128-bit security, SHA-256 → ~128-bit collision resistance, both still safe (and cheaply doubled by using larger sizes). The response is **post-quantum cryptography** built on problems quantum computers don't obviously crack (lattices, hashes): **NIST finalized FIPS 203 (ML-KEM/Kyber)** for key establishment and **FIPS 204/205** for signatures in **August 2024**, and industry is deploying **hybrid** classical+PQC key exchange now, with migration guidance targeting ~2030.",
+  },
+  // ---- ch.32 · Security ----
+  {
+    id: "iv-ch32-1",
+    chapterId: "ch32",
+    level: "mid",
+    q: "SQL injection and XSS are often called the same bug. What is the shared root cause, and the correct fix for each?",
+    a:
+      "Both are **injection**: untrusted **data** is interpreted as **code** because it's concatenated into a code context. In **SQLi** the context is a SQL query; in **XSS** it's an HTML page. The fixes share a shape — keep input as data. For SQLi: **parameterized queries / prepared statements**, so values ride a separate channel and can never become SQL syntax (not hand-escaping). For XSS: **contextual output encoding** (HTML-encode so `<script>` renders as text) and safe sinks (`textContent`, a templating engine that auto-escapes), plus a **Content-Security-Policy** as defense in depth. Validating input helps, but the structural fix is separating data from code at the sink.",
+  },
+  {
+    id: "iv-ch32-2",
+    chapterId: "ch32",
+    level: "mid",
+    q: "Distinguish authentication from authorization, and describe a common way authorization fails.",
+    a:
+      "**Authentication** establishes **who** you are (login, tokens, MFA); **authorization** decides **what** you're allowed to do with a given resource. They're independent, and conflating them is dangerous. The classic failure is **Insecure Direct Object Reference / broken access control**: a route authenticates the user but then trusts a user-supplied identifier — `GET /invoice/1043` — without checking the invoice **belongs** to that user, so changing the id reads someone else's data. **Broken Access Control is #1 on the OWASP Top 10:2025.** Fix: enforce authorization **server-side, per request, against the actual resource and the caller's rights**, defaulting to deny.",
+  },
+  {
+    id: "iv-ch32-3",
+    chapterId: "ch32",
+    level: "senior",
+    q: "What is defense in depth, and why isn't strong cryptography sufficient on its own?",
+    a:
+      "**Defense in depth** layers independent controls so no single failure is a breach: validate at the edge, parameterize at the database, encode at output, least-privilege every component, **fail secure**, encrypt in transit and at rest, authenticate then authorize each request, log/monitor, and patch. Cryptography secures **one** concern (data in transit/at rest) but the attacker targets the weakest link, which is usually elsewhere — a memory-safety bug, a vulnerable dependency, a misconfiguration, or a phished credential. The strongest cipher sits behind a login form and an app full of business logic; if any layer around it fails open, the crypto is irrelevant. Security is a **system property**, not a feature you bolt on.",
+  },
+  {
+    id: "iv-ch32-4",
+    chapterId: "ch32",
+    level: "senior",
+    q: "Why are memory-safety bugs such a large share of severe vulnerabilities, and what mitigates them?",
+    a:
+      "In C/C++ the programmer manually manages memory and bounds, so a **buffer overflow**, use-after-free, or out-of-bounds write lets attacker-controlled input corrupt adjacent memory — including return addresses and function pointers — enabling code execution (the Morris Worm, Heartbleed, countless CVEs). Microsoft and Google have each reported **~70% of their severe vulnerabilities** are memory-safety issues. Mitigations layer up: **memory-safe languages** (Rust, or managed runtimes) that eliminate the class structurally; compiler/OS defenses (**ASLR, stack canaries, DEP/NX, CFI**) that raise the cost; and fuzzing/sanitizers to catch bugs early. CISA and others now push memory-safe languages for **new** code precisely because mitigations only reduce, not remove, the class.",
+  },
+  {
+    id: "iv-ch32-5",
+    chapterId: "ch32",
+    level: "staff",
+    q: "How would you threat-model a new web service, and what does 'assume breach' change about the design?",
+    a:
+      "Start structured: enumerate **assets** (data, funds, access), map the **attack surface** (every input, endpoint, dependency, trust boundary), then walk threats with a framework like **STRIDE** (Spoofing, Tampering, Repudiation, Information disclosure, DoS, Elevation of privilege) per asset, and prioritize by likelihood × impact. Drive fixes structurally (parameterization, output encoding, authN/authZ, secrets management, dependency hygiene) rather than patching known payloads. **Assume breach** flips the posture from 'keep attackers out' to 'contain them when they're in': **least privilege** and **zero trust** (verify every request, even internal), network segmentation to limit **blast radius**, short-lived credentials, thorough **logging/alerting** (an OWASP 2025 category) for detection and response, and secure-by-default design so a single compromised component can't pivot to everything.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

@@ -1020,6 +1020,122 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  {
+    id: "crypto-predict",
+    chapterId: "ch31",
+    questions: [
+      {
+        prompt:
+          "Alice and Bob run Diffie–Hellman. Eve records the whole channel: the prime `p`, the generator `g`, and both public values `gᵃ mod p` and `gᵇ mod p`. Can she compute the shared secret?",
+        options: [
+          "No — she'd have to solve the discrete-log problem to recover a or b",
+          "Yes — she saw everything that was transmitted",
+          "Yes — the shared secret is gᵃ · gᵇ",
+          "Only if she also knows the plaintext",
+        ],
+        answer: 0,
+        explain:
+          "The shared secret is `g^(ab) mod p`. From `gᵃ` and `gᵇ` you can't get `g^(ab)` — multiplying them gives `g^(a+b)`, the wrong thing. Recovering `a` from `gᵃ mod p` is the **discrete-logarithm problem**, believed hard. Everything Eve needs is public *except* the one thing the math keeps private.",
+      },
+      {
+        prompt:
+          "You change a single character in a 1 MB file and re-hash it with SHA-256. How much of the 256-bit digest changes?",
+        options: [
+          "About half the bits, scattered unpredictably",
+          "A few bits, near where the edit was",
+          "Nothing — the length didn't change",
+          "Exactly one bit",
+        ],
+        answer: 0,
+        explain:
+          "The **avalanche effect**: a one-bit input change flips ~50% of the output bits, with no locality — the digest is a chaotic fingerprint, not a summary. This is what makes a hash useful for integrity and commitments: any tampering, however small, is unmissable.",
+      },
+      {
+        prompt:
+          "You want a signature that only you can create but anyone can verify. What do you do?",
+        options: [
+          "Sign with your private key; others verify with your public key",
+          "Encrypt the message with the recipient's public key",
+          "Sign with your public key; others verify with your private key",
+          "Hash the message with a password only you know",
+        ],
+        answer: 0,
+        explain:
+          "A digital signature is public-key crypto run **backwards**: your **private** key produces it (only you can), your **public** key checks it (anyone can). That gives authentication, integrity, and non-repudiation. Encrypting with the recipient's public key gives *confidentiality*, a different goal.",
+      },
+      {
+        prompt:
+          "HTTPS uses ECDHE/RSA at the start of a connection, then switches to AES for the actual data. Why not use the public-key crypto for everything?",
+        options: [
+          "Public-key math is far slower — use it once to agree a key, then AES for bulk speed",
+          "AES is mathematically stronger than RSA",
+          "RSA physically cannot encrypt more than one message",
+          "To avoid needing a certificate",
+        ],
+        answer: 0,
+        explain:
+          "Asymmetric operations are hundreds to thousands of times slower than symmetric ones. So TLS is **hybrid**: use the expensive public-key step only to agree a shared symmetric key (and authenticate), then hand off to fast **AES** for the traffic. Best of both — key distribution *and* speed.",
+      },
+    ],
+  },
+  {
+    id: "spot-the-vuln",
+    chapterId: "ch32",
+    questions: [
+      {
+        prompt:
+          "Spot the hole:\n`db.query(\"SELECT * FROM users WHERE name = '\" + name + \"'\")`",
+        options: [
+          "SQL injection — user input is concatenated into the query string",
+          "Nothing — SELECT statements are read-only and safe",
+          "It's just slow without an index",
+          "Cross-site scripting",
+        ],
+        answer: 0,
+        explain:
+          "`name` is spliced into the SQL **text**, so `' OR 1=1--` rewrites the query. Fix it with a **parameterized query** — `WHERE name = ?` with the value on a separate channel — so input can never become syntax. Escaping by hand is a losing game.",
+      },
+      {
+        prompt:
+          "Spot the hole:\n`commentEl.innerHTML = userComment;`",
+        options: [
+          "Stored XSS — raw user input is inserted as live HTML",
+          "Nothing — it's just displaying text",
+          "A memory leak",
+          "CSRF",
+        ],
+        answer: 0,
+        explain:
+          "Assigning untrusted input to `innerHTML` lets `<script>`/`onerror` payloads execute in other users' browsers. **Output-encode** it (or use `textContent`) so markup renders as inert text. Same root cause as SQL injection: data crossing into a code context.",
+      },
+      {
+        prompt:
+          "Spot the hole:\n`const stored = sha256(password); // saved to the users table`",
+        options: [
+          "Fast, unsalted hash — trivially cracked; use salted Argon2id/bcrypt",
+          "Nothing — SHA-256 is a modern secure hash",
+          "It should use MD5 for speed",
+          "Hashing is the wrong tool; encrypt instead",
+        ],
+        answer: 0,
+        explain:
+          "SHA-256 is *designed* to be fast — a GPU tries billions of guesses/sec, and no salt means one rainbow table cracks everyone. Store passwords with a **slow, salted** password hash: **Argon2id** (OWASP's default), bcrypt, or scrypt. Encryption is wrong here — you never need to recover the password.",
+      },
+      {
+        prompt:
+          "Spot the hole (all routes require a logged-in user):\n`app.get('/invoice/:id', (req, res) => res.send(db.invoice(req.params.id)))`",
+        options: [
+          "Broken access control (IDOR) — it never checks the invoice belongs to this user",
+          "Nothing — authentication is already required",
+          "SQL injection in the route path",
+          "Missing rate limiting",
+        ],
+        answer: 0,
+        explain:
+          "Authentication proves *who* you are; this route never checks *authorization* — any logged-in user can read any invoice by changing the `id` (an **Insecure Direct Object Reference**). **Broken Access Control is #1 on the OWASP Top 10:2025.** Authorize every request against the actual owner.",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {
