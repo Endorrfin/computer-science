@@ -2590,6 +2590,174 @@ Precedence (first match wins):
       { name: "age exactly at max-age is stale", body: `assertEqual(cacheOutcome({ maxAge: 60, etag: true, noStore: false }, 60), "revalidate");` },
     ],
   },
+  // ========================================================================
+  // ch29 · Databases
+  // ========================================================================
+  {
+    id: "index-range-scan",
+    chapterId: "ch29",
+    title: "Index range scan",
+    difficulty: "core",
+    tags: ["databases", "b-tree", "search"],
+    prompt: `
+A B+-tree index keeps its keys **sorted**. A range query \`WHERE k BETWEEN lo AND hi\` never scans the whole table — it binary-searches the first key \`≥ lo\`, then **walks the leaf chain** forward until a key passes \`hi\`.
+
+Given a sorted ascending array \`keys\` and inclusive bounds \`lo\`/\`hi\`, return the keys in \`[lo, hi]\`, in order. Find the start with a **binary search** (O(log n)), not a linear scan.
+
+- Time: **O(log n + m)** for \`m\` matches. Space: **O(m)**.
+
+### Examples
+- \`indexRangeScan([1,4,7,9,12,15], 4, 12)\` → \`[4, 7, 9, 12]\`
+- \`indexRangeScan([1,4,7,9,12,15], 5, 6)\` → \`[]\`
+`,
+    signature: `function indexRangeScan(keys: number[], lo: number, hi: number): number[]`,
+    exportName: "indexRangeScan",
+    starter: `function indexRangeScan(keys, lo, hi) {
+  // TODO: binary-search the first key >= lo, then walk while key <= hi.
+  return [];
+}`,
+    solution: `function indexRangeScan(keys, lo, hi) {
+  let loIdx = 0;
+  let hiIdx = keys.length; // lower bound: first i with keys[i] >= lo
+  while (loIdx < hiIdx) {
+    const mid = (loIdx + hiIdx) >> 1;
+    if (keys[mid] < lo) loIdx = mid + 1;
+    else hiIdx = mid;
+  }
+  const out = [];
+  for (let i = loIdx; i < keys.length && keys[i] <= hi; i++) out.push(keys[i]);
+  return out;
+}`,
+    tests: [
+      { name: "returns the inclusive range", body: `assertDeepEqual(indexRangeScan([1,4,7,9,12,15], 4, 12), [4,7,9,12]);` },
+      { name: "empty when nothing matches", body: `assertDeepEqual(indexRangeScan([1,4,7,9,12,15], 5, 6), []);` },
+      { name: "bounds outside the data grab everything", body: `assertDeepEqual(indexRangeScan([1,4,7,9], -5, 100), [1,4,7,9]);` },
+      { name: "single-point range", body: `assertDeepEqual(indexRangeScan([1,4,7,9], 7, 7), [7]);` },
+      { name: "handles the empty index", body: `assertDeepEqual(indexRangeScan([], 0, 10), []);` },
+      { name: "lo below first, hi mid-array", body: `assertDeepEqual(indexRangeScan([10,20,30,40], 5, 25), [10,20]);` },
+    ],
+  },
+  {
+    id: "hash-join",
+    chapterId: "ch29",
+    title: "Hash join",
+    difficulty: "core",
+    tags: ["databases", "joins", "hashing"],
+    prompt: `
+Join two tables on equal \`key\` in **O(n + m)** instead of the O(n·m) nested loop. Build a hash map from the inner rows \`S\` (key → list of ids), then probe it once per outer row \`R\`.
+
+Return the matched pairs as \`[R.id, S.id]\`, ordered by the outer rows, and within one outer row by the inner rows' original order.
+
+- Time: **O(n + m)**. Space: **O(m)**.
+
+### Examples
+- R = \`[{id:1,key:20},{id:2,key:30}]\`, S = \`[{id:9,key:30},{id:8,key:20},{id:7,key:20}]\` → \`[[1,8],[1,7],[2,9]]\`
+`,
+    signature: `function hashJoin(R: { id: number; key: number }[], S: { id: number; key: number }[]): [number, number][]`,
+    exportName: "hashJoin",
+    starter: `function hashJoin(R, S) {
+  // TODO: build a Map from S (key -> ids), then probe once per R row.
+  return [];
+}`,
+    solution: `function hashJoin(R, S) {
+  const table = new Map();
+  for (const s of S) {
+    if (table.has(s.key)) table.get(s.key).push(s.id);
+    else table.set(s.key, [s.id]);
+  }
+  const out = [];
+  for (const r of R) {
+    const bucket = table.get(r.key);
+    if (bucket) for (const sid of bucket) out.push([r.id, sid]);
+  }
+  return out;
+}`,
+    tests: [
+      { name: "joins on equal keys, outer-then-inner order", body: `assertDeepEqual(hashJoin([{id:1,key:20},{id:2,key:30}], [{id:9,key:30},{id:8,key:20},{id:7,key:20}]), [[1,8],[1,7],[2,9]]);` },
+      { name: "no matches → empty", body: `assertDeepEqual(hashJoin([{id:1,key:1}], [{id:2,key:2}]), []);` },
+      { name: "many-to-many produces the cross product", body: `assertDeepEqual(hashJoin([{id:1,key:5},{id:2,key:5}], [{id:3,key:5},{id:4,key:5}]), [[1,3],[1,4],[2,3],[2,4]]);` },
+      { name: "empty inner table", body: `assertDeepEqual(hashJoin([{id:1,key:1}], []), []);` },
+      { name: "linear work on a large input", body: `const R=[],S=[]; for(let i=0;i<500;i++){R.push({id:i,key:i}); S.push({id:1000+i,key:i});} const res=hashJoin(R,S); assertEqual(res.length, 500); assertDeepEqual(res[0], [0,1000]); assertDeepEqual(res[499], [499,1499]);` },
+    ],
+  },
+  // ========================================================================
+  // ch30 · Distributed systems
+  // ========================================================================
+  {
+    id: "quorum-majority",
+    chapterId: "ch30",
+    title: "Which partition can elect?",
+    difficulty: "core",
+    tags: ["distributed", "consensus", "quorum"],
+    prompt: `
+A cluster of \`n\` nodes splits into partitions of the given \`sizes\`. A partition can elect a leader only if it holds a **strict majority** of the whole cluster — a quorum of \`⌊n/2⌋ + 1\` nodes. Because two majorities must overlap, at most one partition can ever qualify: this is what prevents split-brain.
+
+Return the **index** of the partition that can elect a leader, or \`-1\` if none can.
+
+### Examples
+- \`electableGroup(5, [3, 2])\` → \`0\`
+- \`electableGroup(4, [2, 2])\` → \`-1\`  (a tie is not a majority)
+`,
+    signature: `function electableGroup(n: number, sizes: number[]): number`,
+    exportName: "electableGroup",
+    starter: `function electableGroup(n, sizes) {
+  // TODO: a partition wins iff its size >= floor(n/2)+1.
+  return -1;
+}`,
+    solution: `function electableGroup(n, sizes) {
+  const quorum = Math.floor(n / 2) + 1;
+  for (let i = 0; i < sizes.length; i++) if (sizes[i] >= quorum) return i;
+  return -1;
+}`,
+    tests: [
+      { name: "the majority side wins", body: `assertEqual(electableGroup(5, [3,2]), 0);` },
+      { name: "an even split elects nobody", body: `assertEqual(electableGroup(4, [2,2]), -1);` },
+      { name: "three-way split, none reaches quorum", body: `assertEqual(electableGroup(7, [3,3,1]), -1);` },
+      { name: "returns the big partition, not the first", body: `assertEqual(electableGroup(7, [2,4,1]), 1);` },
+      { name: "the whole cluster together", body: `assertEqual(electableGroup(3, [3]), 0);` },
+      { name: "all singletons of a 5-cluster → nobody", body: `assertEqual(electableGroup(5, [1,1,1,1,1]), -1);` },
+    ],
+  },
+  {
+    id: "lamport-clock",
+    chapterId: "ch30",
+    title: "Lamport clock",
+    difficulty: "core",
+    tags: ["distributed", "clocks", "causality"],
+    prompt: `
+Track one process's **Lamport logical clock**. Start at 0 and process a list of events in order:
+- \`{type:"local"}\` or \`{type:"send"}\` → increment the clock by 1.
+- \`{type:"recv", ts}\` → set the clock to \`max(clock, ts) + 1\`.
+
+Return the clock value **after each event**.
+
+### Examples
+- \`lamportClock([{type:"local"},{type:"send"},{type:"recv",ts:5}])\` → \`[1, 2, 6]\`
+`,
+    signature: `function lamportClock(events: { type: "local" | "send" | "recv"; ts?: number }[]): number[]`,
+    exportName: "lamportClock",
+    starter: `function lamportClock(events) {
+  // TODO: local/send bump by 1; recv jumps to max(clock, ts)+1.
+  return [];
+}`,
+    solution: `function lamportClock(events) {
+  let c = 0;
+  const out = [];
+  for (const e of events) {
+    if (e.type === "recv") c = Math.max(c, e.ts) + 1;
+    else c = c + 1;
+    out.push(c);
+  }
+  return out;
+}`,
+    tests: [
+      { name: "local and send each increment", body: `assertDeepEqual(lamportClock([{type:"local"},{type:"send"}]), [1,2]);` },
+      { name: "recv jumps to max(clock, ts)+1", body: `assertDeepEqual(lamportClock([{type:"local"},{type:"send"},{type:"recv",ts:5}]), [1,2,6]);` },
+      { name: "a recv from the past still advances by 1", body: `assertDeepEqual(lamportClock([{type:"local"},{type:"local"},{type:"recv",ts:1}]), [1,2,3]);` },
+      { name: "the empty stream", body: `assertDeepEqual(lamportClock([]), []);` },
+      { name: "a chain of receives", body: `assertDeepEqual(lamportClock([{type:"recv",ts:10},{type:"recv",ts:3},{type:"send"}]), [11,12,13]);` },
+    ],
+  },
 ];
 
 export function kataById(id: string): Kata | undefined {

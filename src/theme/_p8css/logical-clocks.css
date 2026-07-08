@@ -1,0 +1,159 @@
+/* logical-clocks ([fig] ch.30) — three process lanes, event dots with their
+   Lamport timestamps, and the message arrows that must always climb
+   (send ts < recv ts). The final frame's concurrent link and highlighted
+   events use the shared semantic palette (control = orange emphasis,
+   error = red for the "gotcha"). FigureStepper re-keys the SVG per frame, so
+   any motion here rides the per-frame enter. Prefix: lclk-. */
+
+/* ------------------------------- lanes ------------------------------- */
+.lclk-lane line {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  transition: stroke 0.18s ease;
+}
+.lclk-lane.is-on line {
+  stroke: var(--tx3);
+}
+.lclk-lane-lbl {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  fill: var(--tx3);
+  transition: fill 0.18s ease;
+}
+.lclk-lane.is-on .lclk-lane-lbl {
+  fill: var(--tx2);
+}
+
+/* ------------------------------- events ------------------------------- */
+.lclk-evt circle {
+  fill: color-mix(in srgb, var(--accent) 20%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 2;
+  transition:
+    fill 0.18s ease,
+    stroke 0.18s ease,
+    r 0.18s ease;
+}
+.lclk-evt-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: var(--tx);
+}
+.lclk-evt-ts {
+  font-size: 10px;
+  fill: var(--tx2);
+  font-variant-numeric: tabular-nums;
+}
+
+.lclk-evt.is-hot circle {
+  fill: color-mix(in srgb, var(--sem-control) 30%, var(--surface));
+  stroke: var(--sem-control);
+  stroke-width: 2.5;
+}
+.lclk-evt.is-hot .lclk-evt-label {
+  fill: var(--tx);
+}
+.lclk-evt.is-hot .lclk-evt-ts {
+  fill: var(--sem-control);
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lclk-evt.is-hot circle {
+    animation: lclk-pop 0.32s ease;
+  }
+}
+@keyframes lclk-pop {
+  0% {
+    r: 6;
+  }
+  60% {
+    r: 14;
+  }
+  100% {
+    r: 12;
+  }
+}
+
+.lclk-evt.is-dim circle {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+.lclk-evt.is-dim .lclk-evt-label {
+  fill: var(--tx3);
+}
+.lclk-evt.is-dim .lclk-evt-ts {
+  fill: var(--tx3);
+}
+
+/* ------------------------------- message arrows ------------------------------- */
+.lclk-msg path {
+  fill: none;
+  stroke: var(--sem-control);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+.lclk-msg-lbl {
+  font-size: 10px;
+  fill: var(--sem-control);
+  font-variant-numeric: tabular-nums;
+}
+.lclk-msg.is-hot path {
+  stroke: var(--sem-err);
+  stroke-width: 2.5;
+  opacity: 1;
+}
+.lclk-msg.is-hot .lclk-msg-lbl {
+  fill: var(--sem-err);
+  font-weight: 700;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .lclk-msg path {
+    stroke-dasharray: 6 5;
+    animation: lclk-flow 0.8s linear infinite;
+  }
+}
+@keyframes lclk-flow {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+/* ------------------------------- concurrency callout ------------------------------- */
+.lclk-conc path {
+  fill: none;
+  stroke: var(--sem-err);
+  stroke-width: 1.75;
+  stroke-dasharray: 4 4;
+  opacity: 0.85;
+}
+.lclk-conc-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  fill: var(--sem-err);
+}
+
+.lclk-callout {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--sem-err);
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .lclk-lane line,
+  .lclk-lane-lbl,
+  .lclk-evt circle {
+    transition: none;
+  }
+  .lclk-evt.is-hot circle {
+    animation: none;
+  }
+  .lclk-msg path {
+    stroke-dasharray: none;
+    animation: none;
+  }
+}

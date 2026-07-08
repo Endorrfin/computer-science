@@ -1,7 +1,10 @@
 # dependencies / build
 node_modules
-dist
-dist-*
+# CHANGED (S14): anchor to repo root so a bare "dist" can't ignore the new
+# src/components/sims/dist/ source dir (ch.30 engines/components). Verified via
+# git check-ignore — only the root build output + temp dist-s* dirs are ignored.
+/dist
+/dist-*
 
 # reference assets — NEVER ship, NEVER commit (CLAUDE.md §10)
 _examples/

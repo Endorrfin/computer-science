@@ -75,6 +75,13 @@ const sims: Record<SimKey, LazyComp> = {
   "udp-vs-tcp-race": lazy(() => import("../components/sims/net/UdpVsTcpRace.tsx")),
   "url-journey": lazy(() => import("../components/sims/net/UrlJourney.tsx")),
   "cache-headers": lazy(() => import("../components/sims/net/CacheHeaders.tsx")),
+  // P8 · Data (S14)
+  "btree-lab": lazy(() => import("../components/sims/db/BtreeLab.tsx")),
+  "isolation-anomalies": lazy(() => import("../components/sims/db/IsolationAnomalies.tsx")),
+  "join-visualizer": lazy(() => import("../components/sims/db/JoinVisualizer.tsx")),
+  "election-toy": lazy(() => import("../components/sims/dist/ElectionToy.tsx")),
+  "cap-explorer": lazy(() => import("../components/sims/dist/CapExplorer.tsx")),
+  "replication-lag": lazy(() => import("../components/sims/dist/ReplicationLag.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -114,6 +121,8 @@ const figs: Record<FigKey, LazyComp> = {
   // P7 · Networks (S13)
   "layer-cake": lazy(() => import("../components/figures/LayerCake.tsx")),
   "http-evolution": lazy(() => import("../components/figures/HttpEvolution.tsx")),
+  // P8 · Data (S14)
+  "logical-clocks": lazy(() => import("../components/figures/LogicalClocks.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

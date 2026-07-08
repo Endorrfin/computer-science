@@ -1309,6 +1309,89 @@ export const INTERVIEW: InterviewQ[] = [
       "**(a) Hashed bundle** `app.9f3c2.js`: **`Cache-Control: public, max-age=31536000, immutable`** — the filename changes when the content does, so it can cache for a year with no revalidation; deploys are safe because a new build ships a new URL. **(b) HTML shell**: **`Cache-Control: no-cache`** (or a short max-age) + an **ETag** — must revalidate so users get new markup promptly, but a `304` keeps it cheap. **(c) Account page**: **`Cache-Control: private, no-store`** — personalized and sensitive, so it must never land in a shared/CDN cache or on disk.\n" +
       "The framework: cache **immutable, hashed assets** aggressively (the big win), **revalidate mutable HTML**, and **never store private/personalized** responses. The classic bug is caching the HTML shell as long as the assets — users get stuck on an old app pointing at deleted bundles.",
   },
+  // ch.29 — Databases
+  {
+    id: "iv-ch29-1",
+    chapterId: "ch29",
+    level: "senior",
+    q: "Why do relational databases index with B+-trees rather than binary search trees or hash tables?",
+    a:
+      "It's about the **disk**. A B+-tree node is sized to **one page** and holds hundreds of keys, so the fanout is huge and a tree over *millions* of rows is only **3–4 levels** deep — a lookup is a handful of page reads. All records live in the **linked leaves**, so range queries and `ORDER BY` just **walk the leaf chain** without re-descending. A **BST** has fanout 2 → dozens of levels and one pointer-chase (likely one page miss) per level. A **hash index** gives O(1) point lookups but **can't** do ranges, ordering, or prefix matches — which is most of what a query planner needs.",
+  },
+  {
+    id: "iv-ch29-2",
+    chapterId: "ch29",
+    level: "senior",
+    q: "What is a covering index, and when does it make a query 'index-only'?",
+    a:
+      "A **covering index** contains every column a query touches — both the predicate columns and the selected columns. The planner can then answer **entirely from the index leaves** and skip fetching the row from the heap (an **index-only scan**). It's a big win on hot read paths: e.g. `(customer_id, total)` fully serves `SELECT total WHERE customer_id = ?`. The cost is **write amplification** and space — every extra column widens the index and every write must maintain it, so you cover deliberately, not everywhere. (In Postgres an index-only scan also depends on the visibility map, since the index alone doesn't know if a row is visible to your snapshot.)",
+  },
+  {
+    id: "iv-ch29-3",
+    chapterId: "ch29",
+    level: "staff",
+    q: "Walk through the ANSI SQL isolation levels and the anomaly each one still allows — and the catch with snapshot isolation.",
+    a:
+      "**Read Uncommitted** → dirty reads (you see another txn's uncommitted, maybe-rolled-back writes). **Read Committed** → no dirty reads, but **non-repeatable reads** and **phantoms** (the common default, e.g. Postgres). **Repeatable Read** → re-reading a row is stable, but ANSI still permits **phantoms** (new rows matching a predicate). **Serializable** → none; the result equals *some* serial order.\n" +
+      "The catch (Berenson et al., 1995): the ANSI phenomena are ambiguously worded, and **snapshot isolation** — the MVCC mechanism many engines label 'Repeatable Read' (Postgres does) — doesn't sit in the grid. SI prevents all three ANSI anomalies yet allows **write skew** (two txns each read a consistent snapshot, then write, violating a cross-row invariant). True `SERIALIZABLE` (e.g. Postgres SSI) closes that.",
+  },
+  {
+    id: "iv-ch29-4",
+    chapterId: "ch29",
+    level: "senior",
+    q: "A query filters on an indexed column but the planner chooses a sequential scan. Give a reason that's actually correct.",
+    a:
+      "**Selectivity.** If the predicate matches a large fraction of rows, an index scan's **random heap fetches** (roughly one page per matching row) cost more than reading the table **sequentially** (which the OS also prefetches). A cost-based optimizer estimates both and picks the cheaper — so a seq scan on a non-selective predicate is the *right* call. Other honest causes: **stale statistics** (fix with `ANALYZE`), a predicate the index can't use (a function/type mismatch on the column, e.g. `WHERE lower(email)=…` without a matching expression index), or a table small enough that one scan beats the index's overhead.",
+  },
+  {
+    id: "iv-ch29-5",
+    chapterId: "ch29",
+    level: "senior",
+    q: "ACID's Durability says a committed change survives a crash. How is that made cheap, given disks prefer sequential writes?",
+    a:
+      "With a **write-ahead log (WAL)**. Before `COMMIT` returns, the change is appended to a **sequential** log and `fsync`'d; the actual random heap/index pages can be flushed **lazily** afterward. On restart, recovery **replays** the log to redo committed work and undo the rest. The trick is that one sequential, forced log write is far cheaper than scattered random page writes — and it also gives **Atomicity** (a partial transaction is undone on replay). It's the same write-ahead-logging idea as filesystem journaling (ch.24).",
+  },
+  // ch.30 — Distributed systems
+  {
+    id: "iv-ch30-1",
+    chapterId: "ch30",
+    level: "senior",
+    q: "State the CAP theorem precisely, and name the popular misreading.",
+    a:
+      "In an **asynchronous** network that may drop messages, no system can be simultaneously **Consistent** (linearizable) and **Available** (every request gets a non-error response) while tolerating a **Partition** — Gilbert & Lynch's 2002 proof of Brewer's 2000 conjecture. The misreading is *'pick 2 of 3.'* In a real distributed system partitions **will** happen and aren't something you choose to forgo, so the meaningful choice is **C vs A only while partitioned**. **PACELC** completes it: *else* (no partition) you still trade **Latency vs Consistency**.",
+  },
+  {
+    id: "iv-ch30-2",
+    chapterId: "ch30",
+    level: "senior",
+    q: "How does a read/write quorum (R + W > N) give consistency without a single leader?",
+    a:
+      "Write to at least **W** replicas and read from at least **R**; if **R + W > N**, the read set and the most-recent write set are **guaranteed to overlap** in ≥1 replica, so a read always *sees* the latest write (versioning — a timestamp or vector clock — lets it pick the newest of what it read). Tuning the knobs trades durability/latency: **W = N** makes writes strongly durable but fragile to one slow node; **R = 1, W = N** favors fast reads; Dynamo-style stores let you pick per operation. It buys overlap, not ordering — concurrent writes still need conflict resolution.",
+  },
+  {
+    id: "iv-ch30-3",
+    chapterId: "ch30",
+    level: "staff",
+    q: "In Raft, why the randomized election timeouts, and how is 'at most one leader per term' guaranteed?",
+    a:
+      "**Randomized timeouts** desynchronize the followers: one times out first, becomes a candidate, and usually gathers votes before the others wake — which makes **split votes** rare and self-correcting (a tied term just ends and a new randomized round begins). **Election safety** comes from two rules: a node grants **at most one vote per term**, and winning needs a **majority**. Since any two majorities of the same cluster must share ≥1 node, and that node won't vote twice in a term, **two leaders can't both win the same term**. Higher terms always supersede lower ones, so a stale leader steps down once it hears a newer term.",
+  },
+  {
+    id: "iv-ch30-4",
+    chapterId: "ch30",
+    level: "senior",
+    q: "What does a Lamport logical clock guarantee, and what can't it tell you?",
+    a:
+      "It enforces the **clock condition**: if event *a* happens-before *b* then **C(a) < C(b)** — giving a total order consistent with causality, handy for deterministic tie-breaking. What it **can't** do is detect concurrency: **C(a) < C(b) does *not* imply a → b** — two causally-unrelated (concurrent) events still get ordered by their counters. To capture the full happened-before partial order (and *detect* concurrency), you need **vector clocks** (Fidge & Mattern, 1988), at O(N) space per timestamp for N nodes.",
+  },
+  {
+    id: "iv-ch30-5",
+    chapterId: "ch30",
+    level: "senior",
+    q: "With a primary and async read-replicas, what consistency surprises appear, and how do you mitigate them?",
+    a:
+      "**Replication lag** produces **stale reads**, and two classic violations: **read-your-writes** (you don't see your own just-committed write) and **monotonic reads** (successive reads hit different replicas and appear to go *backward* in time). Mitigations without paying for full strong consistency: **read-your-writes routing** (send a client's own reads to the primary or a replica known to be caught up), **sticky sessions** to one replica for monotonic reads, and bounded-staleness reads. When correctness truly requires it, use **synchronous / quorum** replication for those operations — at a latency cost, exactly the PACELC trade.",
+  },
 ];
 
 export function interviewById(id: string): InterviewQ | undefined {

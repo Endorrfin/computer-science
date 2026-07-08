@@ -921,6 +921,105 @@ export const QUIZZES: QuizDef[] = [
       },
     ],
   },
+  // ch.29 — Databases
+  {
+    id: "why-slow",
+    chapterId: "ch29",
+    questions: [
+      {
+        prompt:
+          "`SELECT * FROM orders WHERE customer_id = 42` crawls on a 10-million-row table. The only index is the primary key on `id`. Why?",
+        options: [
+          "There's no index on `customer_id`, so the planner scans every row",
+          "`SELECT *` returns too many columns",
+          "The primary-key index is corrupt",
+          "`customer_id` needs to be a foreign key",
+        ],
+        answer: 0,
+        explain:
+          "With no index on the **filtered** column, the only plan is a **sequential scan** — read all 10M rows to find the matches. An index on `customer_id` turns that into a shallow B+-tree descent plus a few heap fetches: a handful of page reads instead of millions.",
+      },
+      {
+        prompt:
+          "You add an index on `status`, but `WHERE status = 'shipped'` — which matches ~90% of rows — *still* seq-scans. Bug, or correct?",
+        options: [
+          "Correct — at low selectivity a full scan beats scattered heap fetches",
+          "A bug — an index should always be faster",
+          "The index wasn't built yet",
+          "Indexes can't be used on text columns",
+        ],
+        answer: 0,
+        explain:
+          "An index earns its keep only when the predicate is **selective**. Matching 90% of rows means ~9M random heap fetches — far more expensive than reading the table sequentially. A cost-based optimizer estimates both plans and correctly keeps the seq scan.",
+      },
+      {
+        prompt:
+          "`WHERE status = 'pending' ORDER BY created_at` is hot. Which index serves it best?",
+        options: [
+          "A composite index on `(status, created_at)`",
+          "An index on `created_at` only",
+          "Separate single-column indexes on `status` and `created_at`",
+          "None — `ORDER BY` can't use an index",
+        ],
+        answer: 0,
+        explain:
+          "A composite `(status, created_at)` filters by its **leading** column and returns the survivors already **ordered** by the second — satisfying the `WHERE` and the `ORDER BY` in one pass, and going **index-only** if it covers the selected columns. Two separate indexes can't combine as neatly.",
+      },
+    ],
+  },
+  // ch.30 — Distributed systems
+  {
+    id: "consistency-predict",
+    chapterId: "ch30",
+    questions: [
+      {
+        prompt:
+          "A 5-node cluster splits into a group of 3 and a group of 2. Which side can elect a leader?",
+        options: [
+          "Only the group of 3 — it holds a majority",
+          "Both — each side elects its own",
+          "Only the group of 2",
+          "Neither side ever can",
+        ],
+        answer: 0,
+        explain:
+          "A leader needs a **quorum** of ⌊5/2⌋+1 = **3** votes. Only the majority side reaches it; the minority is stranded. Because two majorities of the same cluster must overlap, at most one leader can exist — that's how quorum **prevents split-brain**.",
+      },
+      {
+        prompt: "During a network partition, an **AP** system chooses to…",
+        options: [
+          "Stay available — keep answering, even if replicas diverge",
+          "Reject writes on both sides to stay consistent",
+          "Shut down until the partition heals",
+          "Guarantee linearizable reads throughout",
+        ],
+        answer: 0,
+        explain:
+          "**AP** favors **availability**: both sides keep serving, so their copies diverge and must be **reconciled on heal**. A **CP** system would instead refuse writes on the minority side to never return wrong data. Partition-tolerance isn't optional, so the real choice is C **vs** A *during* the partition.",
+      },
+      {
+        prompt:
+          "You write to the primary, then immediately read a replica and *don't* see your write. What guarantees you will?",
+        options: [
+          "Read-your-writes — route your own reads to the primary or a caught-up replica",
+          "Lower the transaction isolation level",
+          "Add more read replicas",
+          "Switch the write to fire-and-forget",
+        ],
+        answer: 0,
+        explain:
+          "Replication is **asynchronous**, so a replica lags the primary — a **stale read**. **Read-your-writes** consistency routes a client's own reads to a copy that already has its writes, killing the surprise without paying for full strong consistency everywhere.",
+      },
+      {
+        prompt:
+          "A quorum store has N = 3 replicas and writes to W = 2. What read size R guarantees a read sees the latest write?",
+        options: ["R = 2, because W + R > N", "R = 1", "R = 3, nothing less works", "Any R works"],
+        answer: 0,
+        explain:
+          "Strong consistency needs the read set and write set to **overlap**: W + R > N. With W = 2 and N = 3, R = 2 gives 2 + 2 > 3, so every read touches at least one replica holding the newest version (versioning breaks the tie).",
+      },
+    ],
+  },
 ];
 
 export function quizById(id: string): QuizDef | undefined {

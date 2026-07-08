@@ -1,0 +1,281 @@
+/* isolation-anomalies ([micro] ch.29) — the two-lane T1/T2 timeline, the
+   anomaly verdict card, and the 3×4 scenario×level truth table. Verdict tone
+   (occurs/prevented) is driven by a per-element --tone set inline in
+   IsolationAnomalies.tsx from the shared semantic palette, so the sim still
+   reads correctly without this sheet. Prefix: iso-. Reduced motion honored
+   at the foot. */
+
+/* ------------------------------- layout ------------------------------- */
+.iso-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.iso-panel-title {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.iso-blurb {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+
+/* ------------------------------- controls ------------------------------- */
+.iso-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+/* ------------------------------- timeline ------------------------------- */
+.iso-timeline {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+}
+
+.iso-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.iso-step {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--r-s);
+  border: 1px solid var(--line);
+  background: var(--s2);
+  opacity: 0.32;
+  transform: translateX(0);
+  transition:
+    opacity 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+.iso-step.is-pending {
+  opacity: 0.28;
+}
+.iso-step.is-on {
+  opacity: 1;
+}
+.iso-step.is-latest {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--s2));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .iso-step.is-latest {
+    animation: iso-pop 0.28s ease;
+  }
+}
+@keyframes iso-pop {
+  0% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.iso-step-lane {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  border-radius: var(--r-s);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--bg);
+}
+.iso-step--t1 .iso-step-lane {
+  background: var(--sem-data);
+}
+.iso-step--t2 .iso-step-lane {
+  background: var(--sem-state);
+}
+.iso-step--t1 {
+  border-left: 3px solid color-mix(in srgb, var(--sem-data) 55%, var(--line));
+}
+.iso-step--t2 {
+  border-left: 3px solid color-mix(in srgb, var(--sem-state) 55%, var(--line));
+}
+
+.iso-step-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+.iso-step-op {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  flex: 0 0 auto;
+}
+.iso-step-tag {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  color: var(--tx);
+  flex: 1 1 16ch;
+  min-width: 0;
+}
+.iso-step-observed {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  flex: 0 0 auto;
+}
+.iso-step-observed b {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------- verdict ------------------------------- */
+.iso-verdict {
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--tone, var(--accent));
+  border-radius: var(--r);
+  padding: 12px 14px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.iso-verdict.is-ok,
+.iso-verdict.is-bad {
+  background: color-mix(in srgb, var(--tone) 7%, var(--s2));
+}
+.iso-verdict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 4px 11px;
+  border-radius: 999px;
+  color: var(--tone, var(--tx2));
+  background: color-mix(in srgb, var(--tone, var(--tx3)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone, var(--tx3)) 45%, transparent);
+}
+.iso-verdict-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone, var(--tx3));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tone, var(--tx3)) 70%, transparent);
+}
+.iso-verdict-text {
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.iso-verdict.is-ok .iso-verdict-text,
+.iso-verdict.is-bad .iso-verdict-text {
+  color: var(--tx);
+}
+
+/* ------------------------------- matrix ------------------------------- */
+.iso-matrix-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.iso-matrix {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px;
+  font-family: var(--font-mono);
+}
+.iso-matrix-corner {
+  width: 8.5rem;
+}
+.iso-matrix-colhead,
+.iso-matrix-rowhead {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tx3);
+  text-align: left;
+  padding: 5px 6px;
+  transition: color 0.16s ease;
+}
+.iso-matrix-colhead {
+  text-align: center;
+  white-space: nowrap;
+}
+.iso-matrix-colhead.is-sel,
+.iso-matrix-rowhead.is-sel {
+  color: var(--accent);
+}
+.iso-matrix-cell {
+  text-align: center;
+  padding: 0;
+}
+.iso-matrix-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 30px;
+  border-radius: var(--r-s);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 700;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
+}
+.iso-matrix-mark.is-ok {
+  color: var(--sem-ok);
+}
+.iso-matrix-mark.is-bad {
+  color: var(--sem-err);
+}
+.iso-matrix-cell.is-current .iso-matrix-mark {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .iso-matrix-cell.is-current .iso-matrix-mark {
+    transform: scale(1.06);
+  }
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .iso-step,
+  .iso-verdict,
+  .iso-matrix-mark {
+    transition: none;
+  }
+  .iso-step.is-latest {
+    animation: none;
+  }
+}

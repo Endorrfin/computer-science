@@ -74,6 +74,13 @@ export const SIM_KEYS = [
   "udp-vs-tcp-race", // ch.27 micro — same lossy channel: TCP perfect-but-late (file) vs UDP fast-but-lossy (video call)
   "url-journey", // ch.28 micro — type a URL → DNS→TCP→TLS→request→wait→download→parse→render waterfall, click to expand
   "cache-headers", // ch.28 micro — max-age/ETag/no-store × age → fresh hit / 304 revalidate / full refetch
+  // P8 · Data (S14)
+  "btree-lab", // ch.29 HERO — B+-tree insert/split/search + range-scan leaf walk + index-vs-scan scoreboard + the Query Planner boss
+  "isolation-anomalies", // ch.29 micro — two txns on a timeline; pick a level → dirty / non-repeatable / phantom appear or vanish
+  "join-visualizer", // ch.29 micro — nested-loop (|R|·|S|) vs hash join (|R|+|S|), row touches counted
+  "election-toy", // ch.30 micro — Raft-style leader election: heartbeats → timeout → term vote → quorum; partition → no split-brain
+  "cap-explorer", // ch.30 micro — a partition strikes; choose CP (reject) or AP (diverge), consequences replay on heal
+  "replication-lag", // ch.30 micro — primary write, replica trails → stale read; read-your-writes routes to the primary
 ] as const;
 
 export const FIG_KEYS = [
@@ -118,6 +125,8 @@ export const FIG_KEYS = [
   // P7 · Networks (S13)
   "layer-cake", // ch.26 — the TCP/IP stack as encapsulation: wrap HTTP→TCP→IP→Ethernet down, strip back up
   "http-evolution", // ch.28 — HTTP/1.1 head-of-line vs /2 multiplex-over-one-TCP vs /3 QUIC independent streams under loss
+  // P8 · Data (S14)
+  "logical-clocks", // ch.30 — Lamport timestamps stepped across 3 process timelines; the clock condition + a concurrent pair
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

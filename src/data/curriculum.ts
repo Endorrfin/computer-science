@@ -4454,6 +4454,328 @@ const ch28: Chapter = {
   ],
 };
 
+// ---------------------------------------------------------------
+// ch.29 — Databases  (P8 · Data, built in S14)
+// ---------------------------------------------------------------
+const ch29: Chapter = {
+  id: "ch29",
+  part: "p8",
+  order: 31,
+  title: "Databases",
+  tagline: "A table you can query by saying what you want, an index that finds one row among millions in a handful of page reads, and a transaction that keeps its promises even when the power fails",
+  readMins: { foundations: 25, senior: 40 },
+  storyHook: {
+    md:
+      "**1970.** An IBM researcher named **Edgar F. \"Ted\" Codd** publishes *\"A Relational Model of Data for Large Shared Data Banks.\"* His radical idea: stop storing data as tangled, navigational pointer-chains and store it as plain **tables** — rows and columns — queried by a language that describes **what** you want, not **how** to fetch it. IBM, with a product to protect, was in no hurry; it took the System R project (and its query language SEQUEL, later SQL) to prove it, and Oracle to ship it first. Codd's tables now hold the world's banking, commerce, and records, and he won the **1981 Turing Award** for them. This chapter is what lives under `SELECT`: how a database finds your row without reading them all, and how it keeps its promises when two users — or a crash — collide.",
+  },
+  assumes: [
+    { chapterId: "ch15", oneLiner: "A B-tree is a balanced search tree that stays shallow by fanning out wide; here it becomes the on-disk B+-tree every index is built from." },
+    { chapterId: "ch24", oneLiner: "Storage reads a page (block) at a time, and durability leans on a write-ahead log — the same journaling idea returns as the database's WAL." },
+  ],
+  mentalModel:
+    "A relational database is tables of rows, queried declaratively with SQL — you state the result you want and the engine's planner decides how to get it. The central problem is finding rows fast: without help, a filter is a full scan of every row (O(n)); with an index — a B+-tree whose wide, page-sized nodes keep it only 3–4 levels deep and whose leaves are chained for range scans — the same lookup is a handful of page reads (O(log n)). The planner is cost-based: for each query it estimates page reads for a sequential scan, an index scan, and an index-only scan, and picks the cheapest, so an index only wins when the predicate is selective enough. On top of storage sit transactions with the ACID promise — atomicity, consistency, isolation, durability — implemented cheaply by a write-ahead log. When transactions run concurrently, the isolation level dials how much they can interfere: weaker levels admit dirty reads, non-repeatable reads, and phantoms in exchange for throughput. Beyond the relational world, the NoSQL families trade SQL and strict ACID for scale and flexible schemas — which sets up the next chapter, where the data itself is spread across many machines.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "You've built a machine (P2), taught it languages (P3), given it algorithms (P4) and an operating system (P6), and connected it to others (P7). Now the question changes from *computing* an answer to **remembering** one — reliably, and at a scale that won't fit in memory. That's a **database**.\n" +
+        "Codd's **relational model** is deceptively plain: data lives in **tables** (relations) of **rows**, and you query with **SQL**, a **declarative** language. `SELECT total FROM orders WHERE customer_id = 42` says *what* you want; it says nothing about **how** to find it. That gap — between the *what* and the *how* — is where the whole chapter lives, because the engine is free to choose the method, and the difference between a good method and a bad one is the difference between a millisecond and a minute.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Finding one row in ten million\n" +
+        "Suppose `orders` has ten million rows and no help. To answer `WHERE customer_id = 42`, the engine has exactly one option: read **every** row and check it — a **sequential scan**, O(n). On a table too big for memory that's megabytes of page reads for a single lookup.\n" +
+        "The fix is an **index**: a second structure that maps a column's values to the rows that hold them, kept in **sorted** order so the engine can *search* instead of scan. Databases don't use a binary search tree for this (too deep, one cache/disk miss per level) — they use a **B+-tree**, the disk-native descendant of the balanced trees from ch.15. Build one live: insert keys and watch nodes **split**, then search and range-scan it, and compare an indexed lookup against a full scan on 10,000 rows.",
+    },
+    { kind: "sim", sim: "btree-lab" },
+    {
+      kind: "prose",
+      md:
+        "## Why the tree is only four levels deep\n" +
+        "The B+-tree's trick is **fanout**. Each node is sized to **one disk page** (say 8 KB), so instead of two children it holds *hundreds* of keys and children. Height grows like log base *fanout*, so even a **billion** rows sits in about **4 levels** — four page reads to reach any row. Two more design choices matter: **all the records live in the leaves** (internal nodes hold only *separator keys* that route the search), and **the leaves are linked** left to right. That leaf chain is why a **range query** — `WHERE created_at BETWEEN … AND …`, or `ORDER BY` — is cheap: find one end, then walk the chain, no re-descending per row.",
+    },
+    {
+      kind: "compare",
+      a: "B+-tree index",
+      b: "Hash index",
+      rows: [
+        ["Point lookup `= x`", "O(log n) — a few page reads", "O(1) expected — often one"],
+        ["Range `BETWEEN` / `ORDER BY`", "Walks the linked leaves — cheap", "Impossible — hashing destroys order"],
+        ["Prefix / `LIKE 'abc%'`", "Yes — sorted keys share prefixes", "No"],
+        ["What databases default to", "This — it serves the most query shapes", "A niche, for equality-only columns"],
+      ],
+    },
+    {
+      kind: "prose",
+      md:
+        "## The planner's choice: scan, index, or index-only\n" +
+        "Because SQL is declarative, a **cost-based optimizer** decides the *how*. For a filter it weighs three plans by estimated **page reads**: a **sequential scan** (read every heap page); an **index scan** (descend the B+-tree, read the matching leaves, then fetch each matching row from the heap); and — if the index already contains every column the query needs (a **covering** index) — an **index-only scan** that skips the heap entirely. The deciding factor is **selectivity**: how small a fraction of rows the predicate keeps. A highly selective `customer_id = 42` loves an index; a `status = 'shipped'` matching 90% of rows is *cheaper* as a full scan, because the index's scattered heap fetches would cost more than reading the table straight through. A good planner picks the seq scan there — and that's correct, not a bug.",
+    },
+    {
+      kind: "code",
+      lang: "sql",
+      note: "Create an index, then ask the planner what it will do. EXPLAIN shows the chosen plan and its estimated cost — the same page-read reasoning the sim makes visible.",
+      code:
+        "-- Without an index this filter is a Seq Scan over every row.\n" +
+        "CREATE INDEX idx_orders_customer ON orders (customer_id);\n\n" +
+        "-- A covering index lets the hot query skip the heap (Index Only Scan).\n" +
+        "CREATE INDEX idx_orders_cust_total ON orders (customer_id, total);\n\n" +
+        "EXPLAIN SELECT total FROM orders WHERE customer_id = 42;\n" +
+        "--  Index Only Scan using idx_orders_cust_total on orders\n" +
+        "--    Index Cond: (customer_id = 42)      -- a few page reads, not a full scan",
+    },
+    {
+      kind: "callout",
+      tone: "tip",
+      title: "Boss — Query Planner: hit the query budget",
+      md:
+        "The B+-tree lab has a **boss mode**. You're handed the `orders` table, three real **workloads** (a customer dashboard, an ops queue, and an ingest spike), and a **page-read budget** for each. Your move: choose which **indexes** to create. Index too little and the read workloads blow their budget; index **everything** and the ingest workload blows *its* budget, because every insert must maintain every index. Find the set that fits all three at once to earn the **📇 Query Planner** badge.",
+    },
+    { kind: "quiz", quiz: "why-slow" },
+    {
+      kind: "prose",
+      md:
+        "## The ACID promise\n" +
+        "An index makes reads fast; **transactions** make writes *safe*. A transaction groups statements into a unit with four guarantees, named **ACID** by Härder and Reuter in 1983: **Atomicity** (all of it happens, or none — a transfer never debits without crediting), **Consistency** (it moves the database from one valid state to another, honoring constraints), **Isolation** (concurrent transactions don't see each other's half-done work), and **Durability** (once committed, it survives a crash). Durability sounds expensive — force every change to disk? — but it's made cheap by a **write-ahead log** (the WAL): append the change to a **sequential** log and `fsync` *that* before committing; the random data pages can be flushed lazily, and a crash is repaired by replaying the log. It's the same journaling idea you saw in ch.24, now guarding your money.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## When transactions collide: isolation levels\n" +
+        "**Isolation** is a dial, not a switch — because perfect isolation (every transaction acts as if it ran **alone**) is expensive, SQL defines weaker **levels** that trade safety for throughput. Each level permits certain **anomalies**: a **dirty read** (seeing another transaction's uncommitted, maybe-rolled-back write), a **non-repeatable read** (re-reading a row and getting a new value because someone committed in between), and a **phantom** (re-running a `WHERE` and finding new rows that appeared). Set two transactions loose on the same data, pick a level, and watch which anomalies slip through:",
+    },
+    { kind: "sim", sim: "isolation-anomalies" },
+    {
+      kind: "formal",
+      title: "Formal corner — the ANSI anomaly table (and its cracks)",
+      lens: "senior",
+      md:
+        "The SQL standard defines four levels by which anomalies they **forbid** (✓ = prevented):\n\n" +
+        "| Level | Dirty read | Non-repeatable | Phantom |\n" +
+        "|---|---|---|---|\n" +
+        "| Read Uncommitted | ✗ | ✗ | ✗ |\n" +
+        "| Read Committed | ✓ | ✗ | ✗ |\n" +
+        "| Repeatable Read | ✓ | ✓ | ✗ |\n" +
+        "| Serializable | ✓ | ✓ | ✓ |\n\n" +
+        "Two cracks every senior should know. First, **Read Committed is the common default** (Postgres, Oracle) — not Serializable — so non-repeatable reads and phantoms are your baseline reality. Second, **Berenson et al. (1995)** showed the ANSI phenomena are ambiguously worded, and that **snapshot isolation** — the MVCC mechanism many engines *call* \"Repeatable Read\" (Postgres does) — doesn't fit this grid at all. Snapshot isolation prevents all three ANSI anomalies yet allows **write skew**: two transactions each read a consistent snapshot, then write, together breaking an invariant neither could see the other violating. Only true `SERIALIZABLE` (e.g. Postgres's serializable snapshot isolation) closes it.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Joining tables\n" +
+        "Normalized data is split across tables, so most real queries **join** them — match each row of one to rows of another on a shared key. The naive way, a **nested-loop join**, scans the whole inner table for every outer row: O(n·m). The better way when both sides are large, a **hash join**, builds a hash table on one side once and probes it once per row of the other: O(n + m). Same answer, wildly different work — count the row touches yourself:",
+    },
+    { kind: "sim", sim: "join-visualizer" },
+    {
+      kind: "compare",
+      a: "Relational (SQL, ACID)",
+      b: "NoSQL (BASE)",
+      rows: [
+        ["Schema", "Fixed, declared up front; enforced", "Flexible / schema-on-read"],
+        ["Query", "SQL, joins, ad-hoc — the planner optimizes", "Simple key/document access; joins are your job"],
+        ["Guarantees", "Strong (ACID) transactions", "Often eventual consistency (BASE)"],
+        ["Scales by", "Bigger box, read replicas; joins resist sharding", "Horizontal partitioning across many nodes"],
+        ["Fits", "Money, inventory, anything with invariants", "Huge scale, caching, logs, flexible documents"],
+      ],
+    },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "The NoSQL landscape — and why it exists",
+      lens: "senior",
+      md:
+        "\"NoSQL\" isn't one thing; it's a family that **drops** some of SQL/ACID to buy scale, availability, or a friendlier data shape: **key-value** stores (Redis, DynamoDB) for O(1) lookups and caching; **document** stores (MongoDB) for nested, schema-flexible records; **wide-column** stores (Cassandra, Bigtable) for massive write throughput; and **graph** databases (Neo4j) for relationship-heavy queries. Many favor **BASE** (Basically Available, Soft state, Eventual consistency) over ACID. The honest framing: the relational default is the right call for anything with **invariants** (money, inventory), and you reach for NoSQL when you truly outgrow a single node or your data isn't tabular. *Why* strong consistency gets so hard the moment data spans machines is exactly the subject of the next chapter.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "You now have the single-node database: **tables** queried declaratively, a **B+-tree index** that finds rows in a few page reads, a **cost-based planner** choosing the method, **ACID transactions** guarded by a write-ahead log, and **isolation levels** dialing concurrency against safety. But one machine has a ceiling — of size, of throughput, and of survival when it dies. **Chapter 30** spreads the data across many machines, and discovers that the network you learned to trust in Part 7 will, eventually, split — forcing a choice the single-node world never had to make.",
+    },
+  ],
+  keyPoints: [
+    "SQL is declarative — you state the result you want; the database's planner chooses how to compute it, which is why the same query can be fast or slow.",
+    "Without an index, a filter is a full table scan — O(n) over every row; an index turns it into an O(log n) search.",
+    "Databases index with B+-trees, not BSTs — page-sized nodes fan out to hundreds of children, so even a billion rows sits ~4 levels deep, and linked leaves make range scans cheap.",
+    "The query planner is cost-based — it estimates page reads for seq scan vs index scan vs index-only scan and picks the cheapest, so an index only wins when the predicate is selective.",
+    "A covering index enables an index-only scan — if the index holds every column the query needs, the engine skips the heap fetch entirely.",
+    "ACID = Atomicity, Consistency, Isolation, Durability — the transaction promise (Härder & Reuter, 1983), with Durability made cheap by a sequential write-ahead log.",
+    "Isolation levels trade safety for throughput — weaker levels admit dirty reads, non-repeatable reads, and phantoms; Read Committed is the common default, not Serializable.",
+    "Snapshot isolation doesn't fit the ANSI grid — it prevents the three classic anomalies but allows write skew; only true serializable closes that gap.",
+    "NoSQL trades SQL and strict ACID for scale — key-value, document, wide-column, and graph stores drop guarantees you don't need to partition across many nodes.",
+  ],
+  pitfalls: [
+    {
+      title: "Indexing every column 'to be safe'",
+      body: "Every index must be updated on every insert, update, and delete of the table — so indexes are a tax on writes and on storage. A table with ten indexes can spend more time maintaining them than storing the row. Index the columns your queries actually filter, join, and sort on; measure with EXPLAIN, and drop indexes nothing uses.",
+      lens: "both",
+    },
+    {
+      title: "Assuming an index is always faster",
+      body: "An index scan does random heap fetches — roughly one page per matching row. When a predicate matches a large fraction of the table, those scattered reads cost more than a straight sequential scan, and a cost-based planner will (correctly) ignore the index. 'The index isn't being used' is often the optimizer being right about selectivity, not a bug.",
+      lens: "senior",
+    },
+    {
+      title: "Trusting the isolation level's name",
+      body: "The level names are standardized but their behavior isn't: most databases default to Read Committed, and several implement 'Repeatable Read' as snapshot isolation, which prevents the ANSI anomalies but still allows write skew. If a business invariant spans multiple rows (e.g. 'at least one doctor on call'), snapshot isolation can silently violate it — you need SERIALIZABLE or explicit locking.",
+      lens: "senior",
+    },
+    {
+      title: "Thinking a transaction is just BEGIN/COMMIT",
+      body: "Wrapping statements in a transaction gives atomicity and durability, but isolation is only as strong as the level you set — and holding a transaction open while doing slow work (network calls, user think-time) holds locks and bloats MVCC versions, throttling everyone else. Keep transactions short, and choose the isolation level deliberately rather than accepting the default blindly.",
+      lens: "both",
+    },
+  ],
+  interviewIds: ["iv-ch29-1", "iv-ch29-2", "iv-ch29-3", "iv-ch29-4", "iv-ch29-5"],
+  kataIds: ["index-range-scan", "hash-join"],
+  seeAlso: ["ch15", "ch24", "ch14", "ch30"],
+  sources: [
+    { title: "Relational model — Codd 1970 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Relational_model" },
+    { title: "B+ tree — the database index structure (Wikipedia)", url: "https://en.wikipedia.org/wiki/B%2B_tree" },
+    { title: "ACID — Härder & Reuter 1983 (Wikipedia)", url: "https://en.wikipedia.org/wiki/ACID" },
+    { title: "Isolation & anomalies (Wikipedia)", url: "https://en.wikipedia.org/wiki/Isolation_(database_systems)" },
+    { title: "A Critique of ANSI SQL Isolation Levels — Berenson et al. 1995 (Microsoft Research)", url: "https://www.microsoft.com/en-us/research/publication/a-critique-of-ansi-sql-isolation-levels/" },
+  ],
+};
+
+// ---------------------------------------------------------------
+// ch.30 — Distributed systems  (P8 · Data, built in S14)
+// ---------------------------------------------------------------
+const ch30: Chapter = {
+  id: "ch30",
+  part: "p8",
+  order: 32,
+  title: "Distributed systems",
+  tagline: "Spread the data across many machines for scale and survival — and discover that with no shared clock and a network that can split, even 'is this value the latest?' becomes a genuine choice",
+  readMins: { foundations: 22, senior: 38 },
+  storyHook: {
+    md:
+      "**Leslie Lamport**, who did more than anyone to make distributed systems a science, once defined the field with a joke that is also a warning: *\"A distributed system is one in which the failure of a computer you didn't even know existed can render your own computer unusable.\"* The moment your data outgrows one machine — for scale, or to survive that machine dying — you inherit two hard truths the single box hid from you: there is **no shared clock** (each node's \"now\" is its own), and **the network can fail** independently of the nodes, splitting the system in two while both halves keep running. This chapter is how we build systems that stay correct anyway — and the precise trade-off (proved, not hand-waved) you can't escape when the split happens. Lamport won the **2013 Turing Award** for the tools that tame it.",
+  },
+  assumes: [
+    { chapterId: "ch29", oneLiner: "A single database keeps ACID promises easily; here we replicate and partition it across machines, and those promises get expensive." },
+    { chapterId: "ch27", oneLiner: "The reliable stream from Part 7 rides an unreliable network — and this chapter is about what happens when that network splits mid-conversation." },
+  ],
+  mentalModel:
+    "A distributed system spreads data over many machines for scale and fault-tolerance, and pays for it with two facts: there is no global clock, and the network can partition independently of the nodes. Replication (a primary and read-replicas, sync or async) buys availability and read scale but introduces lag, so a replica read can be stale — read-your-writes routing patches the worst surprise. When a partition strikes, the CAP theorem says you cannot have both consistency and availability: a CP system rejects writes to stay correct, an AP system stays up but lets replicas diverge and reconciles on heal (PACELC adds that even without a partition you trade latency for consistency). Agreement despite failures needs consensus; leader election in the Raft style uses terms, randomized timeouts, and majority-quorum voting, and that same quorum rule (two majorities must overlap) is what prevents split-brain. Because clocks don't agree, ordering events uses logical clocks: Lamport timestamps guarantee that if a happened-before b then C(a) < C(b), though the converse fails, which is why vector clocks exist. The through-line: every guarantee that was free on one machine becomes a deliberate, costed trade-off across many.",
+  sections: [
+    {
+      kind: "prose",
+      md:
+        "## Where you are in the stack\n" +
+        "Chapter 29 gave you one database keeping perfect ACID promises. But one machine has a ceiling: it can only get so big, serve so many reads, and — crucially — when it dies, everything dies with it. So we spread data across **many** machines, for **scale** (more than one box can hold or serve) and **fault-tolerance** (survive any one failing).\n" +
+        "The instant we do, two comforts vanish. There is **no shared clock** — each node's clock drifts, so \"which write happened first?\" has no obvious answer. And the **network is a component that fails on its own**: links drop, and the system can **partition** into groups that can't talk while each keeps serving users. Everything hard about this chapter flows from those two facts.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Replication: copies buy scale and survival — and lag\n" +
+        "The first step is **replication**: keep copies of the data on several nodes. A common shape is one **primary** that takes writes and several **replicas** that serve reads — more read capacity, and a replica can be promoted if the primary dies. The catch is **how** the copy propagates. **Synchronous** replication waits for replicas to confirm before acking the write (safe, but slow, and stalls if a replica is down); **asynchronous** replication acks immediately and ships the change in the background (fast, but the replicas **lag**). Read a replica inside that lag window and you get a **stale** value — including the jarring case where you don't see **your own** write. Watch the lag, then flip on read-your-writes:",
+    },
+    { kind: "sim", sim: "replication-lag" },
+    {
+      kind: "prose",
+      md:
+        "## Partitioning, and the split that changes everything\n" +
+        "Replication scales **reads**; to scale **writes** and **storage** past one node you also **partition** (shard) — split the rows across nodes by key range or by hash of the key, so each node owns a slice. Together, replication and partitioning let a system grow without limit. But both assume the nodes can **talk**. When a link fails, the system **partitions** into groups that are each alive but **isolated** — and now a write on one side is invisible to the other. The network you learned to trust in Part 7 has split mid-conversation, and the system must decide what to do. That decision is not a matter of taste; it's a theorem.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## CAP: you can't have both when the network splits\n" +
+        "The **CAP theorem** — conjectured by **Eric Brewer** in 2000, proved by **Gilbert & Lynch** in 2002 — says that during a network **partition**, a system must give up **either** consistency **or** availability; it cannot keep both. **Consistency** here means every read sees the latest write (linearizable); **availability** means every request still gets a non-error answer. So when the split happens you choose: **CP** — refuse to answer unless you can be correct (reject the write, stay consistent, sacrifice availability); or **AP** — answer anyway (accept the write locally, stay available, let the copies **diverge** and reconcile later). Strike the partition and pick a side:",
+    },
+    { kind: "sim", sim: "cap-explorer" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "\"Two out of three\" is the wrong reading — meet PACELC",
+      lens: "senior",
+      md:
+        "The popular \"pick 2 of CAP\" line is misleading, as **Brewer himself clarified in 2012**. In a real distributed system partitions **will** occur — **P is not optional** — so you never really 'choose CA'. The only live choice is **C vs A *during* a partition**, which is rare. **PACELC** (Abadi, 2010) completes the picture: **if P**artition, trade **A** vs **C**; **E**lse (normal operation, the 99.9% case), trade **L**atency vs **C**onsistency — because even with a healthy network, keeping replicas strongly consistent costs round trips. That's why 'is this the latest value?' has a **latency price** every single day, not just during failures. Consistency lives on a spectrum — **linearizable → sequential → causal → eventual** — and picking the weakest one your app can tolerate is a core design lever.",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Agreement despite failure: consensus and leader election\n" +
+        "Many designs avoid divergence by funneling decisions through **one leader** — but then, when the leader dies, the survivors must **agree** on a new one without a central authority and despite failures. That's **consensus**, and its friendly modern form is **Raft** (Ongaro & Ousterhout, 2014), built to be understandable where **Paxos** (Lamport, 1998) was famously not. Raft divides time into **terms**; a follower that stops hearing the leader's heartbeats **times out**, becomes a **candidate**, bumps the term, and asks the others for votes. Win a **majority** and you're leader. Kill the leader and watch a clean re-election — then **partition** the cluster and watch quorum refuse to crown two:",
+    },
+    { kind: "sim", sim: "election-toy" },
+    {
+      kind: "callout",
+      tone: "senior",
+      title: "Quorum: the overlap that forbids split-brain",
+      lens: "senior",
+      md:
+        "The whole game is **majorities overlap**. A leader needs votes from a **quorum** — ⌊N/2⌋+1 nodes — and since **any two majorities of the same set must share at least one node**, and a node votes once per term, two leaders can't both win a term (**election safety**). This is exactly why a partition can't cause **split-brain**: only the side holding a cluster-majority can elect or commit, so a minority side is stranded rather than crowning a rival. The same overlap runs read/write quorums in leaderless stores: choose **W** write-replicas and **R** read-replicas with **W + R > N** and every read set intersects the last write set (Dynamo, 2007). Randomized election timeouts are the final touch — they desynchronize candidates so split votes are rare and self-heal. And note the failure mode: an **even** split of an even cluster elects **nobody**, which is why clusters are sized **odd** (3, 5, 7).",
+    },
+    {
+      kind: "prose",
+      md:
+        "## Telling time without a clock\n" +
+        "If nodes can't share a clock, how do we order events at all? **Lamport's logical clocks** (1978): each node keeps a counter, bumps it on every event, and stamps outgoing messages; on receiving a message stamped *t*, a node sets its counter to `max(own, t) + 1`. This guarantees the **clock condition** — if event *a* **happened-before** *b*, then **C(a) < C(b)** — giving a causally-consistent ordering out of thin air. Step it across three timelines and watch the receive rule force each arrow to climb:",
+    },
+    { kind: "figure", fig: "logical-clocks", caption: "Lamport timestamps on three processes. Each local event bumps the process's counter; a send carries its stamp; a receive jumps to max(local, received) + 1. Every message arrow climbs (send < receive), so causally-ordered events always have increasing timestamps — but note the concurrent pair whose timestamps still differ: the clock can't tell that apart from causality." },
+    {
+      kind: "prose",
+      md:
+        "## The limit that names a better clock\n" +
+        "Lamport clocks give a total order consistent with causality, but they **can't detect concurrency**: `C(a) < C(b)` does **not** imply `a → b` — two unrelated events still get ordered by their counters. When you need to *know* whether two events are causally related or truly concurrent (say, to detect conflicting writes to reconcile), you need **vector clocks** (Fidge & Mattern, 1988): each node tracks a counter *per node*, so the timestamps capture the full happened-before partial order — at O(N) space. Test the ideas:",
+    },
+    { kind: "quiz", quiz: "consistency-predict" },
+    {
+      kind: "prose",
+      md:
+        "## What's next\n" +
+        "That closes **Part 8 — Data**. You've gone from one database (tables, indexes, ACID) to many machines and the trade-offs they force: **replication** and its lag, **CAP** and its unavoidable partition-time choice, **consensus** and the **quorum** that forbids split-brain, and **logical clocks** for ordering without a shared now. Every guarantee that was free on one box became a deliberate, priced decision across many. **Part 9 — Security** turns from *keeping* data to *defending* it: cryptography from Caesar to TLS, and the adversarial mindset that assumes someone is always trying to break in.",
+    },
+  ],
+  keyPoints: [
+    "Distributing data buys scale and fault-tolerance — and costs you the two comforts of a single machine: a shared clock and a reliable network.",
+    "Replication copies data for read-scale and survival — synchronous is safe but slow, asynchronous is fast but lets replicas lag, so a replica read can be stale.",
+    "Read-your-writes fixes the worst staleness surprise — route a client's own reads to the primary or a caught-up replica so it always sees its own writes.",
+    "CAP theorem — during a network partition a system must sacrifice consistency or availability; it cannot keep both (Gilbert & Lynch, 2002).",
+    "'Two of three' is the wrong reading — partitions aren't optional, so the real choice is C vs A only while partitioned; PACELC adds latency-vs-consistency the rest of the time.",
+    "Consensus lets nodes agree despite failures — Raft uses terms, randomized timeouts, and majority-quorum voting; a candidate wins by collecting ⌊N/2⌋+1 votes.",
+    "Quorum forbids split-brain — because two majorities must overlap in at least one node, only a majority partition can elect or commit, so two leaders can't coexist.",
+    "Lamport clocks order events without a shared clock — if a happened-before b then C(a) < C(b); but the converse fails, so they can't detect concurrency (vector clocks can).",
+  ],
+  pitfalls: [
+    {
+      title: "Reading a replica and expecting your own write",
+      body: "Asynchronous replication means a replica trails the primary. Write to the primary, immediately read a replica, and you may not see your write — because it hasn't arrived yet. This 'read-your-writes' violation surprises developers constantly. Fix it by routing a user's own reads to the primary (or a replica confirmed caught up), or accept eventual consistency deliberately — don't assume a read reflects a just-finished write.",
+      lens: "both",
+    },
+    {
+      title: "Believing you 'chose CA' — dropped partition tolerance",
+      body: "You can't opt out of network partitions in a real distributed system; links fail. A design that assumes no partitions hasn't chosen consistency-and-availability, it has just failed to plan for the split. The honest question is always: when a partition happens (not if), do we reject requests to stay consistent, or serve them and reconcile later?",
+      lens: "senior",
+    },
+    {
+      title: "Running an even number of nodes",
+      body: "Quorum needs a strict majority, ⌊N/2⌋+1. With an even cluster, a clean half-and-half partition leaves neither side with a majority, so the system can't elect a leader or commit — worst of both worlds. Size consensus clusters odd (3, 5, 7): an odd count tolerates the same number of failures with fewer nodes and never ties.",
+      lens: "senior",
+    },
+    {
+      title: "Using wall-clock timestamps to order distributed events",
+      body: "Node clocks drift and are periodically corrected, so 'later timestamp = happened later' is false across machines — a clock can even jump backward. Ordering events by physical time causes lost updates and impossible histories. Use logical clocks (Lamport or vector) for causal ordering; reserve synchronized physical time (NTP, or bounded-uncertainty clocks like Google's TrueTime) for cases engineered specifically around clock error.",
+      lens: "senior",
+    },
+  ],
+  interviewIds: ["iv-ch30-1", "iv-ch30-2", "iv-ch30-3", "iv-ch30-4", "iv-ch30-5"],
+  kataIds: ["quorum-majority", "lamport-clock"],
+  seeAlso: ["ch29", "ch27", "ch25"],
+  sources: [
+    { title: "CAP theorem — Brewer 2000, Gilbert & Lynch 2002 (Wikipedia)", url: "https://en.wikipedia.org/wiki/CAP_theorem" },
+    { title: "PACELC design principle — Abadi 2010 (Wikipedia)", url: "https://en.wikipedia.org/wiki/PACELC_design_principle" },
+    { title: "Raft consensus — Ongaro & Ousterhout 2014 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Raft_(algorithm)" },
+    { title: "Lamport timestamps / logical clocks — Lamport 1978 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Lamport_timestamp" },
+    { title: "Dynamo: Amazon's Highly Available Key-value Store — SOSP 2007 (PDF)", url: "https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf" },
+  ],
+};
+
 export const CHAPTERS: Chapter[] = [
   // P0 · Orientation
   stub("ch0a", "p0", 1, "The Map", "What CS is, and how to travel this guide", 17, { foundations: 10, senior: 12 }),
@@ -4493,9 +4815,9 @@ export const CHAPTERS: Chapter[] = [
   ch26,
   ch27,
   ch28,
-  // P8 · Data
-  stub("ch29", "p8", 31, "Databases", "SQL, B-tree indexes, transactions, isolation", 14, { foundations: 25, senior: 40 }),
-  stub("ch30", "p8", 32, "Distributed systems", "Replication, partitions, CAP, consensus intuition", 14, { foundations: 22, senior: 38 }),
+  // P8 · Data (built in S14)
+  ch29,
+  ch30,
   // P9 · Security
   stub("ch31", "p9", 33, "Cryptography", "Hashes, key exchange, RSA/ECC intuition, TLS", 15, { foundations: 22, senior: 38 }),
   stub("ch32", "p9", 34, "Security", "Threat modeling, attack classes, defense in depth", 15, { foundations: 20, senior: 35 }),

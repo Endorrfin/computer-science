@@ -1,0 +1,290 @@
+/* replication-lag ([micro] ch.30) — primary/replica timelines, the lag-window
+   shading, and the verdict card. Stale/fresh tone is driven by a per-element
+   --tone set inline in ReplicationLag.tsx from the shared semantic palette
+   (stale = --sem-err, fresh = --sem-ok), so the sim still reads correctly
+   without this sheet. Prefix: rep-. Reduced motion honored at the foot. */
+
+/* ------------------------------- layout ------------------------------- */
+.rep-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ------------------------------- controls ------------------------------- */
+.rep-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+.rep-field {
+  gap: 8px;
+}
+.rep-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8rem;
+  max-width: 34vw;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  outline-offset: 3px;
+  vertical-align: middle;
+}
+.rep-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.08s ease;
+}
+.rep-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+.rep-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--accent, var(--tx2));
+  border: 2px solid var(--surface);
+}
+.rep-slider:focus-visible {
+  outline: 2px solid var(--accent, var(--tx3));
+}
+.rep-numval {
+  color: var(--tx);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.8em;
+  display: inline-block;
+  text-align: right;
+}
+.rep-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.rep-toggle input {
+  accent-color: var(--accent, var(--sem-data));
+  cursor: pointer;
+}
+
+/* ------------------------------- timelines ------------------------------- */
+.rep-timelines {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 10px 14px 6px;
+}
+.rep-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-mono);
+}
+
+.rep-lagband {
+  fill: color-mix(in srgb, var(--sem-err) 10%, transparent);
+  stroke: color-mix(in srgb, var(--sem-err) 40%, transparent);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  transition: width 0.16s ease, x 0.16s ease;
+}
+.rep-lagband-lbl {
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  fill: var(--tx3);
+}
+
+.rep-tick line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.rep-tick text {
+  font-size: 9px;
+  fill: var(--tx3);
+}
+.rep-axis-lbl {
+  font-size: 9px;
+  fill: var(--tx3);
+  letter-spacing: 0.06em;
+}
+
+.rep-lane-track {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rep-lane.is-active .rep-lane-track {
+  stroke: var(--tone, var(--accent));
+  stroke-width: 3;
+}
+.rep-lane-lbl {
+  font-size: 11.5px;
+  font-weight: 700;
+  fill: var(--tx2);
+  letter-spacing: 0.03em;
+}
+.rep-lane.is-active .rep-lane-lbl {
+  fill: var(--tx);
+}
+.rep-lane-val {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.25;
+  transition: stroke 0.16s ease, fill 0.16s ease;
+}
+.rep-lane.is-active .rep-lane-val {
+  stroke: var(--tone, var(--accent));
+  fill: color-mix(in srgb, var(--tone, var(--accent)) 16%, var(--s2));
+}
+.rep-lane-val-t {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--tx2);
+}
+.rep-lane.is-active .rep-lane-val-t {
+  fill: var(--tone, var(--tx));
+}
+
+.rep-mark line {
+  stroke: var(--tx3);
+  stroke-width: 1.5;
+}
+.rep-mark text {
+  font-size: 9.5px;
+  fill: var(--tx3);
+}
+.rep-mark--write line {
+  stroke: var(--sem-control);
+  stroke-width: 2;
+}
+.rep-mark--write text {
+  fill: var(--sem-control);
+  font-weight: 700;
+}
+.rep-mark--apply line {
+  stroke: var(--tx3);
+  stroke-dasharray: 3 3;
+}
+
+.rep-readmark line {
+  stroke: var(--tone, var(--accent));
+  stroke-width: 2;
+  stroke-dasharray: 3 3;
+}
+.rep-readmark circle {
+  fill: color-mix(in srgb, var(--tone, var(--accent)) 30%, var(--surface));
+  stroke: var(--tone, var(--accent));
+  stroke-width: 2.5;
+  transition: cx 0.16s ease, cy 0.16s ease;
+}
+.rep-readmark text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: var(--tone, var(--accent));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rep-readmark circle {
+    animation: rep-readpulse 1.6s ease-in-out infinite;
+  }
+}
+@keyframes rep-readpulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tone, var(--accent)) 65%, transparent));
+  }
+}
+
+/* ------------------------------- verdict ------------------------------- */
+.rep-verdict {
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--tone, var(--accent));
+  border-radius: var(--r);
+  padding: 12px 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.rep-verdict-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.rep-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 11px;
+  border-radius: 999px;
+  color: var(--tone, var(--tx));
+  background: color-mix(in srgb, var(--tone, var(--accent)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone, var(--accent)) 45%, transparent);
+}
+.rep-pill-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tone, var(--accent));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--tone, var(--accent)) 70%, transparent);
+}
+.rep-verdict-value,
+.rep-verdict-servedby {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.rep-verdict-value b,
+.rep-verdict-servedby b {
+  color: var(--tx);
+  font-weight: 700;
+}
+.rep-verdict-note {
+  margin: 10px 0 0;
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.rep-takeaway {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--tx3);
+}
+.rep-takeaway em {
+  color: var(--tx2);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .rep-lagband,
+  .rep-lane-val,
+  .rep-readmark circle,
+  .rep-verdict {
+    transition: none;
+  }
+  .rep-readmark circle {
+    animation: none;
+  }
+}

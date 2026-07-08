@@ -1,0 +1,222 @@
+/* join-visualizer ([micro] ch.29) — the R/S row columns, match links, and the
+   Big-O headline comparing nested-loop vs. hash-join touch counts. Prefix:
+   jn-. Reduced motion honored at the foot. */
+
+/* ------------------------------- layout ------------------------------- */
+.jn-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.jn-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+}
+.jn-touches {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+}
+.jn-touches b {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------- svg stage ------------------------------- */
+.jn-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.jn-colhead {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: var(--tx3);
+}
+
+.jn-row-box {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+  transition: stroke 0.16s ease, fill 0.16s ease;
+}
+.jn-row-t {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  fill: var(--tx2);
+  transition: fill 0.16s ease;
+}
+.jn-row.is-active .jn-row-box {
+  stroke: var(--accent);
+  stroke-width: 2;
+  fill: color-mix(in srgb, var(--accent) 20%, var(--s2));
+}
+.jn-row.is-active .jn-row-t {
+  fill: var(--tx);
+  font-weight: 600;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .jn-anim .jn-row.is-active .jn-row-box {
+    animation: jn-pulse 0.5s ease;
+  }
+}
+@keyframes jn-pulse {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  40% {
+    filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+.jn-link {
+  fill: none;
+  stroke: var(--sem-ok);
+  stroke-width: 2;
+  opacity: 0.55;
+}
+.jn-link.is-new {
+  opacity: 1;
+  stroke-width: 2.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .jn-anim .jn-link.is-new {
+    stroke-dasharray: 5 5;
+    animation: jn-link-flow 0.6s linear infinite;
+  }
+}
+@keyframes jn-link-flow {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* ------------------------------- footer ------------------------------- */
+.jn-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.jn-bigo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jn-bigo-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+  opacity: 0.55;
+  transition:
+    opacity 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease;
+}
+.jn-bigo-row.is-active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 9%, var(--s2));
+}
+.jn-bigo-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx2);
+}
+.jn-bigo-row.is-active .jn-bigo-name {
+  color: var(--tx);
+}
+.jn-bigo-formula {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+  font-variant-numeric: tabular-nums;
+}
+.jn-bigo-formula b {
+  color: var(--tx);
+}
+.jn-bigo-row.is-active .jn-bigo-formula b {
+  color: var(--accent);
+}
+.jn-bigo-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--tx3);
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.jn-bigo-row.is-active .jn-bigo-tag {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.jn-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.jn-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  min-width: 6.5rem;
+}
+.jn-stat--wide {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+.jn-stat-k {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.jn-stat-v {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.jn-stat-v.is-ok {
+  color: var(--sem-ok);
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .jn-row-box,
+  .jn-row-t,
+  .jn-bigo-row {
+    transition: none;
+  }
+  .jn-link.is-new {
+    stroke-dasharray: none;
+    animation: none;
+  }
+}

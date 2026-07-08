@@ -219,20 +219,21 @@
 - [micro] `cache-headers` ✅ — tweak `max-age`/`etag`/`no-store` × age → fresh hit / 304 revalidate / full refetch per request
 - [quiz] `web-predict` ✅ — cache freshness · which HTTP version stalls most on loss · what TLS does *not* hide
 
-## P8 · Data
+## P8 · Data  — ✅ SHIPPED S14 (engines: `sims/db/{btree,planner,isolation,joins}.ts` + `sims/dist/{election,cap,replication,clocks}.ts`; tests ch.29–30)
 
 ### ch.29 — Databases
-- [HERO] `btree-lab` — insert keys → node fills → **split animates**; range-query walk highlighted; scoreboard: indexed search (log steps) vs full scan (row-by-row) with op counters on 10k rows
-- [micro] `isolation-anomalies` — two transactions interleave on a timeline; pick isolation level → dirty read / non-repeatable read / phantom appear or vanish
-- [micro] `join-visualizer` — nested-loop vs hash join on two small tables, row touches counted
-- [quiz] `why-slow` — given query + schema, spot the missing index
-- [boss] `P8: hit the query budget` (choose indexes for 3 workloads under a page-read budget) — badge: *Query Planner*
+- [HERO] `btree-lab` ✅ — real B+-tree: insert keys → node fills → **split animates**; search highlights the root→leaf path (nodeReads = height); range-query **walks the linked leaves**; scoreboard: index reads vs full scan on 10k rows at a realistic fanout. Hosts the boss.
+- [micro] `isolation-anomalies` ✅ — two transactions interleave on a T1/T2 timeline; pick a level → dirty read / non-repeatable read / phantom appear or vanish; the full ANSI 3×4 matrix rendered alongside
+- [micro] `join-visualizer` ✅ — nested-loop (|R|·|S|) vs hash join (|R|+|S|) on two small tables, row touches counted, matches linked as you step
+- [quiz] `why-slow` ✅ — missing index / selectivity / composite-for-filter+sort
+- [boss] `P8: hit the query budget` ✅ (choose indexes for 3 workloads under a page-read budget; over-indexing blows the ingest write budget) — badge: 📇 *Query Planner* → `markChallengeDone("boss-p8")`
 
 ### ch.30 — Distributed systems
-- [micro] `election-toy` — 5 nodes with heartbeats; kill the leader → timeout → election; partition the network → split-brain demo → quorum rule fixes it
-- [micro] `cap-explorer` — partition strikes; choose C (reject writes) or A (accept, diverge) → watch consequences replay on heal
-- [micro] `replication-lag` — write primary, read replica → stale read; read-your-writes toggle
-- [fig] `logical-clocks` — Lamport timestamps stepped across 3 node timelines
+- [micro] `election-toy` ✅ — Raft-style: nodes in a ring, kill the leader → timeout → term vote → majority quorum; partition 3\|2 → only the majority elects; even 2\|2 → nobody (no split-brain)
+- [micro] `cap-explorer` ✅ — partition strikes; choose CP (reject, stay consistent) or AP (accept, diverge → reconcile on heal), stepped on a timeline
+- [micro] `replication-lag` ✅ — primary write, replica trails → stale read inside the lag window; read-your-writes routes to the primary
+- [fig] `logical-clocks` ✅ — Lamport timestamps stepped across 3 process timelines; every message arrow climbs, plus a concurrent pair the clock can't distinguish
+- [quiz] `consistency-predict` ✅ — quorum majority / AP trade-off / read-your-writes / R+W>N
 
 ## P9 · Security
 
@@ -338,13 +339,18 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 +rb-intuition, +merge-recursion, +sort-stability at S8) · **10 boss** (each with a badge) ·
 **kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
-batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch)
-· quizzes in every chapter. As of **S13** the live build carries **58 sims, 28 figures,
-28 quizzes, 141 interview Qs, 44 katas** across **28 live chapters** (`npm run qa` prints the
-running census and enforces the per-chapter minimums — CLAUDE.md §6 mandate). **Part 5 · Theory
+batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch;
+**48** after S14's +4 data batch) · quizzes in every chapter. As of **S14** the live build
+carries **64 sims, 29 figures, 30 quizzes, 151 interview Qs, 48 katas** across **30 live
+chapters** (`npm run qa` prints the running census and enforces the per-chapter minimums —
+CLAUDE.md §6 mandate). **Part 5 · Theory
 complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · Operating
 Systems complete** (ch.22–25): S11 shipped ch.22–23 with the `scheduler-sim` HERO; **S12** shipped
 ch.24 (Files & storage, `inode-explorer` HERO) and ch.25 (Concurrency, `deadlock-lab` HERO) with
 the *Deadlock Breaker* boss. **Part 7 · Networks complete** (ch.26–28): **S13** shipped ch.26
 (`packet-journey` HERO), ch.27 (TCP & UDP, `tcp-lab` HERO with the Reno sawtooth) and ch.28 (The
-Web) with the 🦈 *Wire Shark* boss inside `tcp-lab` (debug three broken handshakes).
+Web) with the 🦈 *Wire Shark* boss inside `tcp-lab` (debug three broken handshakes). **Part 8 ·
+Data complete** (ch.29–30): **S14** shipped ch.29 (Databases, the `btree-lab` **B+-tree** HERO +
+`isolation-anomalies` + `join-visualizer`) with the 📇 *Query Planner* boss inside `btree-lab`
+(choose indexes to fit three workloads under a page-read budget), and ch.30 (Distributed systems,
+Raft-style `election-toy` + `cap-explorer` + `replication-lag` + the `logical-clocks` figure).

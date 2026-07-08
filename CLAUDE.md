@@ -1098,3 +1098,71 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   S13 CLOSED pending user commit — suggested branch `feat/s13-p7-networks`. Next: S14 — P8 · Data: ch.29
   (Databases — `btree-lab` HERO + isolation-anomalies) + ch.30 (Distributed systems — election-toy,
   cap-explorer) + the P8 *Query Planner* boss.**
+- **2026-07-08 · S14 (P8 · Data — PART 8 COMPLETE)** — ch.29–30 built to the golden bar; the guide
+  leaves the network and turns to *remembering at scale*: one database (tables, a B+-tree index,
+  ACID, isolation) then many machines (replication, CAP, consensus, logical clocks), and the **P8
+  📇 *Query Planner* boss went live** inside `btree-lab`. **Kickoff (4 AskUserQuestion):** user took
+  every recommended pick — (1) **B+-tree** (not a plain B-tree) for `btree-lab`: records in linked
+  leaves, range scans walk the leaf chain, the honest structure for a databases chapter; (2)
+  **Raft-style leader election** for `election-toy`: terms + randomized timeouts + majority quorum;
+  (3) **full INTERACTIVES.md P8 inventory**; (4) **stage-only** hand-off. **ch.29 Databases** (story:
+  **Codd's 1970 relational model** → System R/SEQUEL → **Turing Award 1981**, web-verified): the
+  full-scan problem, the **B+-tree** (fanout → ~4 levels for a billion rows, records-in-leaves, the
+  linked-leaf range walk), the **cost-based planner** (seq vs index vs index-only, driven by
+  **selectivity**) with a SQL `EXPLAIN` block, **ACID** (**Härder & Reuter 1983**) on a write-ahead
+  log, **isolation levels + the three anomalies** with an ANSI-table formal corner (+ the
+  **Berenson-1995** snapshot-isolation/**write-skew** caveat and RC-is-the-default reality),
+  nested-loop vs hash **joins**, and a relational-vs-NoSQL(BASE) compare — 9 keyPoints, 4 pitfalls,
+  5 sources. **ch.30 Distributed systems** (story: **Lamport's** "a distributed system is one in
+  which the failure of a computer you didn't even know existed can render your own unusable" +
+  **2013 Turing Award**): **replication** & lag, **partitioning**, **CAP** (**Brewer 2000** /
+  **Gilbert & Lynch 2002**) with the *"2-of-3 is the wrong reading"* + **PACELC** (**Abadi 2010**)
+  senior beat, **consensus & Raft** (**Ongaro & Ousterhout 2014**) leader election, a **quorum** /
+  split-brain senior callout (**R+W>N**, odd clusters, Dynamo 2007), and **Lamport logical clocks**
+  (**1978**; the clock condition, and why the converse fails → vector clocks, **Fidge & Mattern
+  1988**) — 8 keyPoints, 4 pitfalls, 5 sources. **1 HERO + 5 micro + 1 fig + 2 quiz + 1 boss** —
+  `btree-lab` HERO (lab|boss; a real B+-tree engine with split/search/range + an index-vs-full-scan
+  scoreboard; **boss grades a chosen index set against three workloads under per-workload page-read
+  budgets → over-indexing blows the ingest write budget → `markChallengeDone("boss-p8")` = 📇 Query
+  Planner**), `isolation-anomalies` (T1/T2 timeline + the live 3×4 ANSI matrix), `join-visualizer`
+  (nested-loop |R|·|S| vs hash |R|+|S| touch counts), `election-toy` (Raft ring; kill-leader +
+  3\|2 and even-2\|2 partition presets), `cap-explorer` (CP vs AP replayed on heal), `replication-lag`
+  (primary/replica timeline + read-your-writes), and the `logical-clocks` figure (6-frame Lamport
+  walk ending on the concurrent pair). **8 pure engines** — `sims/db/{btree,planner,isolation,
+  joins}.ts` + `sims/dist/{election,cap,replication,clocks}.ts` — plus **`scripts/test-ch29.ts`**
+  (B+-tree invariants on ascending/descending/shuffled/order-3/6, search reads = height, range
+  leaf-walk; the planner boss: intended `[ix_customer, ix_status_created]` passes all three, `[]`
+  fails on reads, all-four fails on ingest writes; the **ANSI anomaly matrix exactly**; join touch
+  counts) and **`scripts/test-ch30.ts`** (quorum + one-leader-per-term; 3\|2 elects / 2\|2 nobody /
+  no split-brain; CAP CP-vs-AP; replication lag + RYW; **Lamport [1,2,3,4,1,5]** + the clock
+  condition + a genuinely concurrent pair) — both wired into `npm test`; test-katas whitelist → ch30.
+  **+4 katas** (`index-range-scan`, `hash-join` [ch29]; `quorum-majority`, `lamport-clock` [ch30])
+  → batch **48** (245 cases). **Sim components + figure delegated to 4 parallel subagents** (each
+  built one/two files against the already-tested engines + SimShell/FigureStepper; per-sim styles in
+  `src/theme/_p8css/*.css` side-effect imports, namespaced `.bt-/.iso-/.jn-/.el-/.cap-/.rep-/.lclk-`
+  to avoid the cross-part CSS collisions §10 warns about), then reviewed. registryKeys/registry →
+  **64 sims, 29 figs**; +10 interview Qs (iv-ch29 ×5, iv-ch30 ×5); `boss-p8` metadata already present
+  from S1. **Adversarial review** (subagent: independent Node probes on all 8 engines with
+  hand-computed expectations — **119 partition shapes confirm split-brain never occurs**, 2,541
+  replication combinations, the full ANSI matrix hand-traced — plus web-re-verified all 13 dated
+  facts, recomputed all 7 quiz keys, and built discriminating wrong-impls for the 4 katas): **zero
+  blocking, zero factual, zero wrong quiz keys, zero engine bugs.** One [POLISH] note (kata Big-O
+  isn't runtime-enforced by output-only tests) is a pre-existing whole-file pattern → not actioned.
+  **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓ (30 live chapters; 64 sims · 29 figs
+  · 30 quizzes · 151 interview Qs · 48 katas · 10 bosses; mandate holds) · test ✓ (23 suites;
+  +test-ch29/30, +4 katas → 245 kata cases) · build ✓** (fresh `dist-s14`: BtreeLab 21.5 KB · TcpLab
+  22.3 · CompilerPipeline 24.4 · ElectionToy 8.2 · LogicalClocks 7.8 · IsolationAnomalies/JoinVisualizer/
+  CapExplorer/ReplicationLag 5–8 KB · react-vendor 190 · index 750 KB/270 gzip — data modules still in
+  the main bundle, the S18/S19 lazy-load note stands). `dist-s14` gitignored (`dist-*`); sandbox
+  `unlink` still blocked (build uses a fresh `--outDir`); Rolldown linux-arm64 binding present; review
+  probes archived under `_test_ops/_s14_review_probes_done/` (gitignored). NOT sandbox-testable:
+  real-browser interaction pass — **5-min manual QA after deploy** (btree-lab: insert keys to force a
+  split, search lights the root→leaf path, a range walks the linked leaves, read the scoreboard; boss
+  → toggle indexes until all three workloads fit → 📇 badge; isolation-anomalies: flip the level and
+  watch dirty/non-repeatable/phantom (dis)appear + the matrix cell; join-visualizer: step nested-loop
+  vs hash and compare touches; election-toy: kill the leader → re-election, then 3\|2 vs even 2\|2;
+  cap-explorer: CP vs AP; replication-lag: drag lag/read + toggle read-your-writes; logical-clocks
+  auto-plays and lands on the concurrent pair). **PART 8 COMPLETE. S14 CLOSED pending user commit —
+  suggested branch `feat/s14-p8-data`. Next: S15 — P9 · Security: ch.31 (Cryptography — `dh-color-lab`
+  HERO + hash-avalanche + cipher-cracker) + ch.32 (Security — injection-sandbox) + the P9 *Codebreaker*
+  boss.**

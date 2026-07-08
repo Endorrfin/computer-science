@@ -1,0 +1,203 @@
+/* election-toy ([micro] ch.30) — Raft-style leader election. Nodes on a
+   circle; scenario buttons; a partition-groups scoreboard + verdict banner
+   in the footer. Layout + the few functional accents that aren't
+   inline-styled from theme vars in ElectionToy.tsx. Prefix: el-.
+   Reduced motion honored at the foot. */
+
+/* ------------------------------- controls ------------------------------- */
+.el-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.el-quorum {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------- stage ------------------------------- */
+.el-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.el-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 460px;
+  margin: 0 auto;
+  font-family: var(--font-mono);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.el-ring {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 6;
+}
+
+/* nodes */
+.el-node circle {
+  fill: color-mix(in srgb, currentColor 16%, var(--surface));
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: stroke-width 0.2s ease, fill 0.2s ease;
+}
+.el-node-id {
+  fill: var(--tx);
+  font-size: 13px;
+  font-weight: 700;
+}
+.el-node-term {
+  fill: var(--tx2);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.el-node-role {
+  fill: currentColor;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.el-node.is-leader circle {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, currentColor 55%, transparent));
+}
+.el-node.is-down circle {
+  opacity: 0.4;
+  stroke-dasharray: 4 3;
+}
+.el-node.is-down .el-node-role,
+.el-node.is-down .el-node-term {
+  opacity: 0.6;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .el-anim .el-node.is-pulsing circle {
+    animation: el-pulse 0.6s ease;
+  }
+}
+@keyframes el-pulse {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  45% {
+    filter: drop-shadow(0 0 9px color-mix(in srgb, currentColor 75%, transparent));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+}
+
+/* in-flight vote messages */
+.el-msg line {
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 0.9;
+}
+.el-msg-lbl {
+  fill: currentColor;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .el-anim .el-msg line {
+    stroke-dasharray: 5 4;
+    animation: el-msg-flow 0.5s linear infinite;
+  }
+}
+@keyframes el-msg-flow {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+
+/* ------------------------------- footer ------------------------------- */
+.el-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.el-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.el-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.el-group.is-ok {
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 9%, var(--s2));
+}
+.el-group.is-no {
+  border-color: color-mix(in srgb, var(--sem-err) 50%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 9%, var(--s2));
+}
+.el-group-members {
+  color: var(--tx);
+  font-weight: 600;
+}
+.el-group-votes {
+  color: var(--tx2);
+  font-variant-numeric: tabular-nums;
+}
+.el-group-tag {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.el-group.is-ok .el-group-tag {
+  color: var(--sem-ok);
+}
+.el-group.is-no .el-group-tag {
+  color: var(--sem-err);
+}
+
+.el-verdict {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: var(--r-s);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.el-verdict.is-ok {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 12%, transparent);
+}
+.el-verdict.is-no {
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 14%, transparent);
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .el-node circle,
+  .el-group,
+  .el-anim .el-node.is-pulsing circle,
+  .el-anim .el-msg line {
+    animation: none;
+    transition: none;
+    stroke-dasharray: none;
+  }
+}

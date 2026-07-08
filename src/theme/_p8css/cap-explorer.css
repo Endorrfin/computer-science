@@ -1,0 +1,248 @@
+/* cap-explorer ([micro] ch.30) — the CAP theorem made concrete: two replicas,
+   a partition, a CP|AP toggle. Layout + the few functional accents that
+   aren't inline-styled from theme vars in CapExplorer.tsx. Prefix: cap-.
+   Reduced motion honored at the foot. */
+
+/* ------------------------------- controls ------------------------------- */
+.cap-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+/* ------------------------------- stage ------------------------------- */
+.cap-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cap-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  font-family: var(--font-mono);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+
+.cap-client rect {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.25;
+}
+.cap-client-t {
+  fill: var(--tx2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.cap-link {
+  stroke: var(--sem-ok);
+  stroke-width: 2;
+  opacity: 0.7;
+}
+.cap-anim .cap-link {
+  transition: stroke 0.25s ease, opacity 0.25s ease;
+}
+.cap-link.is-cut {
+  stroke: var(--sem-err);
+  stroke-dasharray: 6 5;
+  opacity: 0.55;
+}
+.cap-cutmark line {
+  stroke: var(--sem-err);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.cap-op {
+  stroke-width: 2.25;
+  fill: none;
+}
+.cap-op-write {
+  stroke: var(--sem-control);
+}
+.cap-op-read {
+  stroke: var(--sem-data);
+}
+.cap-op-heal {
+  stroke: var(--sem-ok);
+  stroke-width: 3;
+  stroke-dasharray: 4 4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cap-anim .cap-op-write,
+  .cap-anim .cap-op-read {
+    animation: cap-draw 0.5s ease both;
+  }
+  .cap-anim .cap-op-heal {
+    animation: cap-heal-sweep 0.9s ease both;
+  }
+}
+@keyframes cap-draw {
+  from {
+    stroke-dasharray: 260;
+    stroke-dashoffset: 260;
+  }
+  to {
+    stroke-dasharray: 260;
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes cap-heal-sweep {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.cap-node circle {
+  fill: var(--s2);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  transition: stroke 0.2s ease, fill 0.2s ease;
+}
+.cap-node-id {
+  fill: var(--tx);
+  font-size: 15px;
+  font-weight: 700;
+}
+.cap-node-val {
+  fill: var(--sem-data);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cap-tick circle {
+  fill: var(--s2);
+  stroke: var(--line);
+  stroke-width: 1.5;
+  transition: fill 0.2s ease, stroke 0.2s ease;
+}
+.cap-tick.on circle {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.cap-tick.is-cur circle {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+.cap-tick-lbl {
+  fill: var(--tx3);
+  font-size: 9px;
+  transition: fill 0.2s ease;
+}
+.cap-tick.on .cap-tick-lbl {
+  fill: var(--tx2);
+}
+.cap-tick.is-cur .cap-tick-lbl {
+  fill: var(--tx);
+  font-weight: 700;
+}
+.cap-tick-track {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+/* ------------------------------- footer ------------------------------- */
+.cap-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cap-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.cap-badges-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  min-width: 8.5rem;
+}
+
+.cap-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  opacity: 0.5;
+  transition: opacity 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.cap-badge.on {
+  opacity: 1;
+}
+.cap-badge-k {
+  color: var(--tx2);
+}
+.cap-badge.on .cap-badge-k {
+  color: var(--tx2);
+}
+.cap-badge-v {
+  font-weight: 700;
+  color: var(--tx);
+}
+.cap-badge.on.is-good {
+  border-color: color-mix(in srgb, var(--sem-ok) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-ok) 12%, var(--s2));
+}
+.cap-badge.on.is-good .cap-badge-v {
+  color: var(--sem-ok);
+}
+.cap-badge.on.is-bad {
+  border-color: color-mix(in srgb, var(--sem-err) 50%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 12%, var(--s2));
+}
+.cap-badge.on.is-bad .cap-badge-v {
+  color: var(--sem-err);
+}
+.cap-badge.on.is-neutral {
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+  background: color-mix(in srgb, var(--sem-data) 10%, var(--s2));
+}
+.cap-badge.on.is-neutral .cap-badge-v {
+  color: var(--sem-data);
+}
+
+.cap-tradeoff {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding: 9px 12px;
+  border-radius: var(--r-s);
+  background: var(--s2);
+  border: 1px solid var(--line);
+}
+
+/* ------------------------------- reduced motion ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .cap-anim .cap-link,
+  .cap-anim .cap-op-write,
+  .cap-anim .cap-op-read,
+  .cap-anim .cap-op-heal,
+  .cap-node circle,
+  .cap-tick circle,
+  .cap-tick-lbl,
+  .cap-badge {
+    animation: none;
+    transition: none;
+  }
+}
