@@ -88,6 +88,13 @@ export const SIM_KEYS = [
   "injection-sandbox", // ch.32 micro — fake login; ' OR 1=1-- against string-concat vs parameterized, both ASTs shown
   "password-entropy", // ch.32 micro — length/charset/pattern → entropy bits → crack-time at GPU rates; dictionary hit on P@ssw0rd
   "xss-demo", // ch.32 micro — sandboxed comment; unescaped payload executes vs escaped renders as inert text
+  // P10 · Intelligence (S16)
+  "neural-playground", // ch.33 HERO — build & train an MLP; boundary morphs, loss falls; hosts the Model Tamer boss (spiral ≥95%, ≤3 layers)
+  "gradient-bowl", // ch.33 micro — gradient descent on a loss surface; learning rate → converge / oscillate / explode
+  "knn-toy", // ch.33 micro — k-nearest-neighbours class regions; k trades memorization for smoothing
+  "tokenizer-toy", // ch.34 micro — real BPE; token chips, char-vs-token count, why letter-counting fails
+  "attention-heatmap", // ch.34 micro — real softmax self-attention; hover a word → attention flows to related words
+  "embedding-space", // ch.34 micro — real word2vec vectors; king−man+woman≈queen + nearest neighbours
 ] as const;
 
 export const FIG_KEYS = [
@@ -138,6 +145,9 @@ export const FIG_KEYS = [
   "rsa-locks", // ch.31 — public-lock / private-key metaphor + a small-number RSA walkthrough, stepped
   "tls-replay", // ch.31 — the ch.28 TLS handshake replayed, labelling the crypto primitive each step uses
   "defense-layers", // ch.32 — an attacker walks inward; each missing defense layer is the breach, stepped
+  // P10 · Intelligence (S16)
+  "transformer-block", // ch.34 — embeddings → attention → feed-forward → next-token, stepped, with residuals
+  "scaling-curves", // ch.34 — test loss vs compute/data/params as power laws; the Chinchilla compute-optimal point
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

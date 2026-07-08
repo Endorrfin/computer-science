@@ -252,21 +252,21 @@
 - [fig] `defense-layers` ✅ — attacker walks through missing layers, stepped
 - [quiz] `spot-the-vuln` ✅ — 4 code snippets, find the holes
 
-## P10 · Intelligence
+## P10 · Intelligence  — ✅ SHIPPED S16 (engines: `sims/ml/{rng,datasets,mlp,knn,gd}.ts` + `sims/ai/{bpe,attention,embeddings}.ts` with vendored `sims/ai/data/{bpe-data,embeddings-data,corpus}.ts`; tests ch.33–34. Real backprop MLP, real BPE, real word2vec vectors, real softmax attention.)
 
 ### ch.33 — Machine learning
-- [HERO] `neural-playground` ⚠ — datasets (linear/circle/spiral 2D points); build the net (layers/neurons sliders); train → decision boundary morphs live, loss curve draws; overfit a tiny noisy set → train/test split exposes it
-- [micro] `gradient-bowl` — drag the start point on a loss surface; learning-rate slider → converge / oscillate / explode
-- [micro] `knn-toy` — k slider redraws class regions around your draggable points
-- [quiz] `why-overfit` — diagnose 3 training curves
-- [boss] `P10: train to 95% on the spiral` (budget: ≤3 layers) — badge: *Model Tamer*
+- [HERO] `neural-playground` ✅ — datasets (linear/circle/xor/spiral); build the net (0–3 hidden layers, width, activation, input-feature toggles); train live → decision-boundary heat-map morphs, loss curve draws, train/test accuracy split; 🎲 reseed = live-random init. Real forward+backprop+gradient descent (`mlp.ts`).
+- [micro] `gradient-bowl` ✅ — drag the start point on the loss bowl `L=½(a²+κb²)`; learning-rate control → converge / oscillate / explode, with the `lr < 2/κ` stability threshold shown
+- [micro] `knn-toy` ✅ — k slider redraws the class-region map; a query crosshair shows its k nearest neighbours + vote; leave-one-out accuracy narrates memorize-vs-smooth
+- [quiz] `why-overfit` ✅ — diagnose the train-vs-test curves (3 questions)
+- [boss] `P10: train to 95% on the spiral` ✅ (budget: ≤3 hidden layers) — badge: 🧠 *Model Tamer* (winnable two ways: 3 raw layers, or 2 layers + engineered features — both CI-proven)
 
 ### ch.34 — Modern AI & frontiers
-- [micro] `tokenizer-toy` — type text → token chips (weird splits visible); why letter-counting fails
-- [micro] `attention-heatmap` — pick a sentence; hover a word → attention weights shade the others
-- [micro] `embedding-space` — 2D word-vector map; the king−man+woman arrow lands near queen
-- [fig] `transformer-block` — embeddings→attention→MLP→next-token, stepped
-- [fig] `scaling-curves` — capability vs compute/data/params
+- [micro] `tokenizer-toy` ✅ — type text → real BPE token chips (subword splits visible); char-vs-token count; the `strawberry` letter-counting demo (letters buried across tokens)
+- [micro] `attention-heatmap` ✅ — pick a sentence; hover a word → real softmax attention shades the others + an n×n heat-map (weights real; token vectors illustrative, labeled)
+- [micro] `embedding-space` ✅ — 2-D PCA map of real word2vec vectors; the analogy builder computes king−man+woman → **queen** in full 64-D (genuinely learned, not placed)
+- [fig] `transformer-block` ✅ — embeddings→attention→feed-forward→next-token, stepped, with residuals
+- [fig] `scaling-curves` ✅ — test loss vs compute/data/params power laws + the Chinchilla compute-optimal point
 
 ## P11 · Capstone
 
@@ -340,8 +340,9 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 **kata runner** (10 katas at v1, S7 → **20 katas** after S8; **24** after S9; **30** after
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
 batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch;
-**48** after S14's +4 data batch) · quizzes in every chapter. As of **S14** the live build
-carries **64 sims, 29 figures, 30 quizzes, 151 interview Qs, 48 katas** across **30 live
+**48** after S14's +4 data batch; **52** after S15's +4 security batch; **56** after S16's
++4 ML/AI batch) · quizzes in every chapter. As of **S16** the live build
+carries **76 sims, 34 figures, 34 quizzes, 171 interview Qs, 56 katas** across **34 live
 chapters** (`npm run qa` prints the running census and enforces the per-chapter minimums —
 CLAUDE.md §6 mandate). **Part 5 · Theory
 complete** (ch.19–21 + the *Halting Oracle* boss inside `turing-machine`). **Part 6 · Operating
@@ -354,3 +355,10 @@ Data complete** (ch.29–30): **S14** shipped ch.29 (Databases, the `btree-lab` 
 `isolation-anomalies` + `join-visualizer`) with the 📇 *Query Planner* boss inside `btree-lab`
 (choose indexes to fit three workloads under a page-read budget), and ch.30 (Distributed systems,
 Raft-style `election-toy` + `cap-explorer` + `replication-lag` + the `logical-clocks` figure).
+**Part 9 · Security complete** (ch.31–32): **S15** shipped ch.31 (Cryptography, the `dh-color-lab`
+HERO — paint + real modular arithmetic) + `hash-avalanche` + `cipher-cracker`, and ch.32 (Security,
+`injection-sandbox` + `password-entropy` + `xss-demo`) with the 🗝️ *Codebreaker* boss. **Part 10 ·
+Intelligence complete** (ch.33–34): **S16** shipped ch.33 (Machine learning, the `neural-playground`
+**real-backprop MLP** HERO + `gradient-bowl` + `knn-toy`) with the 🧠 *Model Tamer* boss (train the
+spiral to 95% within ≤3 layers), and ch.34 (Modern AI, real BPE `tokenizer-toy` + real-softmax
+`attention-heatmap` + real-word2vec `embedding-space` + `transformer-block` & `scaling-curves` figs).

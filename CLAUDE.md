@@ -1232,3 +1232,75 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   rsa-locks/tls-replay/defense-layers auto-step). **PART 9 COMPLETE. S15 CLOSED pending user commit —
   suggested branch `feat/s15-p9-security`. Next: S16 — P10 · Intelligence: ch.33–34 (`neural-playground`
   HERO) + P10 boss; web-verify the AI-landscape facts.**
+
+- **2026-07-08 · S16 (P10 · Intelligence — PART 10 COMPLETE)** — ch.33–34 built to the golden bar; the guide
+  reaches the top of the stack, from a single learning neuron to the transformers behind modern AI, and the
+  **P10 🧠 *Model Tamer* boss went live** inside `neural-playground`. **Kickoff (4 AskUserQuestion):** (1) the
+  neural net = **real backprop** — from-scratch forward + backpropagation + gradient descent — and per the
+  user's call **live-random init in the app** (a 🎲 reseed button; initialization genuinely matters) with the
+  RNG **seed-injectable so the Node tests stay deterministic** (reconciled so CI + the boss contract don't go
+  flaky); (2) ch.34's data-driven micros **all real** — a real BPE tokenizer and **real word2vec vectors**
+  (attention stays real *math* with clearly-labeled illustrative Q/K/V, since a trained LLM can't run in a
+  static sim); (3) frontier = **durable concepts + one dated 'state of play — mid-2026' snapshot box**
+  (web-verified); (4) **full scope, Claude commits**. **ch.33 Machine learning** (story: **Perceptron 1958** →
+  **Minsky–Papert XOR 1969** → **backprop 1986** Rumelhart/Hinton/Williams): the supervised setup
+  (features/model/loss/**generalization**), kNN → a single neuron → a network, **gradient descent** + the
+  learning-rate stability threshold η<2/κ, a Formal corner (update rule + BCE∘sigmoid gradient collapses to
+  **p−y**), **overfitting** & the train/test discipline, a bias–variance senior beat, and a scikit-learn code
+  snippet — 7 keyPoints, 4 pitfalls, 4 sources. **ch.34 Modern AI & frontiers** (story: **"Attention Is All
+  You Need," Vaswani et al. 2017**): embeddings & the distributional hypothesis, **BPE tokenization** & the
+  "strawberry" letter-counting blind spot, **self-attention** `softmax(QKᵀ/√d)·V`, LLM = next-token
+  prediction + **RLHF** alignment, **scaling laws + Chinchilla** (compute-optimal; most models undertrained),
+  a capabilities-vs-limits compare, the dated **mid-2026 snapshot** (GPT-5.x / Claude Opus 4.x / Gemini 3.x /
+  DeepSeek / Llama 4 / Qwen; 1M-token context common; **MMLU saturated ~92%**; GPQA/SWE-bench/ARC-AGI-2/HLE),
+  a Formal corner on scaled dot-product + multi-head attention, and the **computability tie-back to ch.20**
+  (no scale escapes the halting problem) — 6 keyPoints, 4 pitfalls, 5 web-verified sources. **1 HERO + 5 micro
+  + 2 fig + 2 quiz + 1 boss** — `neural-playground` HERO (datasets linear/circle/xor/spiral; input-feature
+  toggles; 0–3 hidden layers with width/activation; live decision-boundary heat-map + loss curve + train/test
+  accuracy; **boss grades spiral test-acc ≥95% within ≤3 hidden layers → `markChallengeDone("boss-p10")` = 🧠
+  Model Tamer**, winnable two honest ways — 3 raw layers *or* 2 layers + engineered x²/x·y features),
+  `gradient-bowl` (drag the start on L=½(a²+κb²); lr → converge/oscillate/explode at the 2/κ line), `knn-toy`
+  (k-region map + query vote + leave-one-out accuracy: memorize vs smooth), `tokenizer-toy` (real BPE chips,
+  char-vs-token count, the 'strawberry' r-scatter), `attention-heatmap` (real softmax self-attention + n×n
+  heat-map; 'it'→'animal' coreference; honesty-labeled toy vectors), `embedding-space` (real word2vec map; the
+  analogy builder computes **king−man+woman → queen** in full 64-D), `transformer-block` fig
+  (embeddings→attention→FFN→next-token, residuals, stepped) and `scaling-curves` fig (log-log power laws + the
+  Chinchilla point). **8 pure engines** — `sims/ml/{rng,datasets,mlp,knn,gd}.ts` (the MLP is real: backprop
+  finite-difference-checked to **6.4e-11**, XOR→100%, spiral boss winnable) + `sims/ai/{bpe,attention,
+  embeddings}.ts` with vendored `sims/ai/data/{corpus,bpe-data,embeddings-data}.ts` — plus **`scripts/
+  test-ch33.ts`** (grad-check tanh+relu; XOR; the spiral boss ≥95% across seed sets on both the 3-raw-layer
+  and 2-layer+features paths; decision field; gd converge/oscillate/explode; kNN memorize-vs-smooth) and
+  **`scripts/test-ch34.ts`** (BPE **regenerates from the corpus** + round-trips + the 3 scattered r's; the
+  vendored embeddings satisfy king−man+woman→queen & 4 more analogies rank-1; attention rows softmax to 1 +
+  coreference) — both wired into `npm test`; test-katas whitelist → ch33/ch34. **Real-vectors note:** pretrained
+  GloVe was unreachable in the sandbox (gensim-data host blocked; large-corpus web_fetch times out), so the
+  vectors are **real word2vec (skip-gram) trained in-repo** on a small bundled corpus (`scripts/
+  gen-embeddings.py`, gensim) — genuinely learned (king→queen rank 1), labeled honestly as such (not
+  pretrained). **+4 katas** (`sigmoid`, `mse-loss` [ch33]; `softmax`, `cosine-similarity` [ch34]) → batch **56**
+  (290 cases). **+10 interview Qs** (iv-ch33 ×5, iv-ch34 ×5), **+2 quizzes** (`why-overfit`, `llm-limits`);
+  `boss-p10` metadata already present from S1. **8 components delegated to 6 parallel subagents** (each built
+  against the already-tested engines + SimShell/FigureStepper; per-sim CSS in `src/theme/_p10css/*`, namespaced
+  `.np-/.gb-/.knn-/.tok-/.att-/.emb-`), then reviewed. registryKeys/registry → **76 sims, 34 figs**.
+  **Adversarial review** (subagent: independent **numpy** re-derivation of backprop [grad-check 2.9e-10] and a
+  **byte-identical** port of the mulberry32 RNG + spiral, confirming the boss is winnable [27/30 seeds ≥95% on
+  ≤3 layers]; recomputed all embeddings analogies from the raw vendored vectors; re-ran BPE + attention;
+  recomputed all 6 new quiz keys; re-verified the 4 katas; web-re-verified every dated AI fact): **zero engine
+  bugs, zero wrong quiz keys, zero wrong katas, durable history all correct.** One **[BLOCKING]** fixed — the
+  ARC-AGI-2 "models score under ~30%" aside was **stale** (mid-2026 self-reported frontier is now 77–85%;
+  <30% is only the strict verified private-eval), reworded to drop the contested number. One [POLISH] (MMLU
+  "~32% in 2020") left as defensible + source-consistent. **verify = typecheck ✓ · lint ✓ (0 errors, 0
+  warnings) · qa ✓ (34 live chapters; 76 sims · 34 figs · 34 quizzes · 171 interview Qs · 56 katas · 10 bosses;
+  mandate holds) · test ✓ (27 suites; +test-ch33/34, +4 katas → 290 kata cases) · build ✓** (fresh `dist-s16`:
+  DhColorLab 25.9 KB · EmbeddingSpace 25.3 · CompilerPipeline 24.4 · TcpLab 22.3 · BtreeLab 21.5 ·
+  NeuralPlayground 18.3 · TransformerBlock 13.9 · TokenizerToy 11.5 · react-vendor 190 · index 854 KB/309 gzip —
+  data modules still in the main bundle, the S18/S19 lazy-load note stands). `dist-s16` gitignored (`/dist-*`);
+  sandbox `unlink` still blocked (build uses a fresh `--outDir`); Rolldown linux-arm64 binding present. NOT
+  sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (neural-playground: pick
+  the spiral, add 3 hidden layers *or* turn on x²/x·y features, train → boundary morphs, loss falls,
+  test ≥ 95% → 🧠 Model Tamer; hit reseed and watch init matter; gradient-bowl: push lr past 2/κ → explode;
+  knn-toy: k=1 jagged vs large-k smooth; tokenizer-toy: type 'strawberry' → the r's scatter across tokens;
+  attention-heatmap: hover 'it' → lights 'animal'; embedding-space: run king−man+woman → queen;
+  transformer-block/scaling-curves auto-step). **PART 10 COMPLETE. S16 CLOSED pending user commit — sandbox git
+  is blocked by an unremovable `.git/index.lock` (the §10 unlink constraint), so finalize on the Mac. Suggested
+  branch `feat/s16-p10-intelligence`. Next: S17 — P0 + P11: ch.0a/0b (math toolkit) + ch.35 grand traversal +
+  boss gallery.**

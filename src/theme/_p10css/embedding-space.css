@@ -1,0 +1,448 @@
+/* embedding-space ([micro] ch.34, Part 10 · Intelligence) — REAL word2vec
+   vectors on a 2-D PCA projection: click a word to halo its cosine neighbours,
+   or run king − man + woman → queen and watch the analogy parallelogram draw.
+   The SVG (dots, labels, neighbour halos, analogy arrows, the placed target)
+   carries functional color inline from the semantic palette in
+   EmbeddingSpace.tsx; this sheet handles the stage layout, the analogy builder,
+   the neighbour/result lists and the honesty note. Every class is prefixed
+   `.emb-` so nothing here collides with another part's CSS. Animated transitions
+   live behind prefers-reduced-motion: no-preference. */
+
+/* --------------------------------- stage --------------------------------- */
+.emb-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emb-panel-h {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+/* --------------------------------- map (svg) --------------------------------- */
+.emb-map {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  touch-action: none;
+}
+
+.emb-grid-line {
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.emb-axis-lbl {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--tx3);
+  letter-spacing: 0.04em;
+}
+
+/* neighbour link + halo (drawn under the dots) */
+.emb-link {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  fill: none;
+  opacity: 0.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .emb-link {
+    animation: emb-fade 0.3s ease both;
+  }
+}
+
+/* a word node — a hit target wrapping dot + label */
+.emb-node {
+  cursor: pointer;
+}
+.emb-node:focus {
+  outline: none;
+}
+.emb-dot {
+  fill: var(--sem-data);
+  stroke: var(--surface);
+  stroke-width: 1.5;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .emb-dot {
+    transition: r 0.18s ease, fill 0.18s ease;
+  }
+}
+.emb-node:hover .emb-dot,
+.emb-node:focus-visible .emb-dot {
+  fill: var(--accent);
+}
+.emb-node.is-selected .emb-dot {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+.emb-node.is-neighbor .emb-dot {
+  fill: var(--sem-ok);
+}
+.emb-node-halo {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  opacity: 0.55;
+}
+
+.emb-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--tx2);
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.emb-node:hover .emb-lbl,
+.emb-node:focus-visible .emb-lbl,
+.emb-node.is-selected .emb-lbl {
+  fill: var(--tx);
+  font-weight: 700;
+}
+.emb-node.is-neighbor .emb-lbl {
+  fill: var(--tx);
+}
+
+/* the two analogy arrows (B→A, C→result) + the placed target */
+.emb-arrow {
+  fill: none;
+  stroke-width: 2;
+}
+.emb-arrow.is-source {
+  stroke: var(--sem-control);
+}
+.emb-arrow.is-result {
+  stroke: var(--sem-state);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .emb-arrow {
+    animation: emb-fade 0.35s ease both;
+  }
+}
+.emb-target {
+  fill: none;
+  stroke: var(--sem-state);
+  stroke-width: 2;
+}
+.emb-target-x {
+  stroke: var(--sem-state);
+  stroke-width: 2;
+}
+.emb-target-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--sem-state);
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+@keyframes emb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* --------------------------------- map caption / legend --------------------------------- */
+.emb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.emb-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.emb-swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.emb-leg-hint {
+  color: var(--tx3);
+  font-style: italic;
+}
+.emb-proj-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--tx3);
+  text-align: center;
+}
+.emb-proj-note b {
+  color: var(--tx2);
+}
+
+/* --------------------------------- analogy builder --------------------------------- */
+.emb-analogy {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.emb-eq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 10px;
+}
+.emb-eq-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.emb-eq-tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.emb-eq-field select {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.emb-eq-field select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.emb-op {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tx3);
+  padding-bottom: 7px;
+  user-select: none;
+}
+.emb-op.is-arrow {
+  color: var(--accent);
+}
+
+/* result read-out */
+.emb-result {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.emb-result-lead {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+}
+.emb-result-lead b {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+.emb-result-word {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--sem-state);
+}
+.emb-result-score {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* unknown-word hint */
+.emb-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 55%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 11%, var(--surface));
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.emb-hint-icon {
+  color: var(--sem-err);
+  font-size: 16px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.emb-hint b {
+  color: var(--sem-err);
+}
+
+/* --------------------------------- presets --------------------------------- */
+.emb-presets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.emb-preset {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+/* --------------------------------- ranked lists --------------------------------- */
+.emb-lists {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+.emb-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.emb-card-h {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.emb-card-h b {
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+.emb-rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.emb-rank-row {
+  display: grid;
+  grid-template-columns: 1.6ch 1fr auto;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+.emb-rank-n {
+  color: var(--tx3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.emb-rank-word {
+  color: var(--tx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.emb-rank-row.is-top .emb-rank-word {
+  font-weight: 700;
+}
+.emb-rank-meter {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.emb-rank-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sem-ok);
+}
+.emb-neighbors .emb-rank-fill {
+  background: var(--accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .emb-rank-fill {
+    transition: width 0.25s ease;
+  }
+}
+.emb-rank-score {
+  color: var(--tx2);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.2ch;
+  text-align: right;
+}
+.emb-rank-row.is-top .emb-rank-score {
+  color: var(--tx);
+}
+.emb-card-empty {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--tx3);
+  font-style: italic;
+}
+
+/* --------------------------------- honesty note --------------------------------- */
+.emb-honesty {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--tx2);
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.emb-honesty b {
+  color: var(--tx);
+}
+.emb-honesty .emb-honesty-key {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .emb-link,
+  .emb-arrow,
+  .emb-dot,
+  .emb-rank-fill {
+    transition: none;
+    animation: none;
+  }
+}

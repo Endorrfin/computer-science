@@ -89,6 +89,13 @@ const sims: Record<SimKey, LazyComp> = {
   "injection-sandbox": lazy(() => import("../components/sims/security/InjectionSandbox.tsx")),
   "password-entropy": lazy(() => import("../components/sims/security/PasswordEntropy.tsx")),
   "xss-demo": lazy(() => import("../components/sims/security/XssDemo.tsx")),
+  // P10 · Intelligence
+  "neural-playground": lazy(() => import("../components/sims/ml/NeuralPlayground.tsx")),
+  "gradient-bowl": lazy(() => import("../components/sims/ml/GradientBowl.tsx")),
+  "knn-toy": lazy(() => import("../components/sims/ml/KnnToy.tsx")),
+  "tokenizer-toy": lazy(() => import("../components/sims/ai/TokenizerToy.tsx")),
+  "attention-heatmap": lazy(() => import("../components/sims/ai/AttentionHeatmap.tsx")),
+  "embedding-space": lazy(() => import("../components/sims/ai/EmbeddingSpace.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -134,6 +141,9 @@ const figs: Record<FigKey, LazyComp> = {
   "rsa-locks": lazy(() => import("../components/figures/RsaLocks.tsx")),
   "tls-replay": lazy(() => import("../components/figures/TlsReplay.tsx")),
   "defense-layers": lazy(() => import("../components/figures/DefenseLayers.tsx")),
+  // P10 · Intelligence
+  "transformer-block": lazy(() => import("../components/figures/TransformerBlock.tsx")),
+  "scaling-curves": lazy(() => import("../components/figures/ScalingCurves.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {
