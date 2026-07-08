@@ -1,0 +1,370 @@
+/* xss-demo ([micro] ch.32) — cross-site scripting and its symmetric fix: a comment
+   box, the bytes that land in the page, a mock comment board, and the detected
+   vectors. Layout + the accents that aren't inline-styled from theme vars in
+   XssDemo.tsx. Every class is prefixed `.xss-` so nothing here collides with
+   another part's CSS. Palette: safe/encoded → --sem-ok · raw/live vector & breach
+   → --sem-err · neutral chrome → --tx3/--line. This file styles a SIMULATED breach
+   banner only — no real markup is ever rendered. Animated transitions live behind
+   prefers-reduced-motion: no-preference. */
+
+/* --------------------------------- stage --------------------------------- */
+.xss-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.xss-panel-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+  margin-bottom: 8px;
+}
+
+/* --------------------------------- input --------------------------------- */
+.xss-input-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.xss-input-lbl {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.xss-input {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 9px 11px;
+  resize: vertical;
+}
+.xss-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* --------------------------------- toggle --------------------------------- */
+.xss-toggle {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+.xss-toggle input {
+  accent-color: var(--sem-ok);
+  cursor: pointer;
+}
+.xss-toggle input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --------------------------------- grid --------------------------------- */
+.xss-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .xss-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.xss-wire-panel,
+.xss-board-panel,
+.xss-vectors-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.xss-mode-tag {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  text-transform: none;
+}
+.xss-mode-tag.is-safe {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+}
+.xss-mode-tag.is-raw {
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 12%, transparent);
+  border-color: color-mix(in srgb, var(--sem-err) 45%, var(--line));
+}
+
+/* --------------------------------- wire (page HTML) --------------------------------- */
+.xss-wire {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px 12px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 2.6em;
+}
+.xss-wire-note {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--tx3);
+}
+
+/* --------------------------------- comment board --------------------------------- */
+.xss-board {
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px;
+}
+.xss-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xss-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.xss-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--accent);
+}
+.xss-comment-user {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx2);
+}
+.xss-comment-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--tx);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.xss-breach {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-s);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 60%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 14%, var(--surface));
+}
+.xss-breach-icon {
+  color: var(--sem-err);
+  font-size: 18px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+.xss-breach-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.xss-breach-body b {
+  color: var(--sem-err);
+  font-size: 13px;
+}
+.xss-breach-sub {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--tx2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .xss-breach {
+    animation: xss-alarm 0.45s ease both;
+  }
+}
+@keyframes xss-alarm {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  60% {
+    transform: scale(1.01);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.xss-board-note {
+  margin: 9px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--tx3);
+}
+
+/* --------------------------------- vectors --------------------------------- */
+.xss-vec-count,
+.xss-vectors-panel .xss-vec-count {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 45%, var(--line));
+}
+.xss-vectors {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xss-vector {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-s);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 40%, var(--line));
+  background: color-mix(in srgb, var(--sem-err) 8%, var(--s2));
+}
+.xss-vector.is-defused {
+  border-color: var(--line);
+  background: var(--s2);
+  opacity: 0.7;
+}
+.xss-vector-pat {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sem-err);
+  white-space: nowrap;
+}
+.xss-vector.is-defused .xss-vector-pat {
+  color: var(--tx2);
+}
+.xss-vector-why {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--tx2);
+}
+.xss-vector-state {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.xss-vector-state.is-live {
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sem-err) 45%, var(--line));
+}
+.xss-vector-state.is-defused {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--sem-ok) 42%, var(--line));
+}
+.xss-vectors-empty {
+  margin: 0;
+  font-size: 12px;
+  color: var(--tx3);
+}
+.xss-lesson {
+  margin: 11px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--tx2);
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+/* --------------------------------- footer --------------------------------- */
+.xss-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.xss-foot-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.xss-payloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 8px;
+}
+.xss-payload {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  height: auto;
+  padding: 8px 11px;
+  white-space: normal;
+}
+.xss-payload-lbl {
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.xss-payload-note {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--tx3);
+  font-weight: 400;
+}
+.xss-payload.btn-primary .xss-payload-note {
+  color: color-mix(in srgb, var(--bg) 70%, var(--tx2));
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .xss-breach {
+    animation: none;
+  }
+}

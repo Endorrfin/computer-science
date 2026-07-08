@@ -1166,3 +1166,69 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   suggested branch `feat/s14-p8-data`. Next: S15 — P9 · Security: ch.31 (Cryptography — `dh-color-lab`
   HERO + hash-avalanche + cipher-cracker) + ch.32 (Security — injection-sandbox) + the P9 *Codebreaker*
   boss.**
+- **2026-07-08 · S15 (P9 · Security — PART 9 COMPLETE)** — ch.31–32 built to the golden bar; the guide
+  turns from *keeping* data to *defending* it, and the **P9 🗝️ *Codebreaker* boss went live** inside
+  `dh-color-lab`. **Kickoff (4 AskUserQuestion):** (1) `dh-color-lab` number mode = **real small-prime
+  modular arithmetic** (p=23, g=5; gᵃ mod p stepped) so the boss's "DH by hand" is honest; (2) SHA-256 =
+  **vendored pure-TS** (Claude's recommended best-practice for this repo — identical function in the sim
+  and Node tests, synchronous, no deps, offline — **cross-checked against Node's `crypto` and, in review,
+  Python `hashlib`**); (3) **full P9 INTERACTIVES.md inventory**; (4) **stage-only** hand-off. **ch.31
+  Cryptography** (story: **Diffie–Hellman 1976** + the **GCHQ** secret invention 1969–73 declassified
+  1997, web-verified): **Kerckhoffs** (1883), classical ciphers → **frequency analysis / index of
+  coincidence**, the **one-time pad** & **Shannon 1949** perfect secrecy, **symmetric AES** (**FIPS 197,
+  2001**) + the **key-distribution problem**, an AEAD/nonce-reuse senior beat, **hashing + the avalanche
+  effect** (**MD5** & **SHA-1**/*SHAttered* 2017 broken, **SHA-256** standard), the **Diffie–Hellman**
+  trapdoor, **RSA 1977** + **digital signatures**, a formal corner (modular exponentiation ↔ discrete-log
+  & factoring), the **TLS 1.3** (**RFC 8446, 2018**) tie-back, a symmetric-vs-asymmetric compare, and a
+  forward-secrecy/ECC/**post-quantum** senior callout (**Shor** + **NIST FIPS 203 ML-KEM / 204 / 205,
+  Aug 2024**) — 9 keyPoints, 4 pitfalls, 6 web-verified sources. **ch.32 Security** (story: the **Morris
+  Worm**, 2 Nov 1988, ~10% of ~60,000 hosts): the **adversarial mindset / threat modeling**, **injection**
+  as data-becoming-code, its browser twin **XSS** (+ a **CSRF/SameSite** senior beat), **authentication vs
+  authorization** (broken access control = OWASP #1) + **password entropy**, the classes crypto can't fix
+  (**memory safety** ~70% of severe vulns, **supply chain** — Log4Shell 2021 / xz 2024, **social
+  engineering**), **defense in depth**, the **OWASP Top 10:2025** table (**web-verified — Injection is now
+  A05; two new categories: Software Supply Chain Failures & Mishandling of Exceptional Conditions; SSRF
+  folded into A01**), and a STRIDE/zero-trust senior callout — 9 keyPoints, 4 pitfalls, 5 sources. **1 HERO
+  + 5 micro + 3 fig + 2 quiz + 1 boss** — `dh-color-lab` HERO (🎨 paint | 🔢 numbers | 🗝️ boss; paint =
+  commutative-mix metaphor, numbers = real modular arithmetic with a stepped `modPowTrace` + an
+  Eve-brute-forces `discreteLog`; **boss grades a two-stage challenge — break a Vigenère via the IC/
+  frequency tools, then compute the DH shared secret by hand → `markChallengeDone("boss-p9")` = 🗝️
+  Codebreaker**), `hash-avalanche` (16×16 bit-flip heat-map + leading-zeros mining toy), `cipher-cracker`
+  (Caesar/Vigenère live frequency + IC-per-length crack), `injection-sandbox` (fake login; concat vs
+  parameterized with the parsed **WHERE AST** for both + an AUTH-BYPASS verdict), `password-entropy`
+  (charset → ideal bits → GPU crack-time table + the `P@ssw0rd` dictionary trap), `xss-demo` (escaped =
+  inert text vs raw = *simulated* execution, never real innerHTML/eval), the `rsa-locks` figure (6-frame
+  padlock/key walkthrough of the real n=55 key) and `tls-replay` figure (7-step TLS 1.3 handshake labelled
+  by primitive), and `defense-layers` (attacker walks concentric rings; a missing layer is the breach).
+  **8 pure engines** — `sims/crypto/{dh,sha256,classical,rsa,tls-map}.ts` + `sims/security/{sqli,passwords,
+  xss}.ts` (the vendored SHA-256 is FIPS 180-4, cross-checked vs Node `crypto`) — plus **`scripts/
+  test-ch31.ts`** (DH agreement over all 21×21 secrets + discreteLog; SHA-256 known vectors & Node-crypto
+  match incl. block-boundary lengths 55/56/64 + avalanche ≈½; Vigenère auto-crack recovers key+plaintext,
+  IC peaks at the true period; RSA textbook 3233 + sign/verify) and **`scripts/test-ch32.ts`** (concat
+  `' OR 1=1--`/`admin'--` bypass vs parameterized safety + the top-level-OR AST; entropy math + crack-time
+  monotonicity + the `P@ssw0rd`/`Monkey1` dictionary hits; HTML-escape `&`-first + active-markup detection)
+  — both wired into `npm test`; test-katas whitelist → ch31/ch32. **+4 katas** (`caesar-decrypt`, `mod-exp`
+  [ch31]; `html-escape`, `constant-time-eq` [ch32]) → batch **52** (269 cases). **+10 interview Qs**
+  (iv-ch31 ×5, iv-ch32 ×5); `boss-p9` metadata already present from S1. **9 components delegated to 5
+  parallel subagents** (each built its file(s) against the already-tested engines + SimShell/FigureStepper;
+  per-sim styles in `src/theme/_p9css/*.css` side-effect imports, namespaced `.dh-/.hav-/.cc-/.inj-/.pw-/
+  .xss-/.rsa-/.tls-/.def-`), then reviewed. registryKeys/registry → **70 sims, 32 figs**. **Adversarial
+  review** (subagent: independent **Python `hashlib` + `pow`** re-derivation of all 8 engines, a fresh
+  319-letter Vigenère auto-crack, the full SQLi bypass/AST matrix; web-re-verified every dated fact incl.
+  the **OWASP Top 10:2025** ordering; recomputed all 8 quiz keys; confirmed the 4 new katas' starters fail):
+  **zero blocking, zero factual, zero wrong quiz keys, zero engine bugs.** One [POLISH] fixed (`humanTime`
+  pluralized "1 hour"/"1 day"/"1 year"). **verify = typecheck ✓ · lint ✓ (0 errors, 0 warnings) · qa ✓
+  (32 live chapters; 70 sims · 32 figs · 32 quizzes · 161 interview Qs · 52 katas · 10 bosses; mandate
+  holds) · test ✓ (25 suites; +test-ch31/32, +4 katas → 269 kata cases) · build ✓** (fresh `dist-s15`:
+  DhColorLab 25.9 KB · CompilerPipeline 24.4 · TcpLab 22.3 · BtreeLab 21.5 · RsaLocks 13.0 · InjectionSandbox
+  10.3 · HashAvalanche 9.6 · CipherCracker 9.5 · react-vendor 190 · index 805 KB/291 gzip — data modules
+  still in the main bundle, the S18/S19 lazy-load note stands). `dist-s15` gitignored (`/dist-*`); sandbox
+  `unlink` still blocked (build uses a fresh `--outDir`); Rolldown linux-arm64 binding present. NOT
+  sandbox-testable: real-browser interaction pass — **5-min manual QA after deploy** (dh-color-lab: mix
+  paints to one shared color + run numbers mode stepping gᵃ mod p, then the boss — crack the Vigenère via
+  the IC chart, do DH by hand → 🗝️ badge; hash-avalanche: edit a char → heat-map ≈½, mine N zero-bits;
+  cipher-cracker: encrypt then crack Caesar & Vigenère; injection-sandbox: `' OR 1=1--` bypasses concat but
+  not parameterized, watch the AST; password-entropy: `P@ssw0rd` → instant; xss-demo: toggle escaping;
+  rsa-locks/tls-replay/defense-layers auto-step). **PART 9 COMPLETE. S15 CLOSED pending user commit —
+  suggested branch `feat/s15-p9-security`. Next: S16 — P10 · Intelligence: ch.33–34 (`neural-playground`
+  HERO) + P10 boss; web-verify the AI-landscape facts.**

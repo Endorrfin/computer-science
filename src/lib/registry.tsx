@@ -82,6 +82,13 @@ const sims: Record<SimKey, LazyComp> = {
   "election-toy": lazy(() => import("../components/sims/dist/ElectionToy.tsx")),
   "cap-explorer": lazy(() => import("../components/sims/dist/CapExplorer.tsx")),
   "replication-lag": lazy(() => import("../components/sims/dist/ReplicationLag.tsx")),
+  // P9 · Security (S15)
+  "dh-color-lab": lazy(() => import("../components/sims/crypto/DhColorLab.tsx")),
+  "hash-avalanche": lazy(() => import("../components/sims/crypto/HashAvalanche.tsx")),
+  "cipher-cracker": lazy(() => import("../components/sims/crypto/CipherCracker.tsx")),
+  "injection-sandbox": lazy(() => import("../components/sims/security/InjectionSandbox.tsx")),
+  "password-entropy": lazy(() => import("../components/sims/security/PasswordEntropy.tsx")),
+  "xss-demo": lazy(() => import("../components/sims/security/XssDemo.tsx")),
 };
 
 const figs: Record<FigKey, LazyComp> = {
@@ -123,6 +130,10 @@ const figs: Record<FigKey, LazyComp> = {
   "http-evolution": lazy(() => import("../components/figures/HttpEvolution.tsx")),
   // P8 · Data (S14)
   "logical-clocks": lazy(() => import("../components/figures/LogicalClocks.tsx")),
+  // P9 · Security (S15)
+  "rsa-locks": lazy(() => import("../components/figures/RsaLocks.tsx")),
+  "tls-replay": lazy(() => import("../components/figures/TlsReplay.tsx")),
+  "defense-layers": lazy(() => import("../components/figures/DefenseLayers.tsx")),
 };
 
 export function getSim(key: string): LazyComp | undefined {

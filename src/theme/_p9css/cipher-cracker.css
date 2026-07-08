@@ -1,0 +1,415 @@
+/* cipher-cracker ([micro] ch.31) — Caesar/Vigenère encryption, a live 26-bar
+   frequency chart against the English baseline, and the crack (Caesar χ²
+   ranking · Vigenère IC-per-length chart + recovered key). Semantic palette:
+   observed bars --sem-data, English baseline a faint marker, IC peak --sem-ok.
+   Prefix: cc-. Motion gated at the foot. */
+
+.cc-ctl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.cc-keyfield {
+  align-items: center;
+  gap: 8px;
+}
+.cc-lbl {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+.cc-lbl b {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.cc-slider {
+  width: 130px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.cc-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.cc-input {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 6px 9px;
+}
+.cc-input--key {
+  width: 9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.cc-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* --------------------------------- layout --------------------------------- */
+.cc-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cc-io {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .cc-io {
+    grid-template-columns: 1fr;
+  }
+}
+.cc-iofield {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cc-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 9px 11px;
+  resize: vertical;
+  width: 100%;
+  min-height: 5.4rem;
+  word-break: break-word;
+}
+.cc-text:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+.cc-text--out {
+  color: var(--sem-data);
+  overflow-y: auto;
+  white-space: pre-wrap;
+  display: block;
+}
+
+/* -------------------------------- sections -------------------------------- */
+.cc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.cc-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cc-section-title {
+  margin: 0;
+  font-family: var(--font-head);
+  font-size: 0.95rem;
+  color: var(--tx);
+}
+
+.cc-legend {
+  display: inline-flex;
+  gap: 14px;
+}
+.cc-legkey {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx3);
+}
+.cc-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.cc-swatch--obs {
+  background: var(--sem-data);
+}
+.cc-swatch--eng {
+  background: transparent;
+  border-top: 2px solid var(--tx3);
+  height: 2px;
+  border-radius: 0;
+}
+
+/* --------------------------------- charts --------------------------------- */
+.cc-chart,
+.cc-icchart {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 4px;
+  font-family: var(--font-mono);
+}
+
+.cc-grid line {
+  stroke: var(--line);
+  stroke-width: 1;
+  opacity: 0.5;
+  stroke-dasharray: 2 4;
+}
+.cc-grid-lbl,
+.cc-ylbl {
+  fill: var(--tx3);
+  font-size: 8px;
+}
+.cc-axis {
+  stroke: var(--line);
+  stroke-width: 1.25;
+}
+
+.cc-bar {
+  fill: var(--sem-data);
+  opacity: 0.9;
+}
+.cc-bar.is-top {
+  fill: var(--sem-control);
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cc-bar {
+    transition: y 0.28s ease, height 0.28s ease, fill 0.2s ease;
+  }
+}
+
+.cc-engmark {
+  stroke: var(--tx2);
+  stroke-width: 2;
+  opacity: 0.65;
+  stroke-linecap: round;
+}
+
+.cc-xlbl {
+  fill: var(--tx3);
+  font-size: 8.5px;
+}
+.cc-xlbl.is-top {
+  fill: var(--sem-control);
+  font-weight: 700;
+}
+
+.cc-hint {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--tx2);
+}
+.cc-hint b {
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------- crack --------------------------------- */
+.cc-crack {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.cc-idle {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--tx3);
+  padding: 8px 10px;
+  background: var(--s2);
+  border: 1px dashed var(--line);
+  border-radius: var(--r-s);
+}
+.cc-idle b {
+  color: var(--tx2);
+}
+
+/* Caesar result */
+.cc-caesar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cc-best {
+  padding: 11px 12px;
+  background: color-mix(in srgb, var(--sem-ok) 9%, var(--s2));
+  border: 1px solid color-mix(in srgb, var(--sem-ok) 40%, var(--line));
+  border-radius: var(--r-s);
+}
+.cc-best-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.cc-best-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.cc-best-shift {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--tx);
+  font-weight: 700;
+}
+.cc-best-chi {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+.cc-best-plain {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--tx);
+}
+
+.cc-rank {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cc-rankrow {
+  display: grid;
+  grid-template-columns: 4.5rem 4rem 1fr;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  background: var(--s2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.cc-rank-shift {
+  color: var(--tx2);
+}
+.cc-rank-chi {
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+.cc-rank-snip {
+  color: var(--tx3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Vigenère result */
+.cc-vig {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cc-icchart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cc-icref {
+  stroke: var(--sem-ok);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  opacity: 0.85;
+}
+.cc-icref-lbl {
+  fill: var(--sem-ok);
+  font-size: 9px;
+  font-weight: 600;
+}
+.cc-icbar {
+  fill: color-mix(in srgb, var(--sem-data) 70%, var(--s2));
+}
+.cc-icbar.is-peak {
+  fill: var(--sem-ok);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .cc-icbar {
+    transition: y 0.28s ease, height 0.28s ease, fill 0.2s ease;
+  }
+}
+.cc-iclbl {
+  fill: var(--tx3);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.cc-iclbl.is-peak {
+  fill: var(--sem-ok);
+  font-weight: 700;
+}
+
+.cc-recovered {
+  padding: 11px 12px;
+  background: color-mix(in srgb, var(--sem-ok) 9%, var(--s2));
+  border: 1px solid color-mix(in srgb, var(--sem-ok) 40%, var(--line));
+  border-radius: var(--r-s);
+}
+.cc-rechead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.cc-rec-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sem-ok);
+  font-weight: 700;
+}
+.cc-reckey {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tx);
+  letter-spacing: 0.12em;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 2px 8px;
+}
+.cc-reclen {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------ reduced motion ------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .cc-bar,
+  .cc-icbar {
+    transition: none;
+  }
+}

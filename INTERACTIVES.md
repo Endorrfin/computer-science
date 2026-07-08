@@ -238,19 +238,19 @@
 ## P9 · Security
 
 ### ch.31 — Cryptography
-- [HERO] `dh-color-lab` — Diffie-Hellman twice: **paint mode** (public color + secret colors mix → same shared color, eavesdropper stuck) and **number mode** (small primes, real modular arithmetic) — toggle between them
-- [micro] `hash-avalanche` — edit one character → SHA-256 bits flip everywhere (diff heat-map); mining-difficulty toy (find hash starting with N zeros)
-- [micro] `cipher-cracker` — Caesar/Vigenère; frequency-analysis chart cracks it live as ciphertext accumulates
-- [fig] `rsa-locks` — public-lock/private-key metaphor + small-number walkthrough, stepped
-- [fig] `tls-replay` — the ch.28 handshake reframed: which crypto primitive does each step use
-- [boss] `P9: break Vigenère, then run DH by hand` — badge: *Codebreaker*
+- [HERO] `dh-color-lab` ✅ — Diffie-Hellman twice: **paint mode** (public color + secret colors mix → same shared color, eavesdropper stuck) and **number mode** (small primes, real modular arithmetic) — toggle between them
+- [micro] `hash-avalanche` ✅ — edit one character → SHA-256 bits flip everywhere (diff heat-map); mining-difficulty toy (find hash starting with N zeros)
+- [micro] `cipher-cracker` ✅ — Caesar/Vigenère; frequency-analysis chart cracks it live as ciphertext accumulates
+- [fig] `rsa-locks` ✅ — public-lock/private-key metaphor + small-number walkthrough, stepped
+- [fig] `tls-replay` ✅ — the ch.28 handshake reframed: which crypto primitive does each step use
+- [boss] `P9: break Vigenère, then run DH by hand` ✅ — badge: *Codebreaker*
 
 ### ch.32 — Security
-- [micro] `injection-sandbox` — fake login; try `' OR 1=1--` against naive string-concat vs parameterized query; the query's AST shown for both (why parameters win)
-- [micro] `password-entropy` — length/charset/pattern → entropy bits → crack-time at GPU speeds; dictionary-attack demo on "P@ssw0rd"
-- [micro] `xss-demo` — sandboxed fake page; unescaped vs escaped comment rendering
-- [fig] `defense-layers` — attacker walks through missing layers, stepped
-- [quiz] `spot-the-vuln` — 4 code snippets, find the holes
+- [micro] `injection-sandbox` ✅ — fake login; try `' OR 1=1--` against naive string-concat vs parameterized query; the query's AST shown for both (why parameters win)
+- [micro] `password-entropy` ✅ — length/charset/pattern → entropy bits → crack-time at GPU speeds; dictionary-attack demo on "P@ssw0rd"
+- [micro] `xss-demo` ✅ — sandboxed fake page; unescaped vs escaped comment rendering
+- [fig] `defense-layers` ✅ — attacker walks through missing layers, stepped
+- [quiz] `spot-the-vuln` ✅ — 4 code snippets, find the holes
 
 ## P10 · Intelligence
 

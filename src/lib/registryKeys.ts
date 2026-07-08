@@ -81,6 +81,13 @@ export const SIM_KEYS = [
   "election-toy", // ch.30 micro — Raft-style leader election: heartbeats → timeout → term vote → quorum; partition → no split-brain
   "cap-explorer", // ch.30 micro — a partition strikes; choose CP (reject) or AP (diverge), consequences replay on heal
   "replication-lag", // ch.30 micro — primary write, replica trails → stale read; read-your-writes routes to the primary
+  // P9 · Security (S15)
+  "dh-color-lab", // ch.31 HERO — Diffie–Hellman in paint mode + real number mode; hosts the Codebreaker boss (break Vigenère, then DH by hand)
+  "hash-avalanche", // ch.31 micro — edit one char → SHA-256 bits flip (diff heat-map) + leading-zeros mining toy
+  "cipher-cracker", // ch.31 micro — Caesar/Vigenère; live frequency analysis + index-of-coincidence key-length crack
+  "injection-sandbox", // ch.32 micro — fake login; ' OR 1=1-- against string-concat vs parameterized, both ASTs shown
+  "password-entropy", // ch.32 micro — length/charset/pattern → entropy bits → crack-time at GPU rates; dictionary hit on P@ssw0rd
+  "xss-demo", // ch.32 micro — sandboxed comment; unescaped payload executes vs escaped renders as inert text
 ] as const;
 
 export const FIG_KEYS = [
@@ -127,6 +134,10 @@ export const FIG_KEYS = [
   "http-evolution", // ch.28 — HTTP/1.1 head-of-line vs /2 multiplex-over-one-TCP vs /3 QUIC independent streams under loss
   // P8 · Data (S14)
   "logical-clocks", // ch.30 — Lamport timestamps stepped across 3 process timelines; the clock condition + a concurrent pair
+  // P9 · Security (S15)
+  "rsa-locks", // ch.31 — public-lock / private-key metaphor + a small-number RSA walkthrough, stepped
+  "tls-replay", // ch.31 — the ch.28 TLS handshake replayed, labelling the crypto primitive each step uses
+  "defense-layers", // ch.32 — an attacker walks inward; each missing defense layer is the breach, stepped
 ] as const;
 
 export type SimKey = (typeof SIM_KEYS)[number];

@@ -1,0 +1,327 @@
+/* rsa-locks ([fig] ch.31) — RSA as a public padlock (public key, snaps shut for
+   anyone) and a private key (only the holder opens / signs). The public path is
+   the contextual accent (--accent, P9 = #818CF8); the private path is the state
+   colour (--sem-state, violet); a successful round-trip / valid signature is the
+   success colour (--sem-ok, green). Neutral values sit on the surface. Every
+   number is engine-driven; FigureStepper re-keys the SVG per frame so any motion
+   rides the per-frame enter. Prefix: rsa-. */
+
+/* --------------------------------- headings --------------------------------- */
+.rsa-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  fill: var(--tx3);
+}
+.rsa-title {
+  font-family: var(--font-head);
+  font-size: 18px;
+  font-weight: 800;
+  fill: var(--tx);
+}
+
+/* --------------------------------- value tiles --------------------------------- */
+.rsa-tile rect {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.rsa-tile-lbl {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  fill: var(--tx3);
+}
+.rsa-tile-val {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--tx);
+}
+.rsa-tile-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--tx3);
+}
+
+.rsa-tile--public rect {
+  fill: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  stroke: var(--accent);
+}
+.rsa-tile--public .rsa-tile-lbl,
+.rsa-tile--public .rsa-tile-val {
+  fill: var(--accent);
+}
+.rsa-tile--private rect {
+  fill: color-mix(in srgb, var(--sem-state) 10%, var(--surface));
+  stroke: var(--sem-state);
+}
+.rsa-tile--private .rsa-tile-lbl,
+.rsa-tile--private .rsa-tile-val {
+  fill: var(--sem-state);
+}
+.rsa-tile--ok rect {
+  fill: color-mix(in srgb, var(--sem-ok) 11%, var(--surface));
+  stroke: var(--sem-ok);
+}
+.rsa-tile--ok .rsa-tile-lbl,
+.rsa-tile--ok .rsa-tile-val {
+  fill: var(--sem-ok);
+}
+
+/* --------------------------------- padlock --------------------------------- */
+.rsa-lock-body {
+  fill: color-mix(in srgb, var(--accent) 16%, var(--surface));
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.rsa-lock-shackle {
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: d 0.25s ease;
+}
+.rsa-lock-keyhole {
+  fill: var(--accent);
+}
+.rsa-lock--open .rsa-lock-body {
+  fill: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  stroke-dasharray: 5 4;
+}
+.rsa-lock--locked .rsa-lock-body {
+  fill: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rsa-lock--locked .rsa-lock-body {
+    animation: rsa-snap 0.34s ease;
+  }
+}
+@keyframes rsa-snap {
+  0% {
+    transform: translateY(-3px);
+  }
+  55% {
+    transform: translateY(1.5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* --------------------------------- private key --------------------------------- */
+.rsa-key-bow {
+  fill: none;
+  stroke: var(--sem-state);
+  stroke-width: 4.5;
+}
+.rsa-key-eye {
+  fill: var(--surface);
+  stroke: var(--sem-state);
+  stroke-width: 2;
+}
+.rsa-key-blade,
+.rsa-key-bit {
+  fill: var(--sem-state);
+}
+
+/* --------------------------------- actors --------------------------------- */
+.rsa-actor rect {
+  stroke-width: 1.5;
+}
+.rsa-actor-lbl {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.rsa-actor--public rect {
+  fill: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  stroke: var(--accent);
+}
+.rsa-actor--public .rsa-actor-lbl {
+  fill: var(--accent);
+}
+.rsa-actor--private rect {
+  fill: color-mix(in srgb, var(--sem-state) 12%, var(--surface));
+  stroke: var(--sem-state);
+}
+.rsa-actor--private .rsa-actor-lbl {
+  fill: var(--sem-state);
+}
+
+/* --------------------------------- op arrows --------------------------------- */
+.rsa-op-line {
+  stroke-width: 2.25;
+}
+.rsa-op-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.rsa-op-formula {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  fill: var(--tx3);
+}
+.rsa-op--public .rsa-op-line {
+  stroke: var(--accent);
+}
+.rsa-op--public .rsa-op-label {
+  fill: var(--accent);
+}
+.rsa-op--private .rsa-op-line {
+  stroke: var(--sem-state);
+}
+.rsa-op--private .rsa-op-label {
+  fill: var(--sem-state);
+}
+.rsa-op--ok .rsa-op-line {
+  stroke: var(--sem-ok);
+}
+.rsa-op--ok .rsa-op-label {
+  fill: var(--sem-ok);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .rsa-op-line {
+    stroke-dasharray: 7 5;
+    animation: rsa-flow 0.85s linear infinite;
+  }
+}
+@keyframes rsa-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* --------------------------------- key cards --------------------------------- */
+.rsa-keycard rect {
+  stroke-width: 1.75;
+}
+.rsa-keycard-title {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.rsa-keycard-val {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--tx);
+}
+.rsa-keycard-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: var(--tx3);
+}
+.rsa-keycard--pub rect {
+  fill: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  stroke: var(--accent);
+}
+.rsa-keycard--pub .rsa-keycard-title {
+  fill: var(--accent);
+}
+.rsa-keycard--priv rect {
+  fill: color-mix(in srgb, var(--sem-state) 9%, var(--surface));
+  stroke: var(--sem-state);
+}
+.rsa-keycard--priv .rsa-keycard-title {
+  fill: var(--sem-state);
+}
+
+/* --------------------------------- verdict banner --------------------------------- */
+.rsa-verdict rect {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.75;
+}
+.rsa-verdict-title {
+  font-family: var(--font-head);
+  font-size: 14px;
+  font-weight: 800;
+  fill: var(--tx2);
+}
+.rsa-verdict-sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  fill: var(--tx3);
+}
+.rsa-verdict--ok rect {
+  fill: color-mix(in srgb, var(--sem-ok) 10%, var(--surface));
+  stroke: var(--sem-ok);
+}
+.rsa-verdict--ok .rsa-verdict-title {
+  fill: var(--sem-ok);
+}
+
+/* --------------------------------- inline text --------------------------------- */
+.rsa-times {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+  fill: var(--tx3);
+}
+.rsa-hint,
+.rsa-inline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--tx3);
+}
+.rsa-caption-strong {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  fill: var(--tx2);
+  font-variant-numeric: tabular-nums;
+}
+.rsa-caption-num {
+  fill: var(--accent);
+  font-weight: 800;
+}
+.rsa-caption-ok {
+  fill: var(--sem-ok);
+  font-weight: 800;
+}
+.rsa-sup {
+  font-variant-numeric: tabular-nums;
+}
+.rsa-note {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  fill: var(--tx2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rsa-unlock-group {
+    animation: rsa-turn 0.5s ease;
+    transform-origin: 286px 230px;
+  }
+}
+@keyframes rsa-turn {
+  0% {
+    transform: rotate(-8deg);
+  }
+  60% {
+    transform: rotate(3deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* --------------------------------- reduced motion --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .rsa-lock-shackle,
+  .rsa-lock--locked .rsa-lock-body,
+  .rsa-op-line,
+  .rsa-unlock-group {
+    transition: none;
+    animation: none;
+    stroke-dasharray: none;
+  }
+}
