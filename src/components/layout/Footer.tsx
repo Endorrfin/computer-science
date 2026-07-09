@@ -2,12 +2,12 @@
 // (The "Built with Vite · React · TypeScript" row was dropped to keep it to two
 // lines.) Counts are DERIVED from the curriculum data so they can never drift;
 // `SIGNATURE_SIMS` is the planned hero-simulator target (INTERACTIVES.md census).
-import { CHAPTERS, PARTS } from "../../data/curriculum.ts";
+import { CHAPTERS_META, PARTS_META } from "../../data/curriculumMeta.gen.ts"; // CHANGED: S19 — meta
 
 // The climb brands as 11 parts (P1 Information … P11 Capstone); P0 Orientation
 // is the on-ramp, so it's excluded from the headline count.
-const PARTS_COUNT = PARTS.filter((p) => p.id !== "p0").length;
-const UNITS_COUNT = CHAPTERS.length; // 37 units — all stubbed from S1, filled session by session
+const PARTS_COUNT = PARTS_META.filter((p) => p.id !== "p0").length;
+const UNITS_COUNT = CHAPTERS_META.length; // 37 units — all stubbed from S1, filled session by session
 const SIGNATURE_SIMS = 17; // planned hero simulators (INTERACTIVES.md)
 
 const Dot = () => (
@@ -35,6 +35,11 @@ export default function Footer() {
           <Dot />
           <a className="flink" href="https://github.com/Endorrfin/computer-science" target="_blank" rel="noreferrer">
             GitHub&nbsp;↗
+          </a>
+          <Dot />
+          {/* CHANGED: S19 — about page */}
+          <a className="flink" href="#/about">
+            About
           </a>
         </div>
 

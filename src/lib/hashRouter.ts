@@ -1,7 +1,7 @@
 // Custom hash router (no router lib — CLAUDE.md §2).
 // Routes: #/ (map) · #/part/<id> (map, part expanded) · #/chapter/<id> ·
 //         #/review · #/katas[/<kataId>] · #/interview[/<chapterId>] ·
-//         #/bosses · #/search (S18)
+//         #/bosses · #/search (S18) · #/about (S19)
 import { useSyncExternalStore } from "react";
 
 export type Route =
@@ -12,6 +12,7 @@ export type Route =
   | { name: "interview"; chapterId?: string } // CHANGED: S18 — pre-filtered bank
   | { name: "bosses" }
   | { name: "search" } // CHANGED: S18 — global search page
+  | { name: "about" } // CHANGED: S19 — about the guide & author
   | { name: "notfound"; hash: string };
 
 export function parseHash(raw: string): Route {
@@ -25,6 +26,7 @@ export function parseHash(raw: string): Route {
   if (seg[0] === "interview") return { name: "interview", chapterId: seg[1] }; // CHANGED: S18
   if (seg[0] === "bosses") return { name: "bosses" };
   if (seg[0] === "search") return { name: "search" }; // CHANGED: S18
+  if (seg[0] === "about") return { name: "about" }; // CHANGED: S19
   return { name: "notfound", hash: h };
 }
 

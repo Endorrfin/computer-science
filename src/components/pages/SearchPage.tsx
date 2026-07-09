@@ -4,9 +4,12 @@
 // self-contained (react-refresh: components-only exports).
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { ensureIndex, search } from "../../lib/search.ts";
+// CHANGED: S19 — async snapshot from searchClient (shared singleton with the
+// ⌘K palette); no static data imports.
+import { searchIn } from "../../lib/search.ts";
 import type { SearchDoc, SearchDocKind, SearchHit } from "../../lib/search.ts";
-import { chapterById, partById } from "../../data/curriculum.ts";
+import { ensureSearchIndex } from "../../lib/searchClient.ts";
+import type { SearchSnapshot } from "../../lib/searchClient.ts";
 import "../../theme/_engine/search.css";
 
 const KIND_ORDER: SearchDocKind[] = ["chapter", "part", "keypoint", "interview", "kata", "sim", "boss"];
@@ -31,12 +34,10 @@ const KIND_CHIP: Record<SearchDocKind, string> = {
 const CHAPTER_KINDS = new Set<SearchDocKind>(["keypoint", "interview", "kata", "sim"]);
 const SUGGESTIONS = ["deadlock", "huffman", "cache", "two's complement", "tcp handshake"];
 
-function hitAccent(doc: SearchDoc): string | undefined {
-  if (doc.kind === "part") return partById(doc.id.replace(/^part:/, ""))?.accent;
-  if (doc.chapterId) {
-    const ch = chapterById(doc.chapterId);
-    return ch ? partById(ch.part)?.accent : undefined;
-  }
+// CHANGED: S19 — accents/titles come from the snapshot maps
+function hitAccent(doc: SearchDoc, snap: SearchSnapshot): string | undefined {
+  if (doc.kind === "part") return snap.partAccent[doc.id.replace(/^part:/, "")];
+  if (doc.chapterId) return snap.chapterAccent[doc.chapterId];
   return undefined;
 }
 
@@ -55,14 +56,21 @@ function renderTitle(title: string, q: string): ReactNode {
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
+  // CHANGED: S19 — index loads async once per app life (shared with palette)
+  const [snap, setSnap] = useState<SearchSnapshot | null>(null);
 
-  // prebuild once on page mount so the first keystroke answers instantly
   useEffect(() => {
-    ensureIndex();
+    let mounted = true;
+    void ensureSearchIndex().then((s) => {
+      if (mounted) setSnap(s);
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const q = query.trim();
-  const hits = useMemo(() => (q === "" ? [] : search(q, 30)), [q]);
+  const hits = useMemo(() => (q === "" || snap === null ? [] : searchIn(snap.docs, q, 30)), [q, snap]);
   const groups = useMemo(() => {
     const g: { kind: SearchDocKind; label: string; hits: SearchHit[] }[] = [];
     for (const kind of KIND_ORDER) {
@@ -103,6 +111,10 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
+      ) : snap === null ? (
+        <p className="spg-empty" role="status">
+          Building the search index…
+        </p>
       ) : groups.length === 0 ? (
         <p className="spg-empty">Nothing for “{q}” — try fewer words.</p>
       ) : (
@@ -111,9 +123,10 @@ export default function SearchPage() {
             <h2 className="spg-ghead">{g.label}</h2>
             {g.hits.map((h) => {
               const doc = h.doc;
+              // CHANGED: S19 — snapshot maps instead of curriculum lookups
               const chTitle =
-                CHAPTER_KINDS.has(doc.kind) && doc.chapterId ? chapterById(doc.chapterId)?.title : undefined;
-              const accent = hitAccent(doc);
+                CHAPTER_KINDS.has(doc.kind) && doc.chapterId ? snap?.chapterTitle[doc.chapterId] : undefined;
+              const accent = snap === null ? undefined : hitAccent(doc, snap);
               return (
                 <a
                   key={doc.id}

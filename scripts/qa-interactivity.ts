@@ -8,6 +8,16 @@ import { INTERVIEW } from "../src/data/interview.ts";
 import { BOSSES, bossById } from "../src/data/bosses.ts";
 import { KATAS } from "../src/data/katas.ts";
 import { FIG_KEYS, SIM_KEYS } from "../src/lib/registryKeys.ts";
+// CHANGED: S19 — meta-sync gate: the generated landing metadata must match
+// the curriculum exactly, or the landing lies (lazy-load split).
+import {
+  CHAPTERS_META,
+  INTERVIEW_COUNT,
+  KATA_COUNT,
+  PARTS_META,
+  QUIZ_COUNT,
+} from "../src/data/curriculumMeta.gen.ts";
+import { deriveMeta } from "./gen-meta.ts";
 
 const errors: string[] = [];
 const warnings: string[] = [];
@@ -125,6 +135,21 @@ for (const c of CHAPTERS.filter((x) => !isStub(x))) {
 for (const k of SIM_KEYS) if (!usedSims.has(k)) warn(`registry sim '${k}' referenced by no chapter`);
 for (const k of FIG_KEYS) if (!usedFigs.has(k)) warn(`registry figure '${k}' referenced by no chapter`);
 for (const q of QUIZZES) if (!usedQuizzes.has(q.id)) warn(`quiz '${q.id}' referenced by no chapter`);
+
+// ---------- meta sync (S19 lazy-load split) ----------
+{
+  const want = deriveMeta();
+  const got = {
+    parts: PARTS_META,
+    chapters: CHAPTERS_META,
+    quizCount: QUIZ_COUNT,
+    interviewCount: INTERVIEW_COUNT,
+    kataCount: KATA_COUNT,
+  };
+  if (JSON.stringify(got) !== JSON.stringify(want)) {
+    err("curriculumMeta.gen.ts is STALE — run `npm run meta` and commit the result");
+  }
+}
 
 // ---------- report ----------
 const live = CHAPTERS.filter((c) => !isStub(c)).length;

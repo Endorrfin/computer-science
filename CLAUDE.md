@@ -399,6 +399,8 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   filters (193 Q, every chapter ≥5), 74 katas (every content chapter ≥1).**
 - **S19 · Polish & ship** — a11y/mobile/perf pass, OG image, About page, QA integrity gate,
   final deploy. *(Sessions may merge if velocity allows; heroes never ship half-done.)*
+  ✅ **SHIPPED: lazy-load split (index 993 → 47 KB), a11y/mobile pass, og.png, #/about,
+  meta-sync qa gate.**
 
 ---
 
@@ -1427,3 +1429,42 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   kata-hit auto-opens the runner). **THE LEARNING ENGINE IS COMPLETE — §6's three signature systems + all proven
   aids live.** S18 CLOSED pending user commit. Suggested branch `feat/s18-learning-engine`. Next: **S19 — polish &
   ship** (a11y/mobile/perf pass incl. the lazy-load split, OG image, About page, QA integrity gate, final deploy).
+- **2026-07-09 · S19 (polish & ship — the guide is DONE)** — the final roadmap session: performance, accessibility,
+  brand card, About page, ship. **Kickoff (3 AskUserQuestion, all recommended picks):** (1) lazy-load split = **meta
+  module + route-lazy + on-demand data** (not the minimal manualChunks variant, not the risky 37-file curriculum
+  restructure); (2) OG image = **stack-spectrum brand card**; (3) About = **#/about + footer link** (topbar stays
+  clean). **The split (the headline):** `scripts/gen-meta.ts` emits `src/data/curriculumMeta.gen.ts` — PARTS_META +
+  CHAPTERS_META (id/part/order/title/tagline/stub/plannedSession + **SRS cardIds**) + QUIZ/INTERVIEW/KATA counts +
+  meta helpers — and the always-loaded shell (TopBar/Footer/StackMap/PartNode) now renders from it alone. `srs.ts`
+  became content-free (activeChapterIds runs over any {id,stub} list; dueSummary needs only card ids), deck BUILDING
+  moved to `srsCards.ts` (curriculum-heavy, reached only from the lazy ReviewPage), and `srsMeta.ts` counts the
+  due-badge synchronously from meta cardIds — no async hooks, no loops. `search.ts` became data-free
+  (buildIndex(data), searchIn(index,…)); the new `searchClient.ts` owns the async singleton snapshot (docs +
+  chapterTitle/accent maps) built from **dynamic imports** of curriculum/interview/katas; SearchOverlay/SearchPage
+  await it (brief "Building the search index…" state on first-ever open). `App.tsx` lazy-loads all 7 content routes
+  behind Suspense (RouteLoading spinner; reduced-motion → plain text). **qa gate grew a meta-sync check**: qa imports
+  deriveMeta() from gen-meta.ts and fails verify/CI if the .gen file is stale ("run npm run meta"). New npm script:
+  `meta`. **Bundle result (dist-s19): index 992.7 → 46.7 KB (357 → 17.2 gzip)** — landing = index + react-vendor
+  189.7 ≈ **77 KB gzip total**; on-demand chunks: curriculum 513.4 (188.8 gzip, loads once on first
+  chapter/review/search, then cached), interview 162.0 (65.8), katas 153.4 (44.7), ChapterPage 98.7 (35.5); per-sim
+  chunks unchanged. **A11y/mobile:** skip-to-content link (hash-router-safe: preventDefault + focus, NOT href
+  navigation — a naive `#main-content` href would route to 404), route-change focus lands on `<main tabIndex=-1>`
+  (never on initial load), per-route `document.title` (chapter titles from meta), `aria-current="page"` on the
+  topnav, coarse-pointer touch targets, and a 2-row mobile topbar ≤640px (nav becomes a scroll row, brand tagline
+  hidden ≤860px). **OG:** `public/og.png` 1200×630 via `scripts/gen-og.mjs` (@resvg/resvg-js; fonts extracted from
+  @fontsource woff → ttf with python fontTools; DejaVu Sans as the U+2192 arrow fallback — fontsource latin subsets
+  lack it; UA flag drawn as paths, no emoji fonts); index.html gained og:image (ABSOLUTE url — scrapers have no
+  base), og:image:width/height/alt + twitter:card summary_large_image set. **About (#/about):** mission, who it's
+  for, how to use the engine (map/bosses/review/katas/interview/⌘K), "Your data" privacy note (localStorage only,
+  export/import), under-the-hood, sources & inspiration, author block with contact — all counts DERIVED from
+  meta+registry so the page can't drift; footer got the About link; route title wired. **Tests updated to the new
+  seams:** test-srs now also proves **meta cardIds ≡ content card ids** (the badge can't drift) and dueCount sees
+  overdue; test-search injects DATA + asserts buildIndex determinism (the singleton moved browser-side). **verify =
+  typecheck ✓ · lint ✓ (0/0) · qa ✓ (meta-sync holds) · test ✓ (36 suites) · build ✓** (dist-s19; sandbox unlink
+  note: a STALE dist-s* can't be emptied either — `mv` it aside within the same FS and build fresh). NOT
+  sandbox-testable — **post-deploy browser QA (5 min):** Network tab on the landing shows NO curriculum chunk;
+  open a chapter → curriculum loads once, navigating chapters loads no new data; Tab reveals the skip link; ⌘K
+  first-ever open flashes "Building the search index…" then hits land; due badge appears after marking a chapter
+  done; #/about renders with real counts; share the URL in Slack/Telegram → the spectrum card shows (or check via
+  opengraph.xyz). **S19 CLOSED pending user commit — THE ROADMAP IS COMPLETE: 19 sessions, 11 parts, 37 units,
+  the learning engine, and a shipped, fast, accessible guide.** Suggested branch `feat/s19-polish-ship`.

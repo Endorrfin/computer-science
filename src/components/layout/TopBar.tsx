@@ -1,9 +1,9 @@
 import { useHashRoute } from "../../lib/hashRouter.ts";
 import { useDoneSet } from "../../lib/progress.ts";
-import { CHAPTERS } from "../../data/curriculum.ts";
+import { CHAPTERS_META } from "../../data/curriculumMeta.gen.ts"; // CHANGED: S19 — meta, not the full curriculum
 import { cx } from "../../lib/utils.ts";
 import LensToggle from "./LensToggle.tsx";
-import { activeChapterIds, chapterCards, dueSummary } from "../../lib/srs.ts"; // CHANGED: S18
+import { dueCount } from "../../lib/srsMeta.ts"; // CHANGED: S19 — content-free badge
 import { useDeckOverrides, useSrsCards } from "../../lib/srsStore.ts"; // CHANGED: S18
 import { openSearchPalette } from "../../lib/searchOverlayStore.ts"; // CHANGED: S18
 
@@ -20,11 +20,10 @@ const IS_MAC = typeof navigator !== "undefined" && /Mac|iP(hone|ad|od)/.test(nav
 export default function TopBar() {
   const route = useHashRoute();
   const done = useDoneSet();
-  // CHANGED: S18 — live "cards due" badge on the Review tab
+  // CHANGED: S19 — live "cards due" badge, counted from meta card ids
   const overrides = useDeckOverrides();
   const srsStates = useSrsCards();
-  const activeCards = [...activeChapterIds(done, overrides)].flatMap(chapterCards);
-  const { due } = dueSummary(activeCards, srsStates, Date.now());
+  const due = dueCount(done, overrides, srsStates, Date.now());
 
   return (
     <header className="topbar">
@@ -42,7 +41,12 @@ export default function TopBar() {
       </a>
       <nav className="topnav" aria-label="Main">
         {NAV.map((n) => (
-          <a key={n.name} href={n.hash} className={cx("topnav-link", route.name === n.name && "active")}>
+          <a
+            key={n.name}
+            href={n.hash}
+            className={cx("topnav-link", route.name === n.name && "active")}
+            aria-current={route.name === n.name ? "page" : undefined} // CHANGED: S19 — a11y
+          >
             {n.label}
             {/* CHANGED: S18 — due-cards badge (§6: "landing shows N cards due today") */}
             {n.name === "review" && due > 0 && (
@@ -70,7 +74,7 @@ export default function TopBar() {
           <kbd className="search-trigger-kbd">{IS_MAC ? "⌘K" : "Ctrl K"}</kbd>
         </button>
         <span className="progress-chip" title="Chapters completed">
-          {done.size} / {CHAPTERS.length}
+          {done.size} / {CHAPTERS_META.length}
         </span>
         <LensToggle />
       </div>

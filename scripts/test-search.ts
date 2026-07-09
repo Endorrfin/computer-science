@@ -1,11 +1,17 @@
 // Global-search truth-tests — tokenizer, md stripping, index coverage and
 // integrity, ranking sanity, AND-semantics, prefix matching, deep-link shape.
 // Deterministic, no DOM. Run: node --experimental-strip-types scripts/test-search.ts
-import { buildIndex, ensureIndex, search, stripMd, tokenize } from "../src/lib/search.ts";
-import { CHAPTERS, isStub } from "../src/data/curriculum.ts";
+// CHANGED: S19 — search.ts is data-free now; tests inject the data and bind
+// a local `search` over one shared index (same shape the browser client uses).
+import { buildIndex, searchIn, stripMd, tokenize } from "../src/lib/search.ts";
+import { CHAPTERS, PARTS, isStub } from "../src/data/curriculum.ts";
 import { INTERVIEW } from "../src/data/interview.ts";
 import { KATAS } from "../src/data/katas.ts";
 import { BOSSES } from "../src/data/bosses.ts";
+
+const DATA = { parts: PARTS, chapters: CHAPTERS, interview: INTERVIEW, katas: KATAS, bosses: BOSSES };
+const INDEX = buildIndex(DATA);
+const search = (q: string, limit?: number) => searchIn(INDEX, q, limit);
 
 let failed = 0;
 function ok(name: string, cond: boolean, detail?: string): void {
@@ -29,7 +35,7 @@ function ok(name: string, cond: boolean, detail?: string): void {
 // ===================== (B) index coverage & integrity =====================
 {
   console.log("index:");
-  const idx = buildIndex();
+  const idx = INDEX; // CHANGED: S19 — built once above with injected data
   const live = CHAPTERS.filter((c) => !isStub(c));
   const kinds = (k: string) => idx.filter((d) => d.kind === k);
   ok("one doc per live chapter", kinds("chapter").length === live.length, `${kinds("chapter").length} vs ${live.length}`);
@@ -39,7 +45,8 @@ function ok(name: string, cond: boolean, detail?: string): void {
   ok("every boss indexed", kinds("boss").length === BOSSES.length);
   ok("doc ids unique", new Set(idx.map((d) => d.id)).size === idx.length);
   ok("every doc has a #/ deep link", idx.every((d) => d.hash.startsWith("#/")));
-  ok("ensureIndex is a stable singleton", ensureIndex() === ensureIndex());
+  // CHANGED: S19 — determinism: two builds over the same data agree exactly
+  ok("buildIndex is deterministic", JSON.stringify(buildIndex(DATA)) === JSON.stringify(idx));
   const simDoc = idx.find((d) => d.id === "sim:huffman-lab");
   ok("sims indexed and linked to their host chapter", simDoc !== undefined && simDoc.hash === "#/chapter/ch3",
     simDoc?.hash);

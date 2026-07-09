@@ -3,9 +3,14 @@
 // `now` is always injected. Run: node --experimental-strip-types scripts/test-srs.ts
 import {
   AGAIN_DELAY_MS, DAY_MS, MAX_INTERVAL_DAYS, MIN_EASE, MAX_EASE, START_EASE,
-  activeChapterIds, allCards, buildQueue, chapterCards, dueSummary, gradeCard,
+  activeChapterIds, buildQueue, dueSummary, gradeCard,
   isDue, isNew, previewIntervals,
 } from "../src/lib/srs.ts";
+// CHANGED: S19 — deck building split into srsCards.ts; the badge path counts
+// meta cardIds (srsMeta.ts). Both are covered below.
+import { allCards, chapterCards } from "../src/lib/srsCards.ts";
+import { activeCardIds, dueCount } from "../src/lib/srsMeta.ts";
+import { CHAPTERS_META } from "../src/data/curriculumMeta.gen.ts";
 import type { SrsCardState } from "../src/lib/srs.ts";
 import { CHAPTERS, chapterById, isStub } from "../src/data/curriculum.ts";
 import { parseImport } from "../src/lib/dataTransfer.ts";
@@ -92,10 +97,18 @@ const NOW = Date.UTC(2026, 6, 8, 12, 0, 0); // fixed clock
 {
   console.log("deck activation & queue:");
   const done = new Set(["ch4", "ch5"]);
-  const act1 = activeChapterIds(done, {});
+  const act1 = activeChapterIds(CHAPTERS_META, done, {}); // CHANGED: S19 — new signature
   ok("done chapters active", act1.has("ch4") && act1.has("ch5") && !act1.has("ch6"));
-  const act2 = activeChapterIds(done, { ch6: "on", ch4: "off" });
+  const act2 = activeChapterIds(CHAPTERS_META, done, { ch6: "on", ch4: "off" });
   ok("opt-in adds, opt-out beats done", act2.has("ch6") && !act2.has("ch4") && act2.has("ch5"));
+
+  // CHANGED: S19 — the meta badge path must agree with the content path exactly
+  const metaIds = activeCardIds(done, {}).map((c) => c.id).sort();
+  const contentIds = [...act1].flatMap((id) => chapterCards(id).map((c) => c.id)).sort();
+  ok("meta cardIds ≡ content card ids (badge can't drift)", JSON.stringify(metaIds) === JSON.stringify(contentIds));
+  eq("dueCount: all active cards new → 0 due", dueCount(done, {}, {}, NOW), 0);
+  const overdueState = { [metaIds[0]]: { reps: 1, ease: 2.5, intervalDays: 1, dueAt: NOW - 1, lapses: 0 } };
+  eq("dueCount sees an overdue card", dueCount(done, {}, overdueState, NOW), 1);
 
   const cards = chapterCards("ch4");
   const a = cards[0].id;

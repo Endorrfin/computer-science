@@ -5,9 +5,12 @@
 // aria-activedescendant across the flat hit list, Enter navigates.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
-import { ensureIndex, search } from "../../lib/search.ts";
+// CHANGED: S19 — the index arrives async from searchClient (dynamic import of
+// the data modules); no static curriculum import in the always-mounted shell.
+import { searchIn } from "../../lib/search.ts";
 import type { SearchDoc, SearchDocKind, SearchHit } from "../../lib/search.ts";
-import { chapterById, partById } from "../../data/curriculum.ts";
+import { ensureSearchIndex } from "../../lib/searchClient.ts";
+import type { SearchSnapshot } from "../../lib/searchClient.ts";
 import { navigate } from "../../lib/hashRouter.ts";
 import { closeSearchPalette, toggleSearchPalette, useSearchOpen } from "../../lib/searchOverlayStore.ts";
 import { cx } from "../../lib/utils.ts";
@@ -54,12 +57,10 @@ function groupHits(hits: SearchHit[]): Group[] {
 }
 
 /** Part accent for a hit — colors the active row's border only (no rainbow). */
-function hitAccent(doc: SearchDoc): string | undefined {
-  if (doc.kind === "part") return partById(doc.id.replace(/^part:/, ""))?.accent;
-  if (doc.chapterId) {
-    const ch = chapterById(doc.chapterId);
-    return ch ? partById(ch.part)?.accent : undefined;
-  }
+// CHANGED: S19 — accents come from the snapshot maps, not curriculum lookups
+function hitAccent(doc: SearchDoc, snap: SearchSnapshot): string | undefined {
+  if (doc.kind === "part") return snap.partAccent[doc.id.replace(/^part:/, "")];
+  if (doc.chapterId) return snap.chapterAccent[doc.chapterId];
   return undefined;
 }
 
@@ -83,11 +84,20 @@ const optId = (i: number): string => `sov-opt-${i}`;
 function Palette() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  // CHANGED: S19 — the index loads async on first open (data modules are
+  // dynamic imports now); null = still loading, results render when it lands.
+  const [snap, setSnap] = useState<SearchSnapshot | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // prebuild the index the moment the palette opens → first keystroke is instant
+  // start loading the moment the palette opens → typically ready pre-keystroke
   useEffect(() => {
-    ensureIndex();
+    let mounted = true;
+    void ensureSearchIndex().then((s) => {
+      if (mounted) setSnap(s);
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // body scroll lock while open (documentElement — body has no scroll of its own)
@@ -101,7 +111,7 @@ function Palette() {
   }, []);
 
   const q = query.trim();
-  const hits = useMemo(() => (q === "" ? [] : search(q, 20)), [q]);
+  const hits = useMemo(() => (q === "" || snap === null ? [] : searchIn(snap.docs, q, 20)), [q, snap]);
   const groups = useMemo(() => groupHits(hits), [hits]);
   const flat = useMemo(() => groups.flatMap((g) => g.hits), [groups]);
   const act = flat.length === 0 ? -1 : Math.min(active, flat.length - 1);
@@ -174,6 +184,11 @@ function Palette() {
               </button>
             ))}
           </div>
+        ) : snap === null ? (
+          // CHANGED: S19 — first-ever open races the index load; be honest, not empty
+          <p className="sov-empty" role="status">
+            Building the search index…
+          </p>
         ) : flat.length === 0 ? (
           <p className="sov-empty">
             Nothing for “{q}” — try fewer words.
@@ -187,9 +202,10 @@ function Palette() {
                   const i = g.start + j;
                   const on = i === act;
                   const doc = h.doc;
+                  // CHANGED: S19 — titles/accents from the snapshot maps
                   const chTitle =
-                    CHAPTER_KINDS.has(doc.kind) && doc.chapterId ? chapterById(doc.chapterId)?.title : undefined;
-                  const accent = hitAccent(doc);
+                    CHAPTER_KINDS.has(doc.kind) && doc.chapterId ? snap?.chapterTitle[doc.chapterId] : undefined;
+                  const accent = snap === null ? undefined : hitAccent(doc, snap);
                   return (
                     <div
                       key={doc.id}

@@ -1,11 +1,12 @@
 import type { CSSProperties } from "react";
-import type { BossDef, Chapter, Part } from "../../lib/types.ts";
-import { isStub } from "../../data/curriculum.ts";
+// CHANGED: S19 — renders from ChapterMeta (stub flag inline), so the landing
+// no longer imports the full curriculum.
+import type { BossDef, ChapterMeta, Part } from "../../lib/types.ts";
 import { cx } from "../../lib/utils.ts";
 
 type Props = {
   part: Part;
-  chapters: Chapter[];
+  chapters: ChapterMeta[];
   boss?: BossDef;
   bossCleared: boolean;
   doneSet: ReadonlySet<string>;
@@ -40,7 +41,7 @@ function Ring({ done, total, accent }: { done: number; total: number; accent: st
 
 export default function PartNode({ part, chapters, boss, bossCleared, doneSet, expanded, onToggle }: Props) {
   const done = chapters.filter((c) => doneSet.has(c.id)).length;
-  const live = chapters.filter((c) => !isStub(c)).length;
+  const live = chapters.filter((c) => !c.stub).length; // CHANGED: S19
 
   return (
     <section
@@ -83,7 +84,7 @@ export default function PartNode({ part, chapters, boss, bossCleared, doneSet, e
         <div className="chapter-list">
           <p className="part-blurb">{part.blurb}</p>
           {chapters.map((ch) => {
-            const stub = isStub(ch);
+            const stub = ch.stub; // CHANGED: S19
             const isDone = doneSet.has(ch.id);
             return stub ? (
               <div key={ch.id} className="chapter-item stub">

@@ -25,10 +25,11 @@ import type { Chapter } from "../../lib/types.ts";
 import {
   activeChapterIds,
   buildQueue,
-  chapterCards,
   dueSummary,
   previewIntervals,
 } from "../../lib/srs.ts";
+import { chapterCards } from "../../lib/srsCards.ts"; // CHANGED: S19 — content-heavy deck building split out
+import { CHAPTERS_META } from "../../data/curriculumMeta.gen.ts"; // CHANGED: S19 — activation runs on meta stub flags
 import type {
   DeckOverride,
   DueSummary,
@@ -130,7 +131,7 @@ export default function ReviewPage() {
   const [, setTick] = useState(0); // bump → re-read Date.now() without a timer
 
   const now = Date.now();
-  const activeIds = activeChapterIds(done, overrides);
+  const activeIds = activeChapterIds(CHAPTERS_META, done, overrides); // CHANGED: S19 — new signature
   const activeCards = [...activeIds].flatMap((id) => chapterCards(id));
   const summary = dueSummary(activeCards, states, now);
   const queue = buildQueue(activeCards, states, now);
