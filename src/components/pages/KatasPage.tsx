@@ -9,7 +9,11 @@
 // a single component (react-refresh clean). KataRunner receives the current
 // kata's solved flag and an onSolved callback; marking solved updates the store
 // and the counter re-renders live.
-import { useState, useSyncExternalStore } from "react";
+//
+// S18: search deep-links a kata via #/katas/<kataId> → the optional
+// `initialKataId` prop (initial state only — App key-remounts on change):
+// that kata starts selected and the runner scrolls into view on mount.
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { KATAS } from "../../data/katas.ts";
 import type { Kata } from "../../data/katas.ts";
 import { chapterById } from "../../data/curriculum.ts";
@@ -77,10 +81,25 @@ const DIFFICULTY_LABEL: Record<Kata["difficulty"], string> = {
   stretch: "stretch",
 };
 
-export default function KatasPage() {
+export default function KatasPage({ initialKataId }: { initialKataId?: string }) {
   const solved = useSolvedSet();
-  const [selectedId, setSelectedId] = useState<string>(() => KATAS[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState<string>(() =>
+    initialKataId && KATAS.some((k) => k.id === initialKataId)
+      ? initialKataId
+      : (KATAS[0]?.id ?? ""),
+  );
   const selected = KATAS.find((k) => k.id === selectedId) ?? KATAS[0];
+
+  // Deep link: bring the runner into view once, on mount only.
+  const runnerRef = useRef<HTMLDivElement>(null);
+  const didScrollRef = useRef(false);
+  useEffect(() => {
+    if (didScrollRef.current) return;
+    didScrollRef.current = true;
+    if (initialKataId && KATAS.some((k) => k.id === initialKataId)) {
+      runnerRef.current?.scrollIntoView({ behavior: "auto", block: "start" });
+    }
+  }, [initialKataId]);
 
   const solvedCount = KATAS.filter((k) => solved.has(k.id)).length;
 
@@ -209,7 +228,7 @@ export default function KatasPage() {
         </nav>
 
         {/* Runner for the selected kata */}
-        <div className="kata-detail" style={{ minWidth: 0 }}>
+        <div ref={runnerRef} className="kata-detail" style={{ minWidth: 0 }}>
           {selected && (
             <KataRunner
               key={selected.id}

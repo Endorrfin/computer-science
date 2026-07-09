@@ -96,6 +96,15 @@ export const INTERVIEW: InterviewQ[] = [
       "Because 16 = 2⁴: a hex digit ranges 0–15, precisely what four bits encode. So conversion is mechanical — group bits into nibbles and translate each: `1101_0110` = `D6`. No arithmetic needed, unlike decimal.\n" +
       "That's why hex is everywhere bytes matter: memory addresses, color codes (`#FF8800` = three bytes), bitmasks, hexdumps. Two hex digits = one byte, which is the unit you actually reason about.",
   },
+  {
+    id: "iv-ch1-5",
+    chapterId: "ch1",
+    level: "senior",
+    q: "What is endianness, when does it actually bite, and why don't we notice it most of the time?",
+    a:
+      "Endianness is the **byte order** of multi-byte values in memory: **little-endian** stores the least-significant byte first (x86, and in practice ARM), **big-endian** the most-significant first — which is also **network byte order**. Note it's about *bytes*, not bits: `0x12345678` lands as `78 56 34 12` on a little-endian machine.\n" +
+      "It bites exactly where **raw bytes cross a boundary**: binary file formats, network protocols (hence `htons`/`ntohl`), memory dumps you read by eye, and type-punning — reinterpreting the same buffer as a different lane width (a classic source of 'works on my machine' in serialization code). We don't notice day-to-day because *within* one machine the CPU is self-consistent — byte order only becomes visible when bytes are **serialized** and read back under a different convention. The senior move: never let byte order be implicit — formats and protocols must *define* it, and portable code converts at the boundary.",
+  },
   // ---- ch.2 · Encoding the world ----
   {
     id: "iv-ch2-1",
@@ -131,6 +140,15 @@ export const INTERVIEW: InterviewQ[] = [
     q: "What is the Nyquist limit, and why is CD audio sampled at 44.1 kHz with 16-bit depth?",
     a:
       "Nyquist: to capture a signal you must sample at **more than twice its highest frequency**; below that, high frequencies fold down and masquerade as false low ones (aliasing). Human hearing tops out near 20 kHz, so you need >40 kHz — 44.1 kHz leaves headroom for an anti-alias filter's roll-off (and it fit early video-tape storage). **Sample rate** sets the frequency ceiling; **bit depth** sets the amplitude resolution / noise floor: 16 bits ≈ 65,536 levels ≈ ~96 dB dynamic range, past most listening environments. Two orthogonal knobs — time and amplitude.",
+  },
+  {
+    id: "iv-ch2-5",
+    chapterId: "ch2",
+    level: "senior",
+    q: "Why can `'🇺🇦'.length` be 4 in JavaScript — and what are the three different 'lengths' of a string?",
+    a:
+      "JavaScript's `.length` counts **UTF-16 code units**, not characters. The flag is **two code points** (the regional indicators U+1F1FA + U+1F1E6), both outside the BMP, so each needs a **surrogate pair** — 2 × 2 code units = 4. The three lengths: **code units** (storage in UTF-16: `.length` = 4), **code points** (Unicode scalar values: `[...s].length` = 2), and **grapheme clusters** (what a user sees as one symbol: `Intl.Segmenter` = 1).\n" +
+      "Where it bites: `slice` can cut a surrogate pair in half and produce mojibake; a DB limit counts **UTF-8 bytes** while the UI counts graphemes, so 'fits on screen' ≠ 'fits in the column'; ZWJ emoji (family, skin tones) are many code points but one grapheme, so naive 'reverse a string' or cursor math shreds them. The rule: pick the unit per task — byte limits in bytes, cursor/selection in graphemes — and never assume 1 visible character = 1 unit anywhere.",
   },
   // ---- ch.3 · Compression & entropy ----
   {
@@ -543,6 +561,15 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "**MAJOR.MINOR.PATCH**: patch = backward-compatible bug fixes, minor = backward-compatible new features, major = **breaking** changes. It's a contract that lets consumers auto-upgrade patches/minors safely and brace for majors — the basis for lockfiles and version ranges.\n" +
       "Where it breaks: compatibility is about **behavior**, not just the type signature, so a 'patch' can still break you (a changed default, a tightened validation, a perf regression). Transitive dependencies can pull incompatible versions; and plenty of projects practice 'semver in name only'. So treat it as a strong hint, not a guarantee — pin versions, keep a lockfile, and let tests be the real safety net.",
+  },
+  {
+    id: "iv-ch12-5",
+    chapterId: "ch12",
+    level: "staff",
+    q: "'Duplication is far cheaper than the wrong abstraction.' Defend that claim, then attack it.",
+    a:
+      "**Defend:** premature DRY couples call sites that merely *look* similar. When they diverge — and they do — the shared helper sprouts boolean flags and branches; now every change to it risks every caller, and the blast radius of a tweak is the whole codebase. Duplication keeps change **local**, and you can still unify later, once the real shape is known (the 'rule of three'). Undoing a wrong abstraction is much harder than merging two copies — the standard prescription is to **inline it back** and let the true seams re-emerge.\n" +
+      "**Attack:** duplicated **knowledge** (a business rule, a validation, a tax formula) is a genuine hazard — a fix must be applied N times, and one copy *will* be missed. The resolution is that DRY was never about identical **text**, it's about single sources of **truth**: deduplicate when two pieces of code change for the *same reason*; tolerate lookalike code that changes for *different* reasons. The staff-level judgment is telling **essential** duplication (same knowledge) from **accidental** similarity (same shape today, different owners tomorrow) — and having the nerve to leave the second kind alone.",
   },
   {
     id: "iv-ch13-1",
@@ -1247,6 +1274,15 @@ export const INTERVIEW: InterviewQ[] = [
       "What it breaks: it **violates the end-to-end principle** — an outside host can't initiate a connection to a device behind NAT, which is why peer-to-peer needs **hole punching** and relays (STUN/TURN). It makes the router **stateful**, so idle connections get evicted (hence TCP keepalives), and it complicates protocols that embed addresses in their payload. It's a case study in how a pragmatic hack becomes permanent infrastructure.",
   },
   {
+    id: "iv-ch26-5",
+    chapterId: "ch26",
+    level: "senior",
+    q: "IP gets a packet across the internet — but how does it cross the last meter to the right network card? Explain ARP.",
+    a:
+      "Inside one link-layer segment, delivery is by **MAC address**; IP is a logical overlay on top. **ARP** bridges the two: the sender broadcasts *'who has 192.168.1.7?'*, the owner replies with its MAC, and the answer is cached (the ARP table, with a TTL). To leave the subnet, the host doesn't ARP for the destination at all — the netmask says 'not local', so it ARPs for the **default gateway's** MAC. That's the general pattern of the stack: **IP addresses stay end-to-end** while **MAC addresses are swapped hop by hop** — each router peels the L2 header and writes a new one.\n" +
+      "The senior angles: ARP is **unauthenticated**, so anyone on the LAN can claim any IP — **ARP spoofing** is the classic on-path attack (one reason untrusted Wi-Fi is dangerous), while the same trick used honestly (**gratuitous ARP**) powers IP failover. And IPv6 replaced it with **NDP**, same job, ICMPv6 messages. One-liner: *IP decides where; ARP finds the next hop's name for it.*",
+  },
+  {
     id: "iv-ch27-1",
     chapterId: "ch27",
     level: "senior",
@@ -1283,6 +1319,15 @@ export const INTERVIEW: InterviewQ[] = [
       "Check: the advertised **rwnd** and OS **buffer sizes** / window scaling, the **RTT** (a distant server hurts even a fat link), application-level stalls (is the sender actually writing fast enough?), and only then loss/congestion. The senior move is naming BDP and realizing 'slow but no loss' points at the *window*, not the network core.",
   },
   {
+    id: "iv-ch27-5",
+    chapterId: "ch27",
+    level: "senior",
+    q: "What is TIME_WAIT, why must it exist, and when does it become a production problem?",
+    a:
+      "After the side that closes **first** sends its last ACK, the socket lingers in **TIME_WAIT** for 2×MSL (max segment lifetime). Two correctness jobs: (1) if that final ACK is lost, the peer retransmits its FIN — someone must still be there to re-ACK it; (2) it quarantines the connection's 4-tuple (src IP, src port, dst IP, dst port) until any **delayed old segments die**, so a stray packet from the dead connection can't be mistaken for data on a *new* connection reusing the same tuple. It's a correctness feature, not a leak.\n" +
+      "Production trouble: a busy client or proxy opening many **short-lived outbound** connections to one backend burns a 4-tuple per request — TIME_WAIT pins them, and you exhaust **ephemeral ports** (the tuple space, not memory) → sudden connect failures under load. The real fix is **connection pooling / keep-alive**; supporting moves are more source IPs/ports, `SO_REUSEADDR` so a restarting *server* can rebind its port, and cautious client-side `tcp_tw_reuse` (needs TCP timestamps). The trap answer is `tcp_tw_recycle` — it broke clients behind NAT and was removed from Linux entirely.",
+  },
+  {
     id: "iv-ch28-1",
     chapterId: "ch28",
     level: "senior",
@@ -1308,6 +1353,24 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "**(a) Hashed bundle** `app.9f3c2.js`: **`Cache-Control: public, max-age=31536000, immutable`** — the filename changes when the content does, so it can cache for a year with no revalidation; deploys are safe because a new build ships a new URL. **(b) HTML shell**: **`Cache-Control: no-cache`** (or a short max-age) + an **ETag** — must revalidate so users get new markup promptly, but a `304` keeps it cheap. **(c) Account page**: **`Cache-Control: private, no-store`** — personalized and sensitive, so it must never land in a shared/CDN cache or on disk.\n" +
       "The framework: cache **immutable, hashed assets** aggressively (the big win), **revalidate mutable HTML**, and **never store private/personalized** responses. The classic bug is caching the HTML shell as long as the assets — users get stuck on an old app pointing at deleted bundles.",
+  },
+  {
+    id: "iv-ch28-4",
+    chapterId: "ch28",
+    level: "senior",
+    q: "What problem does the same-origin policy solve, what does CORS change — and why does a request 'work in curl but fail in the browser'?",
+    a:
+      "The browser attaches **ambient credentials** (cookies, sessions) to requests automatically — so without a rule, any page you visit could quietly *read* responses from your bank using **your** logged-in session. The **same-origin policy** is that rule: scripts may only read responses from their own origin (scheme + host + port). **CORS is the server's opt-out**, not a lock: response headers (`Access-Control-Allow-Origin`, …) tell the *browser* that this cross-origin read is permitted. For non-simple requests (custom headers, JSON `Content-Type`, PUT/DELETE) the browser first sends a **preflight** `OPTIONS` asking whether the method and headers are allowed.\n" +
+      "curl 'works' because SOP is a **browser** protection: no origin, no ambient cookies, nothing to enforce. Two nuances interviewers probe: a *simple* cross-origin request still **reaches the server and executes** — the browser only blocks the JS from *reading* the response (so CORS is not access control); and CORS protects **users from malicious sites**, never **servers from clients** — server-side auth still does that job.",
+  },
+  {
+    id: "iv-ch28-5",
+    chapterId: "ch28",
+    level: "mid",
+    q: "Walk through a DNS lookup for a name nobody has cached. Why is DNS both remarkably fast and occasionally fragile?",
+    a:
+      "Your stub resolver asks a **recursive resolver** (ISP, 1.1.1.1, 8.8.8.8). It walks the hierarchy: a **root** server answers 'ask the `.com` TLD servers', the **TLD** answers 'ask example.com's **authoritative** name servers', and the authoritative server returns the A/AAAA record. Every answer is **cached with a TTL** at every level — recursive resolver, OS, browser — so the full walk is rare; a typical lookup is one cached hop, and **anycast** puts root/resolver replicas physically near you. That's the fast half: *a hierarchical, aggressively cached phone book*.\n" +
+      "The fragile half is the same design read backwards: caching means **staleness** (the TTL trade-off: low TTL = fast failover but constant re-resolution and more load; high TTL = cheap but slow to change — which is why cutovers 'take hours to propagate'); one provider's bad config can take out half the internet for an afternoon, because everything upstream *trusts* the answers; and classic DNS rides **unauthenticated UDP/53**, so poisoning is possible without mitigations (source-port randomization, DNSSEC, DoH/DoT). Same tree, same caches — speed and fragility are one mechanism.",
   },
   // ch.29 — Databases
   {
@@ -1584,6 +1647,24 @@ export const INTERVIEW: InterviewQ[] = [
       "A reasonable decomposition (this guide's): **information/representation, hardware/architecture, programming/languages, algorithms & data structures, theory of computation, operating systems, networks, data/databases, security, and AI/ML.** They aren't silos — they're lenses on the same questions, wired by crossing ideas.\n" +
       "Examples of a connecting idea: **hashing** links algorithms (hash tables), databases (hash indexes/joins), and security (cryptographic hashes) — with the *birthday paradox* explaining collisions in all three. **Automata** link theory to compilers (lexing/parsing) and networking (protocol state machines). **Optimization/gradient descent** links algorithms to machine learning. Interviewers like this question because naming the areas is easy; showing you see the *edges* between them signals real understanding.",
   },
+  {
+    id: "iv-ch0a-4",
+    chapterId: "ch0a",
+    level: "senior",
+    q: "A teammate says: 'Frameworks change every two years — why invest in CS fundamentals at all?' What's your answer?",
+    a:
+      "Because fundamentals are what frameworks are **made of**, and they change on decade scales, not release cycles. Every framework is a rearrangement of the same core ideas — caching, queues, state machines, hashing, trees, concurrency, complexity — so knowing the ideas turns 'new framework' from a foreign language into a **new dialect**: the learning cost collapses. And when the abstraction **leaks** (a performance cliff, a deadlock, an encoding bug), the fix lives one layer *below* the framework — precisely where only fundamentals help. You reach for them on the hardest 5% of days, and those are the expensive days.\n" +
+      "The honest counterpoint: fundamentals **without** product/tooling fluency is also incomplete — you ship with both. The asymmetry is in depreciation: framework specifics **depreciate** with every major version; fundamentals **compound**, because they transfer to every stack you'll ever touch. That's the investment argument in one line: learn the things that are still true in ten years, rent the rest.",
+  },
+  {
+    id: "iv-ch0a-5",
+    chapterId: "ch0a",
+    level: "staff",
+    q: "Design a study path through computer science for a strong self-taught engineer with gaps. What order, and what do you cut first?",
+    a:
+      "Three principles. (1) **Follow dependency, not prestige**: representation first (bits, encodings), then one honest mental model of the machine (CPU, memory hierarchy), because everything above assumes them. A defensible spine: information → machine → programs & languages → algorithms + data structures (the longest stay) → theory where it starts paying → OS → networks → data → security → AI. (2) **Alternate theory with a touchable artifact per unit** — build a tiny interpreter, race two sorts, break a toy cipher; retention comes from *prediction and feedback*, not reading. (3) **Spaced review of the core models** beats cramming — a mental model you can redraw in a month is worth ten you recognized once.\n" +
+      "Cut first: hardware minutiae below the gate level, exotic data structures, language-of-the-year trivia. Never cut: complexity reasoning, the memory hierarchy, concurrency hazards, hashing. The staff-level point: the **map** matters more than completeness — knowing *where* a topic lives and what its interfaces guarantee lets you learn the interior just-in-time. (That's the design brief of this very chapter.)",
+  },
   // ===================== P0 · Math toolkit (ch.0b) =====================
   {
     id: "iv-ch0b-1",
@@ -1680,6 +1761,15 @@ export const INTERVIEW: InterviewQ[] = [
     a:
       "Depth is a **cost/benefit** call, not a badge. My heuristics: (1) **Go as deep as the leak.** Debug at the layer where the symptom's *cause* lives — usually one below where it appears — and stop once you can explain and fix it. (2) **Match depth to leverage and blast radius.** A hot path, a security boundary, or a decision that's expensive to reverse justifies going down to cache lines or protocol details; a one-off script does not. (3) **Know the interfaces everywhere, the internals where it pays.** You should always understand the *contract* of each adjacent layer (what it guarantees, what it costs) even if you rarely open the implementation. (4) **Let recurring pain pull you down.** If the same class of bug keeps biting, that's the signal to invest in the layer beneath it.\n" +
       "The failure modes are symmetric: too shallow and you cargo-cult fixes and get surprised by leaks; too deep and you rebuild the world to change a button. The whole-stack literacy this guide builds is precisely what lets you make that call quickly — you know what's *down there*, so you can choose when it's worth the trip.",
+  },
+  {
+    id: "iv-ch35-5",
+    chapterId: "ch35",
+    level: "mid",
+    q: "'It's all just bits' — make that concrete: give three cases where identical bytes mean different things, and name what assigns the meaning.",
+    a:
+      "(1) The four bytes `41 42 43 44` are the text **\"ABCD\"** (ASCII), the 32-bit integer **1,094,861,636** (big-endian; a different number little-endian), an unremarkable float, — and in 32-bit x86, four valid **instructions** (`inc ecx/edx/ebx/esp`). Same bits; the *type* and the *decoder* differ. (2) A PNG 'is' a picture only while something honors the PNG format — rename it `.zip` and the bytes didn't change, the **interpreter** you summon did. (3) Ciphertext vs plaintext: with the key, bytes are your message; without it, indistinguishable from noise — meaning lives in **bits + key**, not the bits alone.\n" +
+      "What assigns meaning every time: the **interpreter** — a type system, a file format, a character encoding, an ISA's fetch unit. That last one is von Neumann's punchline: code and data share one memory, and 'is this bytes or a program?' is decided by nothing but *what the CPU is pointed at* — which is simultaneously how JITs work and how code-injection attacks work. The whole guide is this answer stretched over 35 chapters: from ch.1's 'one row of switches, three readings' to a model whose weights are, of course, just bits.",
   },
 ];
 

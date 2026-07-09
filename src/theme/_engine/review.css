@@ -1,0 +1,525 @@
+/* review hub (#/review, S18) — session card (3D flip like the chapter
+   flashcards, rv-namespaced), tinted grade row, deck manager, data panel.
+   Prefix: rv-. Colors via tokens only; the grade tints reuse the semantic
+   palette (again --sem-err · hard --sem-control · good --sem-ok · easy --p7)
+   as borders/text, never full fills. --accent is set per part on the session
+   root / deck groups. Flip motion gated at the foot. */
+
+/* ---------------------------- header stats ---------------------------- */
+.rv-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0 26px;
+}
+.rv-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx2);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+}
+.rv-stat strong {
+  color: var(--tx);
+  font-weight: 600;
+}
+.rv-stat--due {
+  color: var(--tx);
+  border-color: color-mix(in srgb, var(--sem-control) 55%, var(--line));
+}
+.rv-stat--due strong {
+  color: var(--sem-control);
+}
+
+/* ------------------------------ session ------------------------------- */
+.rv-session {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  padding: 18px 20px 14px;
+  margin: 0 0 30px;
+}
+.rv-sessionbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.rv-chapchip {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--accent, var(--tx2));
+  border: 1px solid color-mix(in srgb, var(--accent, var(--tx3)) 45%, var(--line));
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+a.rv-chapchip:hover {
+  text-decoration: none;
+  border-color: var(--accent, var(--tx2));
+}
+a.rv-chapchip:focus-visible {
+  outline: 2px solid var(--accent, var(--p7));
+  outline-offset: 2px;
+}
+.rv-queueinfo {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+
+/* the flip card — same pattern as .fc-card, namespaced */
+.rv-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 216px;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  perspective: 1000px;
+  text-align: inherit;
+  font: inherit;
+}
+.rv-card:focus-visible {
+  outline: 2px solid var(--accent, var(--p7));
+  outline-offset: 3px;
+  border-radius: var(--r);
+}
+.rv-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 24px;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--accent, var(--p7)) 35%, var(--line));
+  border-radius: var(--r);
+  backface-visibility: hidden;
+  transition: transform 0.5s;
+  text-align: center;
+}
+.rv-face--front {
+  background: var(--s2);
+  transform: rotateY(0deg);
+}
+.rv-face--back {
+  background: color-mix(in srgb, var(--accent, var(--p7)) 9%, var(--s2));
+  transform: rotateY(180deg);
+}
+.rv-card.flipped .rv-face--front {
+  transform: rotateY(-180deg);
+}
+.rv-card.flipped .rv-face--back {
+  transform: rotateY(0deg);
+}
+.rv-facelabel {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--tx3);
+}
+.rv-facetext {
+  font-family: var(--font-head);
+  font-size: 16.5px;
+  font-weight: 500;
+  color: var(--tx);
+  max-width: 58ch;
+}
+.rv-face--back .rv-facetext {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--tx) 92%, var(--tx2));
+}
+
+/* grade row — tinted borders/text on the shared surface, never fills */
+.rv-grades {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  min-height: 56px;
+  margin-top: 12px;
+}
+.rv-grade {
+  --g: var(--tx2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 8px 6px;
+  font: inherit;
+  background: var(--s2);
+  border: 1px solid color-mix(in srgb, var(--g) 45%, var(--line));
+  border-radius: var(--r-s);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.rv-grade:hover {
+  background: color-mix(in srgb, var(--g) 10%, var(--s2));
+  border-color: var(--g);
+}
+.rv-grade:focus-visible {
+  outline: 2px solid var(--g);
+  outline-offset: 2px;
+}
+.rv-grade--again {
+  --g: var(--sem-err);
+}
+.rv-grade--hard {
+  --g: var(--sem-control);
+}
+.rv-grade--good {
+  --g: var(--sem-ok);
+}
+.rv-grade--easy {
+  --g: var(--p7);
+}
+.rv-gradename {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--g);
+}
+.rv-gradeint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.rv-gradehint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--tx3);
+}
+.rv-keys {
+  margin: 10px 0 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+}
+.rv-keys kbd {
+  font-family: inherit;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* caught-up + onboarding — one calm centered layout */
+.rv-calm {
+  text-align: center;
+  padding: 36px 22px 32px;
+}
+.rv-calmhead {
+  margin: 0 0 8px;
+  font-family: var(--font-head);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--tx);
+}
+.rv-calmbody {
+  max-width: 54ch;
+  margin: 0 auto 18px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--tx2);
+}
+.rv-calm .btn {
+  min-height: 40px;
+}
+
+/* ---------------------------- deck manager ---------------------------- */
+.rv-decks {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  margin: 0 0 30px;
+}
+.rv-decks > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 20px;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--r);
+}
+.rv-decks > summary::-webkit-details-marker {
+  display: none;
+}
+.rv-decks > summary::before {
+  content: "▸";
+  display: inline-block;
+  color: var(--tx3);
+  transition: transform 0.15s;
+}
+.rv-decks[open] > summary::before {
+  transform: rotate(90deg);
+}
+.rv-decks > summary:focus-visible {
+  outline: 2px solid var(--p7);
+  outline-offset: -2px;
+}
+.rv-decks summary h2 {
+  margin: 0;
+  font-size: 17px;
+}
+.rv-deckssub {
+  font-size: 12px;
+  color: var(--tx3);
+}
+.rv-partgroup {
+  border-top: 1px solid var(--line);
+  padding: 12px 20px 16px;
+}
+.rv-partname {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--accent, var(--tx2));
+}
+.rv-decklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rv-deck {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  background: var(--s2);
+}
+.rv-deckmain {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rv-decktitle {
+  font-size: 14px;
+  color: var(--tx);
+}
+.rv-deck--dim .rv-decktitle {
+  color: var(--tx2);
+}
+a.rv-decktitle:hover {
+  color: var(--accent, var(--p7));
+  text-decoration: none;
+}
+a.rv-decktitle:focus-visible {
+  outline: 2px solid var(--accent, var(--p7));
+  outline-offset: 2px;
+}
+.rv-deckmeta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx2);
+}
+.rv-pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--tx2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.rv-pill--auto {
+  color: var(--sem-ok);
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+}
+.rv-pill--on {
+  color: var(--sem-data);
+  border-color: color-mix(in srgb, var(--sem-data) 45%, var(--line));
+}
+.rv-pill--off {
+  color: var(--tx2);
+}
+.rv-pill--inactive {
+  color: var(--tx2);
+  border-style: dashed;
+}
+.rv-deckbtn {
+  min-height: 40px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rv-deckbtn:hover {
+  border-color: var(--accent, var(--tx2));
+}
+.rv-deckbtn:focus-visible {
+  outline: 2px solid var(--accent, var(--p7));
+  outline-offset: 2px;
+}
+
+/* ----------------------------- your data ------------------------------ */
+.rv-data {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  padding: 16px 20px 18px;
+}
+.rv-data h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+.rv-datalead {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--tx2);
+}
+.rv-datarow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 10px;
+}
+.rv-datainfo {
+  flex: 1;
+  min-width: 240px;
+}
+.rv-datainfo h3 {
+  margin: 0 0 3px;
+  font-size: 14px;
+}
+.rv-datainfo p {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 13px;
+  color: var(--tx2);
+}
+.rv-data .btn {
+  min-height: 40px;
+}
+.rv-file {
+  max-width: 100%;
+  font-size: 13px;
+  color: var(--tx2);
+}
+.rv-file::file-selector-button {
+  min-height: 40px;
+  margin-right: 10px;
+  padding: 6px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  cursor: pointer;
+}
+.rv-file:focus-visible {
+  outline: 2px solid var(--p7);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.rv-importerr {
+  margin: 12px 0 0;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--sem-err);
+  background: color-mix(in srgb, var(--sem-err) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-err) 50%, var(--line));
+  border-radius: var(--r-s);
+}
+.rv-confirm {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--sem-control) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--sem-control) 45%, var(--line));
+  border-radius: var(--r-s);
+}
+.rv-confirmhead {
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--tx);
+  overflow-wrap: anywhere;
+}
+.rv-confirmlist {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0 0 10px;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+}
+.rv-confirmlist strong {
+  color: var(--tx);
+}
+.rv-confirmwarn {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--sem-control);
+}
+.rv-confirmbtns {
+  display: flex;
+  gap: 8px;
+}
+
+/* --------------------------- small screens ---------------------------- */
+@media (max-width: 560px) {
+  .rv-grades {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .rv-datarow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* motion: reduced motion swaps faces instantly (no 3D flip) */
+@media (prefers-reduced-motion: reduce) {
+  .rv-face,
+  .rv-decks > summary::before {
+    transition: none;
+  }
+}

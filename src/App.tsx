@@ -9,6 +9,8 @@ import ReviewPage from "./components/pages/ReviewPage.tsx";
 import InterviewPage from "./components/pages/InterviewPage.tsx";
 import BossesPage from "./components/pages/BossesPage.tsx";
 import KatasPage from "./components/pages/KatasPage.tsx";
+import SearchPage from "./components/pages/SearchPage.tsx"; // CHANGED: S18
+import SearchOverlay from "./components/search/SearchOverlay.tsx"; // CHANGED: S18
 import NotFound from "./components/pages/NotFound.tsx";
 
 export default function App() {
@@ -30,13 +32,18 @@ export default function App() {
       page = <ReviewPage />;
       break;
     case "interview":
-      page = <InterviewPage />;
+      // CHANGED: S18 — deep-linkable pre-filter; key remounts on a new deep link
+      page = <InterviewPage key={route.chapterId ?? "all"} chapterId={route.chapterId} />;
       break;
     case "bosses":
       page = <BossesPage />;
       break;
     case "katas":
-      page = <KatasPage />;
+      // CHANGED: S18 — search deep-links a specific kata
+      page = <KatasPage key={route.kataId ?? "all"} initialKataId={route.kataId} />;
+      break;
+    case "search": // CHANGED: S18
+      page = <SearchPage />;
       break;
     default:
       page = <NotFound />;
@@ -47,6 +54,7 @@ export default function App() {
       <TopBar />
       <main className="main">{page}</main>
       <Footer />
+      <SearchOverlay /> {/* CHANGED: S18 — ⌘K palette, mounted once */}
     </div>
   );
 }

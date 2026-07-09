@@ -30,6 +30,951 @@ export type Kata = {
 };
 
 export const KATAS: Kata[] = [
+  // ======================= P1–P3 kata batch (S18) =========================
+  // ========================================================================
+  // ch1 · Bits & numbers
+  // ========================================================================
+  {
+    id: "base-convert",
+    chapterId: "ch1",
+    title: "Number base converter",
+    difficulty: "intro",
+    tags: ["binary", "bases", "numbers"],
+    prompt: `
+Convert a **non-negative integer** into its digit string in \`base\` (2–16, digits \`0-9a-f\`) — without \`Number.prototype.toString(base)\`.
+
+Divide-and-mod: \`n % base\` is the **last** digit; continue with \`Math.floor(n / base)\` until zero. The trap: remainders arrive in reverse order. Validate first — throw a \`RangeError\` when \`base\` is outside 2–16 or \`n\` is negative or not an integer. \`toBase(0, b)\` is \`"0"\` (the loop never runs, so special-case it).
+
+- Time: **O(log n)**. Space: **O(log n)**.
+
+### Examples
+- \`toBase(13, 2)\` → \`"1101"\`
+- \`toBase(255, 16)\` → \`"ff"\`
+- \`toBase(100, 7)\` → \`"202"\`
+- \`toBase(5, 1)\` → throws \`RangeError\`
+`,
+    signature: `function toBase(n: number, base: number): string`,
+    exportName: "toBase",
+    starter: `function toBase(n, base) {
+  // TODO: validate n and base (RangeError), then a divide/mod loop over the
+  // digit alphabet "0123456789abcdef" — remainders come out back to front.
+  return "";
+}`,
+    solution: `function toBase(n, base) {
+  if (!Number.isInteger(base) || base < 2 || base > 16) {
+    throw new RangeError("base must be an integer in 2..16, got " + base);
+  }
+  if (!Number.isInteger(n) || n < 0) {
+    throw new RangeError("n must be a non-negative integer, got " + n);
+  }
+  if (n === 0) return "0";
+  const DIGITS = "0123456789abcdef";
+  let out = "";
+  while (n > 0) {
+    out = DIGITS[n % base] + out;
+    n = Math.floor(n / base);
+  }
+  return out;
+}`,
+    tests: [
+      { name: "binary", body: `assertEqual(toBase(13, 2), "1101");
+assertEqual(toBase(1, 2), "1");` },
+      { name: "hex uses letter digits", body: `assertEqual(toBase(255, 16), "ff");
+assertEqual(toBase(3735928559, 16), "deadbeef");` },
+      { name: "an odd base (7)", body: `assertEqual(toBase(100, 7), "202");` },
+      { name: "zero is \"0\" in any base", body: `assertEqual(toBase(0, 2), "0");
+assertEqual(toBase(0, 16), "0");` },
+      {
+        name: "rejects bases outside 2..16 with a RangeError",
+        body: `let threw = false;
+try { toBase(5, 1); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "base 1 must throw a RangeError");
+threw = false;
+try { toBase(5, 17); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "base 17 must throw a RangeError");`,
+      },
+      {
+        name: "rejects negative and non-integer n",
+        body: `let threw = false;
+try { toBase(-1, 10); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "negative n must throw a RangeError");
+threw = false;
+try { toBase(2.5, 10); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "non-integer n must throw a RangeError");`,
+      },
+      {
+        name: "agrees with toString for 0..50 in every base",
+        body: `for (let b = 2; b <= 16; b++)
+  for (let v = 0; v <= 50; v++)
+    assertEqual(toBase(v, b), v.toString(b), v + " in base " + b);`,
+      },
+    ],
+  },
+  {
+    id: "twos-complement",
+    chapterId: "ch1",
+    title: "Two's complement",
+    difficulty: "core",
+    tags: ["binary", "twos-complement", "bitwise"],
+    prompt: `
+Return the \`bits\`-wide **two's-complement** bit string of a signed integer (\`bits\` is 1–32, guaranteed).
+
+An n-bit word stores −2^(bits−1) … 2^(bits−1)−1. The range is **asymmetric** — \`-128\` fits in 8 bits but \`+128\` does not; throw a \`RangeError\` for anything outside it (or non-integer). No BigInt needed: \`n >>> 0\` reinterprets the number as its 32-bit two's-complement pattern — read off the low \`bits\` bits, most significant first.
+
+### Examples
+- \`twosComplement(5, 8)\` → \`"00000101"\`
+- \`twosComplement(-1, 8)\` → \`"11111111"\`
+- \`twosComplement(-128, 8)\` → \`"10000000"\`
+- \`twosComplement(128, 8)\` → throws \`RangeError\`
+`,
+    signature: `function twosComplement(n: number, bits: number): string`,
+    exportName: "twosComplement",
+    starter: `function twosComplement(n, bits) {
+  // TODO: range-check first (the range is asymmetric!), then read the low
+  // bits of (n >>> 0), most significant first.
+  return "";
+}`,
+    solution: `function twosComplement(n, bits) {
+  const min = -(2 ** (bits - 1));
+  const max = 2 ** (bits - 1) - 1;
+  if (!Number.isInteger(n) || n < min || n > max) {
+    throw new RangeError(n + " does not fit in " + bits + " bits (" + min + ".." + max + ")");
+  }
+  const u = n >>> 0; // the 32-bit two's-complement pattern, read as unsigned
+  let out = "";
+  for (let i = bits - 1; i >= 0; i--) out += (u >>> i) & 1;
+  return out;
+}`,
+    tests: [
+      { name: "positive numbers pad with zeros", body: `assertEqual(twosComplement(5, 8), "00000101");
+assertEqual(twosComplement(127, 8), "01111111");` },
+      { name: "-1 is all ones", body: `assertEqual(twosComplement(-1, 8), "11111111");
+assertEqual(twosComplement(-1, 16), "1111111111111111");` },
+      { name: "the most negative value", body: `assertEqual(twosComplement(-128, 8), "10000000");` },
+      {
+        name: "the range is asymmetric: +128 throws, -128 does not",
+        body: `let threw = false;
+try { twosComplement(128, 8); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "+128 must throw a RangeError in 8 bits");
+assertEqual(twosComplement(-128, 8), "10000000", "-128 is fine");
+threw = false;
+try { twosComplement(-129, 8); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "-129 must throw a RangeError in 8 bits");`,
+      },
+      { name: "small widths", body: `assertEqual(twosComplement(-6, 4), "1010");
+assertEqual(twosComplement(0, 1), "0");
+assertEqual(twosComplement(-1, 1), "1");` },
+      { name: "full 32-bit width", body: `assertEqual(twosComplement(-1, 32), "1".repeat(32));
+assertEqual(twosComplement(-2147483648, 32), "1" + "0".repeat(31));` },
+      {
+        name: "non-integer n throws",
+        body: `let threw = false;
+try { twosComplement(1.5, 8); } catch (e) { threw = e instanceof RangeError; }
+assert(threw, "1.5 must throw a RangeError");`,
+      },
+    ],
+  },
+  // ========================================================================
+  // ch2 · Encoding the world
+  // ========================================================================
+  {
+    id: "utf8-encode",
+    chapterId: "ch2",
+    title: "UTF-8 by hand",
+    difficulty: "core",
+    tags: ["encoding", "unicode", "utf-8"],
+    prompt: `
+Encode a string into its **UTF-8 bytes** by hand — return a plain \`number[]\`. No \`TextEncoder\`.
+
+Work per **code point** (\`for…of\` or \`codePointAt\` — \`charCodeAt\` hands you surrogate halves, and astral characters like \`"𝄞"\` are TWO JS "characters"): 1 byte below U+0080, 2 below U+0800, 3 below U+10000, 4 otherwise. The lead byte marks the length (\`0xxxxxxx\`, \`110xxxxx\`, \`1110xxxx\`, \`11110xxx\`); every continuation byte is \`10xxxxxx\` carrying the next 6 bits.
+
+### Examples
+- \`utf8Encode("A")\` → \`[0x41]\`
+- \`utf8Encode("é")\` → \`[0xC3, 0xA9]\`
+- \`utf8Encode("€")\` → \`[0xE2, 0x82, 0xAC]\`
+- \`utf8Encode("𝄞")\` → \`[0xF0, 0x9D, 0x84, 0x9E]\` (U+1D11E — a surrogate pair in JS)
+`,
+    signature: `function utf8Encode(s: string): number[]`,
+    exportName: "utf8Encode",
+    starter: `function utf8Encode(s) {
+  // TODO: 1–4 bytes per code point — length marker + 10xxxxxx continuations.
+  // This ASCII-only version is wrong for anything at U+0080 or above.
+  const bytes = [];
+  for (const ch of s) bytes.push(ch.codePointAt(0));
+  return bytes;
+}`,
+    solution: `function utf8Encode(s) {
+  const bytes = [];
+  for (const ch of s) {
+    const cp = ch.codePointAt(0);
+    if (cp < 0x80) {
+      bytes.push(cp);
+    } else if (cp < 0x800) {
+      bytes.push(0xc0 | (cp >> 6), 0x80 | (cp & 0x3f));
+    } else if (cp < 0x10000) {
+      bytes.push(0xe0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+    } else {
+      bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 0x3f), 0x80 | ((cp >> 6) & 0x3f), 0x80 | (cp & 0x3f));
+    }
+  }
+  return bytes;
+}`,
+    tests: [
+      { name: "ASCII is itself", body: `assertDeepEqual(utf8Encode("A"), [65]);
+assertDeepEqual(utf8Encode("Az"), [65, 122]);` },
+      { name: "two-byte: é", body: `assertDeepEqual(utf8Encode("é"), [0xC3, 0xA9]);` },
+      { name: "three-byte: €", body: `assertDeepEqual(utf8Encode("€"), [0xE2, 0x82, 0xAC]);` },
+      { name: "four-byte: 𝄞 (a surrogate pair in JS)", body: `assertDeepEqual(utf8Encode("𝄞"), [0xF0, 0x9D, 0x84, 0x9E]);` },
+      { name: "a mixed string", body: `assertDeepEqual(utf8Encode("Aé€𝄞"), [65, 195, 169, 226, 130, 172, 240, 157, 132, 158]);` },
+      { name: "empty string → []", body: `assertDeepEqual(utf8Encode(""), []);` },
+    ],
+  },
+  // ========================================================================
+  // ch3 · Compression & entropy
+  // ========================================================================
+  {
+    id: "rle-encode",
+    chapterId: "ch3",
+    title: "Run-length encoding",
+    difficulty: "intro",
+    tags: ["compression", "strings"],
+    prompt: `
+**Run-length encode** a string of letters: each maximal run becomes the character followed by its count — \`"aaabbc"\` → \`"a3b2c1"\`.
+
+One pass, two fingers: where the run starts, where it stops. And notice what the tests rub in: on \`"abc"\` the output \`"a1b1c1"\` is **longer than the input**. That is ch. 3's no-free-lunch in miniature — any code that shrinks some inputs must grow others; RLE only pays off when runs are real.
+
+- Time: **O(n)**. Space: **O(n)**.
+
+### Examples
+- \`rleEncode("aaabbc")\` → \`"a3b2c1"\`
+- \`rleEncode("abc")\` → \`"a1b1c1"\` (compression backfires)
+- \`rleEncode("")\` → \`""\`
+`,
+    signature: `function rleEncode(s: string): string`,
+    exportName: "rleEncode",
+    starter: `function rleEncode(s) {
+  // TODO: scan each maximal run; append the character, then the run length.
+  return "";
+}`,
+    solution: `function rleEncode(s) {
+  let out = "";
+  let i = 0;
+  while (i < s.length) {
+    let j = i;
+    while (j < s.length && s[j] === s[i]) j++;
+    out += s[i] + (j - i);
+    i = j;
+  }
+  return out;
+}`,
+    tests: [
+      { name: "runs collapse", body: `assertEqual(rleEncode("aaabbc"), "a3b2c1");` },
+      {
+        name: "no runs = RLE backfires (output LONGER than input)",
+        body: `const out = rleEncode("abc");
+assertEqual(out, "a1b1c1");
+assert(out.length > "abc".length, "RLE grew the input — no free lunch");`,
+      },
+      { name: "empty string → \"\"", body: `assertEqual(rleEncode(""), "");` },
+      { name: "a single character", body: `assertEqual(rleEncode("z"), "z1");` },
+      { name: "counts go past 9", body: `assertEqual(rleEncode("a".repeat(12)), "a12");` },
+      { name: "separated runs do not merge", body: `assertEqual(rleEncode("aabbaa"), "a2b2a2");` },
+    ],
+  },
+  {
+    id: "huffman-decode",
+    chapterId: "ch3",
+    title: "Huffman decoder",
+    difficulty: "core",
+    tags: ["compression", "huffman", "prefix-codes"],
+    prompt: `
+Decode a Huffman-coded bit string. \`codes\` maps each character to its **prefix code** (e.g. \`{ a: "0", b: "10", c: "11" }\`); \`bits\` is a string of \`0\`/\`1\`.
+
+The prefix property — no code is a prefix of another — makes greedy decoding unambiguous: accumulate bits until they exactly equal some code, emit that character, reset the buffer. The trap is the ending: if bits run out mid-code, or the buffer can never match any code, throw \`Error("invalid encoding")\`. (Invert the map once up front; scanning \`codes\` per bit works but reads worse.)
+
+### Examples
+- \`huffmanDecode("01011", { a: "0", b: "10", c: "11" })\` → \`"abc"\`
+- \`huffmanDecode("0101", { a: "0", b: "10" })\` → throws (ends mid-code)
+- \`huffmanDecode("", { a: "0" })\` → \`""\`
+`,
+    signature: `function huffmanDecode(bits: string, codes: Record<string, string>): string`,
+    exportName: "huffmanDecode",
+    starter: `function huffmanDecode(bits, codes) {
+  // TODO: grow a bit buffer; on an exact code match, emit the character and
+  // reset. Anything left in the buffer at the end = "invalid encoding".
+  return "";
+}`,
+    solution: `function huffmanDecode(bits, codes) {
+  const byCode = {};
+  for (const ch in codes) byCode[codes[ch]] = ch;
+  let out = "";
+  let cur = "";
+  for (const b of bits) {
+    cur += b;
+    if (byCode[cur] !== undefined) {
+      out += byCode[cur];
+      cur = "";
+    }
+  }
+  if (cur !== "") throw new Error("invalid encoding");
+  return out;
+}`,
+    tests: [
+      { name: "a simple three-symbol code", body: `assertEqual(huffmanDecode("01011", { a: "0", b: "10", c: "11" }), "abc");` },
+      { name: "decodes \"hello\"", body: `assertEqual(huffmanDecode("110011111110", { e: "0", o: "10", h: "110", l: "111" }), "hello");` },
+      { name: "single-symbol alphabet", body: `assertEqual(huffmanDecode("000", { x: "0" }), "xxx");` },
+      {
+        name: "bits ending mid-code throw",
+        body: `let threw = false;
+try { huffmanDecode("0101", { a: "0", b: "10" }); } catch (e) { threw = e.message === "invalid encoding"; }
+assert(threw, 'expected Error("invalid encoding") for a dangling half-code');`,
+      },
+      {
+        name: "a sequence matching no code throws",
+        body: `let threw = false;
+try { huffmanDecode("11", { a: "0", b: "10" }); } catch (e) { threw = e.message === "invalid encoding"; }
+assert(threw, 'expected Error("invalid encoding") for an unmatchable prefix');`,
+      },
+      { name: "empty bits → \"\"", body: `assertEqual(huffmanDecode("", { a: "0" }), "");` },
+    ],
+  },
+  // ========================================================================
+  // ch4 · From electricity to gates
+  // ========================================================================
+  {
+    id: "gates-from-nand",
+    chapterId: "ch4",
+    title: "Every gate from NAND",
+    difficulty: "core",
+    tags: ["logic-gates", "nand", "boolean"],
+    prompt: `
+NAND is **functionally complete** — ch. 4's punchline. Given \`nand(a, b)\` over \`0\`/\`1\`, return \`{ not, and, or, xor }\` built from **nand calls only**: no \`!\`, \`&&\`, \`||\`, comparisons, or arithmetic on the signals.
+
+Bootstrap in order: \`not(a)\` is \`nand(a, a)\`; \`and\` is a negated nand; De Morgan gives \`or\` as the nand of two nots. For \`xor\`, share one intermediate — with \`n = nand(a, b)\`, \`xor(a, b) = nand(nand(a, n), nand(b, n))\` is the classic 4-gate build.
+
+The tests verify all four truth tables; the nand-only rule is on your honor (feeling completeness is the whole point).
+
+### Examples
+- \`makeGates(nand).not(0)\` → \`1\`
+- \`makeGates(nand).xor(1, 1)\` → \`0\`
+`,
+    signature: `function makeGates(nand: (a: number, b: number) => number): {
+  not: (a: number) => number;
+  and: (a: number, b: number) => number;
+  or: (a: number, b: number) => number;
+  xor: (a: number, b: number) => number;
+}`,
+    exportName: "makeGates",
+    starter: `function makeGates(nand) {
+  // TODO: not(a) = nand(a, a); then and, or (De Morgan), xor — nand calls only.
+  return {
+    not: (a) => a,
+    and: (a, b) => a,
+    or: (a, b) => a,
+    xor: (a, b) => b,
+  };
+}`,
+    solution: `function makeGates(nand) {
+  const not = (a) => nand(a, a);
+  const and = (a, b) => not(nand(a, b));
+  const or = (a, b) => nand(not(a), not(b));
+  const xor = (a, b) => {
+    const n = nand(a, b);
+    return nand(nand(a, n), nand(b, n));
+  };
+  return { not, and, or, xor };
+}`,
+    tests: [
+      {
+        name: "not: full truth table",
+        body: `const nand = (a, b) => (a === 1 && b === 1 ? 0 : 1);
+const g = makeGates(nand);
+assertEqual(g.not(0), 1);
+assertEqual(g.not(1), 0);`,
+      },
+      {
+        name: "and: full truth table",
+        body: `const nand = (a, b) => (a === 1 && b === 1 ? 0 : 1);
+const g = makeGates(nand);
+assertDeepEqual([g.and(0,0), g.and(0,1), g.and(1,0), g.and(1,1)], [0, 0, 0, 1]);`,
+      },
+      {
+        name: "or: full truth table",
+        body: `const nand = (a, b) => (a === 1 && b === 1 ? 0 : 1);
+const g = makeGates(nand);
+assertDeepEqual([g.or(0,0), g.or(0,1), g.or(1,0), g.or(1,1)], [0, 1, 1, 1]);`,
+      },
+      {
+        name: "xor: full truth table",
+        body: `const nand = (a, b) => (a === 1 && b === 1 ? 0 : 1);
+const g = makeGates(nand);
+assertDeepEqual([g.xor(0,0), g.xor(0,1), g.xor(1,0), g.xor(1,1)], [0, 1, 1, 0]);`,
+      },
+      {
+        name: "returns all four gates as functions",
+        body: `const nand = (a, b) => (a === 1 && b === 1 ? 0 : 1);
+const g = makeGates(nand);
+assert(typeof g.not === "function" && typeof g.and === "function" && typeof g.or === "function" && typeof g.xor === "function");`,
+      },
+    ],
+  },
+  // ========================================================================
+  // ch5 · Circuits that count
+  // ========================================================================
+  {
+    id: "binary-add",
+    chapterId: "ch5",
+    title: "Ripple-carry addition",
+    difficulty: "core",
+    tags: ["binary", "adder", "carry"],
+    prompt: `
+Add two binary numbers given as **strings** and return the sum as a binary string — a ripple-carry adder in software (ch. 5). Do **not** convert whole strings with \`parseInt\`/\`Number\`: past 2^53 floats round silently, and the tests go there on purpose.
+
+Walk both strings from the right with a carry. Each column sums to 0–3: write \`sum % 2\`, carry \`sum >> 1\`; when the digits run out, flush the final carry. No leading zeros in the result (except \`"0"\` itself).
+
+- Time: **O(max(n, m))**. Space: **O(max(n, m))**.
+
+### Examples
+- \`binaryAdd("101", "11")\` → \`"1000"\`
+- \`binaryAdd("0", "0")\` → \`"0"\`
+- \`binaryAdd("1".repeat(60), "1")\` → \`"1" + "0".repeat(60)\` — exact only in string math
+`,
+    signature: `function binaryAdd(a: string, b: string): string`,
+    exportName: "binaryAdd",
+    starter: `function binaryAdd(a, b) {
+  // TODO: walk both strings from the right with a carry; flush the final
+  // carry; trim leading zeros (but keep a lone "0").
+  return "0";
+}`,
+    solution: `function binaryAdd(a, b) {
+  let i = a.length - 1;
+  let j = b.length - 1;
+  let carry = 0;
+  let out = "";
+  while (i >= 0 || j >= 0 || carry > 0) {
+    const sum = (i >= 0 ? a.charCodeAt(i) - 48 : 0) + (j >= 0 ? b.charCodeAt(j) - 48 : 0) + carry;
+    out = (sum & 1) + out;
+    carry = sum >> 1;
+    i--;
+    j--;
+  }
+  return out.replace(/^0+(?=.)/, "");
+}`,
+    tests: [
+      { name: "\"0\" + \"0\" → \"0\"", body: `assertEqual(binaryAdd("0", "0"), "0");` },
+      { name: "1 + 1 makes a new column", body: `assertEqual(binaryAdd("1", "1"), "10");` },
+      { name: "a carry ripples the whole way", body: `assertEqual(binaryAdd("111", "1"), "1000");` },
+      { name: "unequal lengths", body: `assertEqual(binaryAdd("101", "11"), "1000");
+assertEqual(binaryAdd("1011", "110"), "10001");` },
+      { name: "padded inputs come out trimmed", body: `assertEqual(binaryAdd("0011", "0001"), "100");` },
+      {
+        name: "60 ones + 1 = a power of two (past 2^53)",
+        body: `assertEqual(binaryAdd("1".repeat(60), "1"), "1" + "0".repeat(60));`,
+      },
+      {
+        name: "floats would round here; string math must not",
+        body: `const a = "1" + "0".repeat(58) + "1"; // 2^59 + 1
+assertEqual(binaryAdd(a, a), "1" + "0".repeat(58) + "10");`,
+      },
+      {
+        name: "agrees with arithmetic for 0..20 both sides",
+        body: `for (let x = 0; x <= 20; x++)
+  for (let y = 0; y <= 20; y++)
+    assertEqual(binaryAdd(x.toString(2), y.toString(2)), (x + y).toString(2), x + " + " + y);`,
+      },
+    ],
+  },
+  // ========================================================================
+  // ch6 · Circuits that remember
+  // ========================================================================
+  {
+    id: "sr-latch",
+    chapterId: "ch6",
+    title: "SR latch",
+    difficulty: "core",
+    tags: ["sequential-logic", "latch", "state"],
+    prompt: `
+Simulate an **SR latch**, the feedback loop where memory begins (ch. 6). \`pulses\` is a list of \`[s, r]\` pairs (never both 1); return \`Q\` **after each pulse**. \`Q\` starts at 0.
+
+- \`[1, 0]\` — set: \`Q = 1\`.
+- \`[0, 1]\` — reset: \`Q = 0\`.
+- \`[0, 0]\` — hold: \`Q\` keeps its previous value. This case IS the memory — the trap is defaulting it to 0 instead of remembering.
+
+### Examples
+- \`srLatch([[1,0], [0,0], [0,1], [0,0]])\` → \`[1, 1, 0, 0]\`
+- \`srLatch([[0,0]])\` → \`[0]\` (nothing set yet)
+`,
+    signature: `function srLatch(pulses: [number, number][]): number[]`,
+    exportName: "srLatch",
+    starter: `function srLatch(pulses) {
+  // TODO: q starts at 0; set/reset/hold — hold means KEEP q, not clear it.
+  return pulses.map(() => 0);
+}`,
+    solution: `function srLatch(pulses) {
+  let q = 0;
+  const out = [];
+  for (const [s, r] of pulses) {
+    if (s === 1) q = 1;
+    else if (r === 1) q = 0;
+    out.push(q);
+  }
+  return out;
+}`,
+    tests: [
+      { name: "starts at 0 and holds it", body: `assertDeepEqual(srLatch([[0, 0], [0, 0]]), [0, 0]);` },
+      { name: "set drives Q to 1", body: `assertDeepEqual(srLatch([[1, 0]]), [1]);` },
+      { name: "set, hold, reset, hold", body: `assertDeepEqual(srLatch([[1, 0], [0, 0], [0, 1], [0, 0]]), [1, 1, 0, 0]);` },
+      { name: "toggling set/reset", body: `assertDeepEqual(srLatch([[1, 0], [1, 0], [0, 1], [1, 0], [0, 1]]), [1, 1, 0, 1, 0]);` },
+      {
+        name: "a long hold chain keeps the bit alive",
+        body: `const pulses = [[1, 0]];
+for (let i = 0; i < 50; i++) pulses.push([0, 0]);
+pulses.push([0, 1]);
+for (let i = 0; i < 10; i++) pulses.push([0, 0]);
+const out = srLatch(pulses);
+assertEqual(out.length, 62);
+assert(out.slice(0, 51).every((q) => q === 1), "holds 1 across 50 idle pulses");
+assert(out.slice(51).every((q) => q === 0), "holds 0 after the reset");`,
+      },
+      { name: "no pulses → no outputs", body: `assertDeepEqual(srLatch([]), []);` },
+    ],
+  },
+  // ========================================================================
+  // ch7 · The CPU
+  // ========================================================================
+  {
+    id: "tiny-vm",
+    chapterId: "ch7",
+    title: "A tiny virtual machine",
+    difficulty: "stretch",
+    tags: ["cpu", "vm", "fetch-execute"],
+    prompt: `
+Run a tiny accumulator machine — ch. 7's fetch–decode–execute loop in miniature. Start with \`acc = 0\`, \`pc = 0\`; execute until \`["HALT"]\` **or the program runs off the end** (both return \`acc\`):
+
+- \`["LOAD", n]\` → \`acc = n\`; \`["ADD", n]\` → \`acc += n\`; \`["SUB", n]\` → \`acc -= n\`
+- \`["JNZ", addr]\` → if \`acc ≠ 0\`, set \`pc = addr\` (an absolute instruction index); else fall through
+
+A conditional jump makes loops possible — including infinite ones. That is the trap: count executed instructions and throw \`Error("step budget exceeded")\` after 10 000 steps.
+
+### Examples
+- \`runVm([["LOAD", 5], ["SUB", 1], ["JNZ", 1], ["HALT"]])\` → \`0\` (a countdown loop)
+- \`runVm([["LOAD", 2], ["ADD", 3]])\` → \`5\` (no HALT — falls off the end)
+`,
+    signature: `function runVm(program: [op: string, arg?: number][]): number`,
+    exportName: "runVm",
+    starter: `function runVm(program) {
+  // TODO: fetch–decode–execute with acc + pc; JNZ jumps only when acc is not
+  // zero; budget 10000 steps; HALT or running off the end returns acc.
+  return 0;
+}`,
+    solution: `function runVm(program) {
+  let acc = 0;
+  let pc = 0;
+  let steps = 0;
+  while (pc < program.length) {
+    if (++steps > 10000) throw new Error("step budget exceeded");
+    const ins = program[pc];
+    const op = ins[0];
+    if (op === "HALT") return acc;
+    if (op === "LOAD") { acc = ins[1]; pc++; }
+    else if (op === "ADD") { acc += ins[1]; pc++; }
+    else if (op === "SUB") { acc -= ins[1]; pc++; }
+    else if (op === "JNZ") { pc = acc !== 0 ? ins[1] : pc + 1; }
+    else throw new Error("unknown instruction: " + op);
+  }
+  return acc;
+}`,
+    tests: [
+      { name: "straight-line LOAD/ADD/SUB", body: `assertEqual(runVm([["LOAD", 7], ["ADD", 5], ["SUB", 2], ["HALT"]]), 10);` },
+      { name: "a countdown loop reaches 0", body: `assertEqual(runVm([["LOAD", 5], ["SUB", 1], ["JNZ", 1], ["HALT"]]), 0);` },
+      { name: "3 × 7 by repeated addition", body: `assertEqual(runVm([["LOAD", 0], ["ADD", 7], ["ADD", 7], ["ADD", 7], ["HALT"]]), 21);` },
+      { name: "JNZ falls through when acc is 0", body: `assertEqual(runVm([["LOAD", 0], ["JNZ", 0], ["ADD", 4], ["HALT"]]), 4);` },
+      { name: "no HALT: running off the end returns acc", body: `assertEqual(runVm([["LOAD", 2], ["ADD", 3]]), 5);` },
+      { name: "the empty program returns 0", body: `assertEqual(runVm([]), 0);` },
+      {
+        name: "a runaway JNZ hits the step budget",
+        body: `let threw = false;
+try { runVm([["LOAD", 1], ["JNZ", 1]]); } catch (e) { threw = e.message === "step budget exceeded"; }
+assert(threw, 'an infinite loop must throw Error("step budget exceeded")');`,
+      },
+    ],
+  },
+  // ========================================================================
+  // ch8 · Fast CPUs
+  // ========================================================================
+  {
+    id: "cache-sim",
+    chapterId: "ch8",
+    title: "Direct-mapped cache",
+    difficulty: "core",
+    tags: ["caching", "direct-mapped", "memory"],
+    prompt: `
+Count the **hits** of a direct-mapped cache (ch. 8) over a trace of byte addresses. For each address:
+
+- \`block = Math.floor(addr / lineSize)\` — which memory block it lives in,
+- \`line = block % numLines\` — the ONE cache line that block may occupy,
+- \`tag = Math.floor(block / numLines)\` — which of the many blocks mapping there it actually is.
+
+Hit if the line already holds this tag; otherwise a miss — install the tag (evicting the previous tenant). All lines start empty (cold). The trap the tests set: two hot blocks sharing a line evict each other forever — **conflict misses** while the rest of the cache sits idle.
+
+### Examples
+- \`cacheHits([0, 1, 2, 3], 8, 4)\` → \`3\` (one cold miss, then spatial locality)
+- \`cacheHits([0, 64, 0, 64], 4, 16)\` → \`0\` (ping-pong on line 0)
+`,
+    signature: `function cacheHits(addresses: number[], numLines: number, lineSize: number): number`,
+    exportName: "cacheHits",
+    starter: `function cacheHits(addresses, numLines, lineSize) {
+  // TODO: block → line → tag; hit when the line already holds the tag,
+  // otherwise install it (cold lines start invalid).
+  return 0;
+}`,
+    solution: `function cacheHits(addresses, numLines, lineSize) {
+  const tags = new Array(numLines).fill(null);
+  let hits = 0;
+  for (const addr of addresses) {
+    const block = Math.floor(addr / lineSize);
+    const line = block % numLines;
+    const tag = Math.floor(block / numLines);
+    if (tags[line] === tag) hits++;
+    else tags[line] = tag;
+  }
+  return hits;
+}`,
+    tests: [
+      { name: "repeated access: cold miss, then hits", body: `assertEqual(cacheHits([42, 42, 42, 42, 42], 4, 16), 4);` },
+      { name: "spatial locality: neighbours share a line", body: `assertEqual(cacheHits([0, 1, 2, 3], 8, 4), 3);` },
+      { name: "conflict ping-pong: same line, zero hits", body: `assertEqual(cacheHits([0, 64, 0, 64, 0, 64], 4, 16), 0);` },
+      { name: "more lines end the ping-pong", body: `assertEqual(cacheHits([0, 64, 0, 64], 8, 16), 2);` },
+      {
+        name: "a sequential scan hits within each block",
+        body: `const seq = [];
+for (let a = 0; a < 32; a++) seq.push(a);
+assertEqual(cacheHits(seq, 2, 8), 28);`,
+      },
+      { name: "empty trace → 0", body: `assertEqual(cacheHits([], 4, 16), 0);` },
+    ],
+  },
+  // ========================================================================
+  // ch9 · GPUs & parallel hardware
+  // ========================================================================
+  {
+    id: "grayscale",
+    chapterId: "ch9",
+    title: "Grayscale a pixel buffer",
+    difficulty: "intro",
+    tags: ["gpu", "pixels", "image"],
+    prompt: `
+Turn an RGBA pixel buffer into **grayscale** — the per-pixel map a GPU fragment shader runs in parallel (ch. 9). Input is a flat array \`[r, g, b, a, r, g, b, a, …]\`; return one luma byte per pixel:
+
+\`luma = Math.round((r*299 + g*587 + b*114) / 1000)\` — integer-weighted BT.601. Green dominates because your eyes do.
+
+Alpha is ignored — the trap is stepping by 3 instead of **4** and letting alpha bleed into the next pixel's red.
+
+### Examples
+- \`grayscale([255, 255, 255, 255])\` → \`[255]\`
+- \`grayscale([255, 0, 0, 255])\` → \`[76]\`; pure green → \`[150]\`; pure blue → \`[29]\`
+- \`grayscale([])\` → \`[]\`
+`,
+    signature: `function grayscale(rgba: number[]): number[]`,
+    exportName: "grayscale",
+    starter: `function grayscale(rgba) {
+  // TODO: one luma per FOUR values — Math.round((r*299 + g*587 + b*114) / 1000).
+  return [];
+}`,
+    solution: `function grayscale(rgba) {
+  const out = [];
+  for (let i = 0; i < rgba.length; i += 4) {
+    out.push(Math.round((rgba[i] * 299 + rgba[i + 1] * 587 + rgba[i + 2] * 114) / 1000));
+  }
+  return out;
+}`,
+    tests: [
+      { name: "white → 255, black → 0", body: `assertDeepEqual(grayscale([255, 255, 255, 255, 0, 0, 0, 255]), [255, 0]);` },
+      { name: "pure red → 76", body: `assertDeepEqual(grayscale([255, 0, 0, 255]), [76]);` },
+      { name: "pure green → 150, pure blue → 29", body: `assertDeepEqual(grayscale([0, 255, 0, 255]), [150]);
+assertDeepEqual(grayscale([0, 0, 255, 255]), [29]);` },
+      { name: "alpha is ignored", body: `assertDeepEqual(grayscale([10, 20, 30, 0]), [18]);
+assertDeepEqual(grayscale([10, 20, 30, 255]), [18]);` },
+      { name: "one luma per pixel, in order", body: `assertDeepEqual(grayscale([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255]), [76, 150, 29]);` },
+      { name: "empty buffer → []", body: `assertDeepEqual(grayscale([]), []);` },
+    ],
+  },
+  // ========================================================================
+  // ch10 · From machine code to languages
+  // ========================================================================
+  {
+    id: "flatten-stack",
+    chapterId: "ch10",
+    title: "Flatten without recursion",
+    difficulty: "core",
+    tags: ["stack", "recursion", "iteration"],
+    prompt: `
+Flatten arbitrarily nested arrays into one flat array, left-to-right order preserved — **without recursion**. Ch. 10's lesson: recursion is just a call stack you didn't write. So write it — an explicit stack and a loop.
+
+Pop one item at a time: an array pushes its elements back onto the stack **in reverse** (so the leftmost pops first — forget this and your output comes out shuffled); anything else appends to the output. The tests include a 10 000-deep nest: naive recursion overflows the call stack exactly where your loop keeps going.
+
+- Time: **O(total elements)**. Space: **O(width + depth)** for the stack.
+
+### Examples
+- \`flattenStack([1, [2, [3, [4]], 5], 6])\` → \`[1, 2, 3, 4, 5, 6]\`
+- \`flattenStack([[], [[]]])\` → \`[]\`
+`,
+    signature: `function flattenStack(arr: unknown[]): unknown[]`,
+    exportName: "flattenStack",
+    starter: `function flattenStack(arr) {
+  // TODO: explicit stack, no recursion — pop; arrays push their elements back
+  // in reverse; everything else goes to the output.
+  return [];
+}`,
+    solution: `function flattenStack(arr) {
+  const out = [];
+  const stack = [];
+  for (let i = arr.length - 1; i >= 0; i--) stack.push(arr[i]);
+  while (stack.length > 0) {
+    const x = stack.pop();
+    if (Array.isArray(x)) {
+      for (let i = x.length - 1; i >= 0; i--) stack.push(x[i]);
+    } else {
+      out.push(x);
+    }
+  }
+  return out;
+}`,
+    tests: [
+      { name: "already flat stays put", body: `assertDeepEqual(flattenStack([1, 2, 3]), [1, 2, 3]);` },
+      { name: "deep nesting, order preserved", body: `assertDeepEqual(flattenStack([1, [2, [3, [4]], 5], 6]), [1, 2, 3, 4, 5, 6]);` },
+      { name: "wide with empty holes", body: `assertDeepEqual(flattenStack([[1, 2], [], [3, [4, 5]]]), [1, 2, 3, 4, 5]);` },
+      { name: "nothing but empties → []", body: `assertDeepEqual(flattenStack([[], [[]]]), []);` },
+      { name: "works on strings too", body: `assertDeepEqual(flattenStack(["a", ["b", ["c"]]]), ["a", "b", "c"]);` },
+      {
+        name: "a 10000-deep nest (recursion would blow the stack)",
+        body: `let a = [7];
+for (let i = 0; i < 10000; i++) a = [a];
+const flat = flattenStack(a);
+assertEqual(flat.length, 1, "one value survives 10000 wrappers");
+assertEqual(flat[0], 7);`,
+      },
+      { name: "empty input → []", body: `assertDeepEqual(flattenStack([]), []);` },
+    ],
+  },
+  // ========================================================================
+  // ch11 · Compilers & interpreters
+  // ========================================================================
+  {
+    id: "tokenize-expr",
+    chapterId: "ch11",
+    title: "Tokenize arithmetic",
+    difficulty: "core",
+    tags: ["lexer", "parsing", "compilers"],
+    prompt: `
+Write ch. 11's **lexer**: turn an arithmetic source string into a token stream.
+
+- integers → \`{ type: "num", value: 12 }\` (value is a **number**),
+- \`+ - * /\` → \`{ type: "op", value: "+" }\`,
+- parens → \`{ type: "lparen" }\` / \`{ type: "rparen" }\`,
+- spaces and tabs are skipped; any other character → throw a \`SyntaxError\` naming it.
+
+The classic lexer bug is emitting one token per digit: \`45\` is ONE token. Keep consuming while digits continue — maximal munch.
+
+### Examples
+- \`tokenize("12+(3*45)")\` → \`num 12, op +, lparen, num 3, op *, num 45, rparen\`
+- \`tokenize("")\` → \`[]\`
+- \`tokenize("2 $ 2")\` → throws \`SyntaxError\`
+`,
+    signature: `type Token =
+  | { type: "num"; value: number }
+  | { type: "op"; value: string }
+  | { type: "lparen" }
+  | { type: "rparen" };
+function tokenize(src: string): Token[]`,
+    exportName: "tokenize",
+    starter: `function tokenize(src) {
+  // TODO: skip blanks; scan WHOLE numbers (maximal munch); ops; parens;
+  // throw a SyntaxError naming any other character.
+  return [];
+}`,
+    solution: `function tokenize(src) {
+  const tokens = [];
+  let i = 0;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === " " || ch === "\\t") {
+      i++;
+    } else if (ch >= "0" && ch <= "9") {
+      let j = i;
+      while (j < src.length && src[j] >= "0" && src[j] <= "9") j++;
+      tokens.push({ type: "num", value: Number(src.slice(i, j)) });
+      i = j;
+    } else if (ch === "+" || ch === "-" || ch === "*" || ch === "/") {
+      tokens.push({ type: "op", value: ch });
+      i++;
+    } else if (ch === "(") {
+      tokens.push({ type: "lparen" });
+      i++;
+    } else if (ch === ")") {
+      tokens.push({ type: "rparen" });
+      i++;
+    } else {
+      throw new SyntaxError("unexpected character: " + ch);
+    }
+  }
+  return tokens;
+}`,
+    tests: [
+      {
+        name: "the full stream for 12+(3*45)",
+        body: `assertDeepEqual(tokenize("12+(3*45)"), [
+  { type: "num", value: 12 },
+  { type: "op", value: "+" },
+  { type: "lparen" },
+  { type: "num", value: 3 },
+  { type: "op", value: "*" },
+  { type: "num", value: 45 },
+  { type: "rparen" },
+]);`,
+      },
+      { name: "spaces and tabs are skipped", body: `assertDeepEqual(tokenize(" 1 +\\t2 "), [{ type: "num", value: 1 }, { type: "op", value: "+" }, { type: "num", value: 2 }]);` },
+      { name: "maximal munch: 007 is one token", body: `assertDeepEqual(tokenize("007"), [{ type: "num", value: 7 }]);
+assertDeepEqual(tokenize("1234"), [{ type: "num", value: 1234 }]);` },
+      { name: "parens hug a number", body: `assertDeepEqual(tokenize("(1)"), [{ type: "lparen" }, { type: "num", value: 1 }, { type: "rparen" }]);` },
+      {
+        name: "all four operators",
+        body: `assertDeepEqual(tokenize("1-2*3/4+5"), [
+  { type: "num", value: 1 },
+  { type: "op", value: "-" },
+  { type: "num", value: 2 },
+  { type: "op", value: "*" },
+  { type: "num", value: 3 },
+  { type: "op", value: "/" },
+  { type: "num", value: 4 },
+  { type: "op", value: "+" },
+  { type: "num", value: 5 },
+]);`,
+      },
+      { name: "empty source → []", body: `assertDeepEqual(tokenize(""), []);` },
+      {
+        name: "an unknown character throws a SyntaxError naming it",
+        body: `let threw = false;
+try { tokenize("2 $ 2"); } catch (e) { threw = e instanceof SyntaxError && e.message.includes("$"); }
+assert(threw, "expected a SyntaxError mentioning the offending $");`,
+      },
+    ],
+  },
+  {
+    id: "rpn-eval",
+    chapterId: "ch11",
+    title: "RPN calculator",
+    difficulty: "intro",
+    tags: ["stack", "postfix", "evaluation"],
+    prompt: `
+Evaluate a **postfix (RPN)** expression — the stack machine ch. 11 compiles into. \`tokens\` are strings: a number pushes; an operator (\`+ - * /\`) pops \`b\`, then \`a\`, and pushes \`a op b\`.
+
+Pop order is the trap: \`["7", "2", "-"]\` is \`7 − 2 = 5\`, not \`−5\`. Two malformed shapes must throw: an operator finding fewer than two values → \`Error("stack underflow")\`; anything other than exactly one value left at the end → \`Error("leftover operands")\`.
+
+### Examples
+- \`rpnEval(["2", "3", "+"])\` → \`5\`
+- \`rpnEval(["7", "2", "-"])\` → \`5\`
+- \`rpnEval(["5", "1", "2", "+", "4", "*", "+", "3", "-"])\` → \`14\` (the classic)
+`,
+    signature: `function rpnEval(tokens: string[]): number`,
+    exportName: "rpnEval",
+    starter: `function rpnEval(tokens) {
+  // TODO: numbers push; operators pop b then a, push a op b; police the
+  // two malformed shapes (underflow / leftover).
+  return 0;
+}`,
+    solution: `function rpnEval(tokens) {
+  const stack = [];
+  for (const t of tokens) {
+    if (t === "+" || t === "-" || t === "*" || t === "/") {
+      if (stack.length < 2) throw new Error("stack underflow");
+      const b = stack.pop();
+      const a = stack.pop();
+      if (t === "+") stack.push(a + b);
+      else if (t === "-") stack.push(a - b);
+      else if (t === "*") stack.push(a * b);
+      else stack.push(a / b);
+    } else {
+      stack.push(Number(t));
+    }
+  }
+  if (stack.length !== 1) throw new Error("leftover operands");
+  return stack[0];
+}`,
+    tests: [
+      { name: "2 3 + → 5", body: `assertEqual(rpnEval(["2", "3", "+"]), 5);` },
+      { name: "pop order: 7 2 - → 5 and 4 2 / → 2", body: `assertEqual(rpnEval(["7", "2", "-"]), 5);
+assertEqual(rpnEval(["4", "2", "/"]), 2);` },
+      { name: "the classic: 5 1 2 + 4 * + 3 - → 14", body: `assertEqual(rpnEval(["5", "1", "2", "+", "4", "*", "+", "3", "-"]), 14);` },
+      { name: "a lone number evaluates to itself", body: `assertEqual(rpnEval(["42"]), 42);` },
+      { name: "results can go negative", body: `assertEqual(rpnEval(["2", "5", "-"]), -3);
+assertEqual(rpnEval(["3", "4", "*"]), 12);` },
+      {
+        name: "an operator without operands underflows",
+        body: `let threw = false;
+try { rpnEval(["2", "+"]); } catch (e) { threw = e.message === "stack underflow"; }
+assert(threw, '["2", "+"] must throw Error("stack underflow")');
+threw = false;
+try { rpnEval(["+"]); } catch (e) { threw = e.message === "stack underflow"; }
+assert(threw, '["+"] must throw Error("stack underflow")');`,
+      },
+      {
+        name: "extra values left behind throw",
+        body: `let threw = false;
+try { rpnEval(["2", "3"]); } catch (e) { threw = e.message === "leftover operands"; }
+assert(threw, '["2", "3"] must throw Error("leftover operands")');`,
+      },
+    ],
+  },
+  // ========================================================================
+  // ch12 · Software engineering
+  // ========================================================================
+  {
+    id: "semver-compare",
+    chapterId: "ch12",
+    title: "Compare semantic versions",
+    difficulty: "intro",
+    tags: ["versioning", "parsing", "comparison"],
+    prompt: `
+Compare two **semantic versions** \`"MAJOR.MINOR.PATCH"\` (ch. 12): return \`-1\`, \`0\`, or \`1\`.
+
+Split on dots and compare **numerically**, left to right — the first difference decides. The trap is comparing strings: \`"1.2.10" < "1.2.9"\` lexicographically, yet 10 > 9. Missing parts count as 0, so \`"1.2"\` equals \`"1.2.0"\`.
+
+### Examples
+- \`semverCompare("1.2.10", "1.2.9")\` → \`1\`
+- \`semverCompare("1.2", "1.2.0")\` → \`0\`
+- \`semverCompare("1.9.9", "1.10.0")\` → \`-1\`
+`,
+    signature: `function semverCompare(a: string, b: string): -1 | 0 | 1`,
+    exportName: "semverCompare",
+    starter: `function semverCompare(a, b) {
+  // TODO: split on ".", compare part by part NUMERICALLY; missing parts are 0.
+  // This string comparison falls straight into the "10" < "9" trap.
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}`,
+    solution: `function semverCompare(a, b) {
+  const pa = a.split(".");
+  const pb = b.split(".");
+  for (let i = 0; i < 3; i++) {
+    const x = i < pa.length ? Number(pa[i]) : 0;
+    const y = i < pb.length ? Number(pb[i]) : 0;
+    if (x < y) return -1;
+    if (x > y) return 1;
+  }
+  return 0;
+}`,
+    tests: [
+      { name: "the string-vs-numeric trap: 1.2.10 > 1.2.9", body: `assertEqual(semverCompare("1.2.10", "1.2.9"), 1);
+assertEqual(semverCompare("1.2.9", "1.2.10"), -1);` },
+      { name: "equal versions → 0", body: `assertEqual(semverCompare("1.2.3", "1.2.3"), 0);` },
+      { name: "missing parts count as 0", body: `assertEqual(semverCompare("1.2", "1.2.0"), 0);
+assertEqual(semverCompare("1.0", "1"), 0);` },
+      { name: "major beats everything", body: `assertEqual(semverCompare("2.0.0", "1.99.99"), 1);` },
+      { name: "minor compares numerically too", body: `assertEqual(semverCompare("1.10.0", "1.9.9"), 1);` },
+      { name: "patch decides last", body: `assertEqual(semverCompare("0.0.1", "0.0.2"), -1);` },
+    ],
+  },
   // ========================================================================
   // ch13 · Arrays & sequences
   // ========================================================================

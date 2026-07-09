@@ -317,6 +317,25 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 - `subset-sum-decide` — reachable-sums DP for the NP-complete decision problem *(ch.21)*
 - `verify-hamiltonian` — the easy "check a certificate" side of an NP problem *(ch.21)*
 
+**S18 batch — P1–P3 (+15, ch.1–12):** with this batch **every content chapter (ch.1–34 + ch.0b)
+carries ≥1 kata**; only the ch.0a/ch.35 book-ends stay kata-free by design.
+
+- `base-convert` — positional notation for real: n → digit string in base 2–16, no `toString(b)` *(ch.1)*
+- `twos-complement` — encode a signed int into an n-bit two's-complement bit string (range-checked) *(ch.1)*
+- `utf8-encode` — string → UTF-8 byte array by hand: 1–4-byte sequences, surrogate pairs handled *(ch.2)*
+- `rle-encode` — run-length encoding with the ch.3 lesson built in: it must *backfire* on non-runs *(ch.3)*
+- `huffman-decode` — walk a prefix-code table bit by bit; reject codes that don't decode cleanly *(ch.3)*
+- `gates-from-nand` — given only `nand(a,b)`, build NOT/AND/OR/XOR — universality by construction *(ch.4)*
+- `binary-add` — ripple-carry addition on binary *strings* (works past 2⁵³, where `parseInt` lies) *(ch.5)*
+- `sr-latch` — fold (S,R) pulse sequences into Q: feedback as a reduce, hold state on (0,0) *(ch.6)*
+- `tiny-vm` — an accumulator machine: LOAD/ADD/SUB/JNZ/HALT with a step budget — the ch.7 loop in 20 lines *(ch.7)*
+- `cache-sim` — direct-mapped cache: index/tag from the address, count hits — locality made countable *(ch.8)*
+- `grayscale` — the embarrassingly-parallel op done serially: RGBA lanes → integer-weighted luma *(ch.9)*
+- `flatten-stack` — flatten nested arrays with an *explicit* stack, no recursion — the call stack, reified *(ch.10)*
+- `tokenize-expr` — a real lexer: numbers/ops/parens, whitespace skipped, unknown chars rejected *(ch.11)*
+- `rpn-eval` — evaluate postfix with one stack — the "tree already flattened" half of a compiler *(ch.11)*
+- `semver-compare` — compare dotted versions numerically ("1.2.10" > "1.2.9") — the ch.12 contract, executable *(ch.12)*
+
 ## Shared framework (built once at S1, reused ~90 times)
 
 - **`SimShell`** — chrome for every `[HERO]`/`[micro]`: play/pause/step/reset, speed slider,
@@ -340,8 +359,13 @@ linear structures — and grows one part at a time (§6). Route `#/katas`; per-c
 S10's +6 automata/computability/complexity batch; **34** after S11's +4 scheduling/paging
 batch; **38** after S12's +4 files/concurrency batch; **44** after S13's +6 networks batch;
 **48** after S14's +4 data batch; **52** after S15's +4 security batch; **56** after S16's
-+4 ML/AI batch) · quizzes in every chapter. As of **S17 the guide is CONTENT-COMPLETE** — the live build
-carries **82 sims, 37 figures, 38 quizzes, 183 interview Qs, 59 katas** across **all 37
++4 ML/AI batch; **59** after S17's +3 math batch (ch.0b); **74** after S18's +15 P1–P3 batch —
+every content chapter now carries ≥1 kata) · quizzes in every chapter. As of **S17 the guide is
+CONTENT-COMPLETE** — and **S18 completed the learning engine**: the SRS review hub (`#/review`,
+SM-2-lite over decks auto-generated from every chapter's keyPoints + mental model), global search
+(⌘K palette + `#/search` over chapters/sections/keyPoints/interview/katas/sims), interview-bank
+filters, and progress export/import (one JSON of all local state). The live build carries
+**82 sims, 37 figures, 38 quizzes, 193 interview Qs, 74 katas** across **all 37
 chapters (11 parts)** (`npm run qa` prints the running census and enforces the per-chapter
 minimums — CLAUDE.md §6 mandate). S17 closed the book-ends: **P0 · Orientation** (the
 `discipline-map` HERO + the `combinatorics-counter` / `birthday-paradox` math heroes + a

@@ -74,16 +74,17 @@ computer_science/                       # = git repo root; deploy publishes dist
       interview.ts                      # senior CS interview bank (tagged by chapter)
       katas.ts                          # in-browser exercises (tests + starters)
       bosses.ts                         # per-part boss challenges metadata
-      decks.ts                          # SRS flashcard decks (generated from keyPoints + figures)
+      # (no decks.ts — S18: SRS cards derive at runtime from keyPoints + mentalModel, lib/srs.ts)
     components/
       layout/  TopBar  Sidebar  Toc  ProgressRings  LensToggle  Footer(brand)
       map/     StackMap  PartNode  Drawer        # the landing "stack" (§7) — clickable
       chapter/ ChapterPage  Section  Prose  Figure  CodeBlock  DataTable  Callout
                Compare  FormalCorner  RecapBox("what this assumes")  StoryHook
       sims/    <one folder per sim>              # registry-keyed interactive widgets
-      study/   Flashcards  SrsReviewHub  PredictQuiz  InterviewBank  KataRunner  BossArena
-    lib/     hashRouter.ts  search.ts  registry.ts  srs.ts(SM-2-lite)  progress.ts
-             sandbox.ts(worker eval for katas)  utils.ts
+      study/   Flashcards  PredictQuiz  KataRunner   # hubs live in pages/ (Review/Interview/Katas/Bosses/Search)
+      search/  SearchOverlay                         # ⌘K palette (S18)
+    lib/     hashRouter.ts  search.ts  registry.ts  srs.ts(SM-2-lite)+srsStore.ts  progress.ts
+             dataTransfer.ts(export/import)  searchOverlayStore.ts  kataSandbox.ts(worker eval)  utils.ts
   CLAUDE.md  (this file)
   INTERACTIVES.md                       # binding inventory of ALL interactives (§6 mandate)
 ```
@@ -393,7 +394,9 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   all 11 parts / 37 units live** (discipline-map, combinatorics-counter, birthday-paradox, truth-table,
   grand-traversal HERO + boss-gallery; 82 sims · 37 figs · 38 quizzes · 183 interview Qs · 59 katas).
 - **S18 · Learning engine completion** — SRS review hub, interview bank filled (~60 Q),
-  remaining katas, progress export/import, global search.
+  remaining katas, progress export/import, global search. ✅ **ENGINE-COMPLETE: SM-2-lite
+  review hub live (309 cards / 37 decks), ⌘K global search, export/import, interview
+  filters (193 Q, every chapter ≥5), 74 katas (every content chapter ≥1).**
 - **S19 · Polish & ship** — a11y/mobile/perf pass, OG image, About page, QA integrity gate,
   final deploy. *(Sessions may merge if velocity allows; heroes never ship half-done.)*
 
@@ -1367,3 +1370,60 @@ Same as Node guide: on push to `main` → checkout → setup-node (LTS) → `npm
   all 11 parts, all 37 units, live.** S17 CLOSED pending user commit. Suggested branch `feat/s17-p0-p11-capstone`.
   Next: S18 — learning-engine completion (SRS review hub, interview bank fill ~60 Q, remaining katas, progress
   export/import, global search).**
+- **2026-07-09 · S18 (learning-engine completion — §6 systems all live)** — the session that turns the content-complete
+  wiki into a course. **Kickoff (4 AskUserQuestion):** (1) SRS rotation = **done-chapters auto-activate + per-deck
+  opt-in/opt-out** (spec's "review only the parts you study"; explicit opt-out always wins); (2) interview "fill" =
+  **top-up light chapters to ≥5 + filters** (the S0 "~60 Q" target was long passed); (3) katas = **full P1–P3 batch
+  (15)** so every content chapter carries ≥1; (4) search = **⌘K palette + #/search fallback**. **Engines first, pure
+  + Node-tested** (then UI against them, S17-style): **`lib/srs.ts`** — SM-2-lite (again/hard/good/easy; ease
+  1.3–3.0 from 2.5; good intervals 1d→3d→×ease, easy ×1.3 bonus, hard ×1.2 floor-1d, again = lapse → 10 min +
+  ease−0.2; cap 365 d — a good-only card walks 1/3/8/20/50/125/313/365; injected `now` everywhere); cards derive
+  **at runtime** from keyPoints (" — " front/back) **+ one mental-model card per chapter** → **309 cards / 37
+  decks**, no decks.ts; `activeChapterIds(done, overrides)`, `buildQueue` (due oldest-first, then new in curriculum
+  order), `dueSummary`, `previewIntervals` ("10 min"/"3 d"/"1.5 mo" grade sublabels). **`lib/search.ts`** — static
+  tokenized index (lazy singleton) over **7 doc kinds**: chapters (full prose/callouts/tables/pitfalls), parts,
+  keyPoints, interview, katas, sims/figs (mapped to first host chapter; shared components like ram-grid deduped),
+  bosses; **AND semantics**, per-token max of title-exact 6 > title-prefix 3 > body-exact 2 > body-prefix 1 + kind
+  boost, alpha tie-break; md stripped, stop-words dropped. **`lib/dataTransfer.ts`** — versioned export bundle
+  (`cs-guide-progress` v1) of ALL five localStorage keys — `csguide.v1`, `csguide.srs.v1`, `cs:kata-solved`,
+  `cs:kata:<id>` drafts, `cs:iv-seen` — download as JSON; `parseImport` validates envelope + counts a human summary;
+  import = write keys + reload (every store already sanitizes on load, so bad files degrade, never crash).
+  `srsStore.ts` / `searchOverlayStore.ts` external stores (progress.ts pattern). **`scripts/test-srs.ts` +
+  `test-search.ts`** wired into `npm test`. **Content:** **+15 katas (ch.1–12, inventory-first in INTERACTIVES.md)**
+  — base-convert · twos-complement · utf8-encode · rle-encode (the "compression backfires" lesson as a test) ·
+  huffman-decode · gates-from-nand (truth-table-verified universality) · binary-add (string ripple-carry, exact past
+  2⁵³) · sr-latch (feedback-as-reduce) · tiny-vm (LOAD/ADD/SUB/JNZ/HALT + step budget) · cache-sim (direct-mapped
+  index/tag) · grayscale (node-verified BT.601 integer weights) · flatten-stack (explicit stack; depth-10k test that
+  provably blows recursion) · tokenize-expr · rpn-eval · semver-compare → **74 katas / 404 locked cases**, every
+  content chapter ≥1 (ch.0a/ch.35 book-ends kata-free by design). **+10 interview Qs → 193, every chapter ≥5**:
+  endianness, JS string "three lengths" (🇺🇦 = 4), duplication-vs-wrong-abstraction, ARP/NDP, TIME_WAIT (incl. the
+  tw_recycle trap), CORS/SOP ("works in curl"), DNS walk (fast *and* fragile as one mechanism), why-fundamentals,
+  design-a-study-path, "it's all just bits" (41 42 43 44 quad-read). **UI (4 parallel subagents against the tested
+  engines):** **ReviewPage hub** — due/new/later chips, session (flip = aria-pressed card, Space + 1–4 grading with
+  interval sublabels, focus survives advance), calm caught-up state with next-due time, zero-deck onboarding, deck
+  manager (PARTS order, auto/on/off/inactive pills), "Your data" export/import with inline summary-confirm (no
+  window.confirm); **SearchOverlay** — ⌘K/Ctrl+K (Shift/Alt excluded), ARIA combobox (aria-activedescendant, wrap
+  ↑↓, Enter navigates), grouped kinds, scroll-lock on documentElement, z-200 over topbar-50, `ensureIndex()` on
+  open; **SearchPage** fallback; **InterviewPage** — part/level/text filters (AND), deep-link chapter chip
+  (#/interview/<chId> from search hits), per-question **reviewed ✓** store (`cs:iv-seen`), live "N of 193 · M
+  reviewed"; **KatasPage** deep-link (#/katas/<id> auto-opens the runner). Integration: routes `#/search` ·
+  `#/katas/<id>` · `#/interview/<chId>`; TopBar **search trigger (⌘K kbd hint)** + **due-badge on Review**; StackMap
+  **"N cards due for review →" chip** (§6's landing promise); Flashcards note now links the hub. **Adversarial
+  review** (self + independent node oracles): SM-2 monotonicity (again < hard ≤ good ≤ easy) + ease clamps under 30×
+  spam; search top-hits for semver/two-complement/sr-latch/time_wait/endianness/cors all land on the new content;
+  kata constants computed before authoring (grayscale 76/150/29, utf8 vs TextEncoder, 𝄞 → F0 9D 84 9E); interview
+  claims fact-checked (tw_recycle removed in Linux 4.12; JSON content-type triggers preflight; 0x41–44 = inc
+  ecx/edx/ebx/esp in 32-bit x86; big-endian 0x41424344 = 1,094,861,636). One earlier test over-asserted ranking
+  ("chapter beats keypoint") — relaxed to the product truth (top hit deadlock-titled; chapter present; UI groups by
+  kind). **verify = typecheck ✓ · lint ✓ · qa ✓ (37 chapters, 37 live; 82 sims · 37 figs · 38 quizzes · 193
+  interview Qs · 74 katas · 10 bosses; mandate holds) · test ✓ (36 suites; +test-srs +test-search; katas 404 cases)
+  · build ✓** (fresh `dist-s18`: index 992.7 KB/357 gzip — data modules still in the main bundle, the **S19
+  lazy-load note stands**, now including the search index source). Sandbox `unlink` still blocks default `dist/`
+  (built `--outDir dist-s18`, gitignored `/dist-*`); `.git` locks remain — finalize on the Mac. NOT sandbox-testable:
+  real-browser pass — **5-min manual QA after deploy** (⌘K → type "deadlock" → Enter lands in ch.25; mark a chapter
+  done → landing chip + Review badge show due cards; review a card with 1–4 keys, Again returns it in-session;
+  Decks: opt-in an unread chapter, mute a done one; export JSON → clear a browser → import → everything back incl.
+  kata drafts + interview ✓s; #/interview filters + a search interview-hit pre-filters the chapter; a search
+  kata-hit auto-opens the runner). **THE LEARNING ENGINE IS COMPLETE — §6's three signature systems + all proven
+  aids live.** S18 CLOSED pending user commit. Suggested branch `feat/s18-learning-engine`. Next: **S19 — polish &
+  ship** (a11y/mobile/perf pass incl. the lazy-load split, OG image, About page, QA integrity gate, final deploy).

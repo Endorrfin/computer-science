@@ -206,7 +206,7 @@ const ch4: Chapter = {
     },
   ],
   interviewIds: ["iv-ch4-1", "iv-ch4-2", "iv-ch4-3", "iv-ch4-4", "iv-ch4-5", "iv-ch4-6"],
-  kataIds: [],
+  kataIds: ["gates-from-nand"],
   seeAlso: ["ch5", "ch6", "ch11"],
   sources: [
     { title: "C. E. Shannon — A Symbolic Analysis of Relay and Switching Circuits (MIT, 1937)", url: "https://dspace.mit.edu/handle/1721.1/11173" },
@@ -384,8 +384,8 @@ const ch1: Chapter = {
       lens: "senior",
     },
   ],
-  interviewIds: ["iv-ch1-1", "iv-ch1-2", "iv-ch1-3", "iv-ch1-4"],
-  kataIds: [],
+  interviewIds: ["iv-ch1-1", "iv-ch1-2", "iv-ch1-3", "iv-ch1-4", "iv-ch1-5"],
+  kataIds: ["base-convert", "twos-complement"],
   seeAlso: ["ch2", "ch3", "ch5"],
   sources: [
     { title: "David Goldberg — What Every Computer Scientist Should Know About Floating-Point Arithmetic", url: "https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html" },
@@ -541,8 +541,8 @@ const ch2: Chapter = {
       lens: "senior",
     },
   ],
-  interviewIds: ["iv-ch2-1", "iv-ch2-2", "iv-ch2-3", "iv-ch2-4"],
-  kataIds: [],
+  interviewIds: ["iv-ch2-1", "iv-ch2-2", "iv-ch2-3", "iv-ch2-4", "iv-ch2-5"],
+  kataIds: ["utf8-encode"],
   seeAlso: ["ch1", "ch3"],
   sources: [
     { title: "Joel Spolsky — The Absolute Minimum Every Developer Must Know About Unicode", url: "https://www.joelonsoftware.com/2003/10/08/the-absolute-minimum-every-software-developer-absolutely-positively-must-know-about-unicode-and-character-sets-no-excuses/" },
@@ -706,7 +706,7 @@ const ch3: Chapter = {
     },
   ],
   interviewIds: ["iv-ch3-1", "iv-ch3-2", "iv-ch3-3", "iv-ch3-4", "iv-ch3-5"],
-  kataIds: [],
+  kataIds: ["rle-encode", "huffman-decode"],
   seeAlso: ["ch1", "ch2", "ch4"],
   sources: [
     { title: "D. A. Huffman — A Method for the Construction of Minimum-Redundancy Codes (1952) — overview", url: "https://en.wikipedia.org/wiki/Huffman_coding" },
@@ -862,7 +862,7 @@ const ch5: Chapter = {
     },
   ],
   interviewIds: ["iv-ch5-1", "iv-ch5-2", "iv-ch5-3", "iv-ch5-4", "iv-ch5-5"],
-  kataIds: [],
+  kataIds: ["binary-add"],
   seeAlso: ["ch4", "ch6", "ch7", "ch8"],
   sources: [
     { title: "George Stibitz & the Model K adder (Computer History Museum)", url: "https://www.computerhistory.org/tdih/november/9/" },
@@ -1019,7 +1019,7 @@ const ch6: Chapter = {
     },
   ],
   interviewIds: ["iv-ch6-1", "iv-ch6-2", "iv-ch6-3", "iv-ch6-4", "iv-ch6-5"],
-  kataIds: [],
+  kataIds: ["sr-latch"],
   seeAlso: ["ch4", "ch5", "ch7", "ch8", "ch23"],
   sources: [
     { title: "Flip-flop (electronics) — the Eccles–Jordan trigger, 1918 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Flip-flop_(electronics)" },
@@ -1212,7 +1212,7 @@ const ch7: Chapter = {
     },
   ],
   interviewIds: ["iv-ch7-1", "iv-ch7-2", "iv-ch7-3", "iv-ch7-4", "iv-ch7-5"],
-  kataIds: [],
+  kataIds: ["tiny-vm"],
   seeAlso: ["ch5", "ch6", "ch8", "ch10", "ch11"],
   sources: [
     { title: "Manchester Baby (Small-Scale Experimental Machine) — first stored-program computer, 21 June 1948 (Wikipedia)", url: "https://en.wikipedia.org/wiki/Manchester_Baby" },
@@ -1417,7 +1417,7 @@ const ch8: Chapter = {
     },
   ],
   interviewIds: ["iv-ch8-1", "iv-ch8-2", "iv-ch8-3", "iv-ch8-4", "iv-ch8-5"],
-  kataIds: [],
+  kataIds: ["cache-sim"],
   seeAlso: ["ch6", "ch7", "ch9", "ch23", "ch25"],
   sources: [
     { title: "Patterson & Hennessy — Computer Organization and Design (pipelining, hazards, caches, Amdahl's law)", url: "https://www.elsevier.com/books/computer-organization-and-design-risc-v-edition/patterson/978-0-12-820331-6" },
@@ -1572,7 +1572,7 @@ const ch9: Chapter = {
     },
   ],
   interviewIds: ["iv-ch9-1", "iv-ch9-2", "iv-ch9-3", "iv-ch9-4", "iv-ch9-5"],
-  kataIds: [],
+  kataIds: ["grayscale"],
   seeAlso: ["ch5", "ch7", "ch8", "ch33", "ch34"],
   sources: [
     { title: "Graphics pipeline — vertices to pixels (Wikipedia)", url: "https://en.wikipedia.org/wiki/Graphics_pipeline" },
@@ -1728,7 +1728,7 @@ const ch10: Chapter = {
     },
   ],
   interviewIds: ["iv-ch10-1", "iv-ch10-2", "iv-ch10-3", "iv-ch10-4", "iv-ch10-5"],
-  kataIds: [],
+  kataIds: ["flatten-stack"],
   seeAlso: ["ch7", "ch11", "ch14", "ch23"],
   sources: [
     { title: "Grace Hopper — the A-0 system (1952), the first compiler, and coining 'compiler' (Wikipedia)", url: "https://en.wikipedia.org/wiki/Grace_Hopper" },
@@ -1903,7 +1903,7 @@ const ch11: Chapter = {
     },
   ],
   interviewIds: ["iv-ch11-1", "iv-ch11-2", "iv-ch11-3", "iv-ch11-4", "iv-ch11-5"],
-  kataIds: [],
+  kataIds: ["tokenize-expr", "rpn-eval"],
   seeAlso: ["ch7", "ch10", "ch19", "ch20"],
   sources: [
     { title: "Fortran — Backus's team and the first optimizing compiler, 1957 (IBM History)", url: "https://www.ibm.com/history/fortran" },
@@ -2032,8 +2032,8 @@ const ch12: Chapter = {
       lens: "both",
     },
   ],
-  interviewIds: ["iv-ch12-1", "iv-ch12-2", "iv-ch12-3", "iv-ch12-4"],
-  kataIds: [],
+  interviewIds: ["iv-ch12-1", "iv-ch12-2", "iv-ch12-3", "iv-ch12-4", "iv-ch12-5"],
+  kataIds: ["semver-compare"],
   seeAlso: ["ch10", "ch11", "ch32"],
   sources: [
     { title: "NATO Software Engineering Conferences (1968 Garmisch) — where 'software engineering' and the 'software crisis' were named (Wikipedia)", url: "https://en.wikipedia.org/wiki/NATO_Software_Engineering_Conferences" },
@@ -4151,7 +4151,7 @@ const ch26: Chapter = {
       lens: "both",
     },
   ],
-  interviewIds: ["iv-ch26-1", "iv-ch26-2", "iv-ch26-3", "iv-ch26-4"],
+  interviewIds: ["iv-ch26-1", "iv-ch26-2", "iv-ch26-3", "iv-ch26-4", "iv-ch26-5"],
   kataIds: ["ip-same-subnet", "switch-learn"],
   seeAlso: ["ch27", "ch28", "ch6"],
   sources: [
@@ -4300,7 +4300,7 @@ const ch27: Chapter = {
       lens: "both",
     },
   ],
-  interviewIds: ["iv-ch27-1", "iv-ch27-2", "iv-ch27-3", "iv-ch27-4"],
+  interviewIds: ["iv-ch27-1", "iv-ch27-2", "iv-ch27-3", "iv-ch27-4", "iv-ch27-5"],
   kataIds: ["handshake-acks", "reno-cwnd"],
   seeAlso: ["ch26", "ch28", "ch25"],
   sources: [
@@ -4425,7 +4425,7 @@ const ch28: Chapter = {
       lens: "both",
     },
   ],
-  interviewIds: ["iv-ch28-1", "iv-ch28-2", "iv-ch28-3"],
+  interviewIds: ["iv-ch28-1", "iv-ch28-2", "iv-ch28-3", "iv-ch28-4", "iv-ch28-5"],
   kataIds: ["parse-url", "cache-decision"],
   seeAlso: ["ch26", "ch27", "ch31"],
   sources: [
@@ -5475,7 +5475,7 @@ const ch0a: Chapter = {
       lens: "senior",
     },
   ],
-  interviewIds: ["iv-ch0a-1", "iv-ch0a-2", "iv-ch0a-3"],
+  interviewIds: ["iv-ch0a-1", "iv-ch0a-2", "iv-ch0a-3", "iv-ch0a-4", "iv-ch0a-5"],
   kataIds: [],
   seeAlso: ["ch0b", "ch1", "ch35"],
   sources: [
@@ -5729,7 +5729,7 @@ const ch35: Chapter = {
       lens: "senior",
     },
   ],
-  interviewIds: ["iv-ch35-1", "iv-ch35-2", "iv-ch35-3", "iv-ch35-4"],
+  interviewIds: ["iv-ch35-1", "iv-ch35-2", "iv-ch35-3", "iv-ch35-4", "iv-ch35-5"],
   kataIds: [],
   seeAlso: ["ch0a", "ch1", "ch33"],
   sources: [
