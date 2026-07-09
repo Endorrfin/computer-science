@@ -18,8 +18,10 @@
 // done, or when the user opts it in from the hub; an explicit opt-out always
 // wins (review only the parts you study — §6).
 
-import { CHAPTERS, chapterById, isStub } from "../data/curriculum.ts";
-import { splitKeyPoint } from "./utils.ts";
+// CHANGED: S19 — this module is now CONTENT-FREE (no curriculum import): the
+// always-loaded due-badge (TopBar/StackMap) only needs the scheduler + counts.
+// Card BUILDING (keyPoints → fronts/backs) moved to srsCards.ts, which pulls
+// the full curriculum and is reached only from lazy pages / dynamic import.
 
 export type SrsGrade = "again" | "hard" | "good" | "easy";
 
@@ -45,46 +47,21 @@ export const MIN_EASE = 1.3;
 export const MAX_EASE = 3.0;
 export const START_EASE = 2.5;
 
-// ---------------------------------------------------------------------------
-// Deck building — cards derive 1:1 from content, ids are stable per chapter.
-// ---------------------------------------------------------------------------
-
-/** All flashcards of one chapter: keyPoints with a back side + the mental model. */
-export function chapterCards(chapterId: string): SrsCard[] {
-  const ch = chapterById(chapterId);
-  if (!ch || isStub(ch)) return [];
-  const cards: SrsCard[] = [];
-  ch.keyPoints.forEach((kp, i) => {
-    const { front, back } = splitKeyPoint(kp);
-    if (back !== "") cards.push({ id: `${ch.id}:kp${i}`, chapterId: ch.id, front, back });
-  });
-  cards.push({
-    id: `${ch.id}:mm`,
-    chapterId: ch.id,
-    front: `Redraw the mental model of “${ch.title}” from memory.`,
-    back: ch.mentalModel,
-  });
-  return cards;
-}
-
-/** Every card in the guide, in curriculum order (the new-card order). */
-export function allCards(): SrsCard[] {
-  return CHAPTERS.filter((c) => !isStub(c)).flatMap((c) => chapterCards(c.id));
-}
-
-// ---------------------------------------------------------------------------
-// Deck activation — done chapters are in; explicit overrides win.
-// ---------------------------------------------------------------------------
+// CHANGED: S19 — deck building (chapterCards / allCards) lives in srsCards.ts;
+// deck ACTIVATION stays here because it only needs meta-level stub flags.
 
 export type DeckOverride = "on" | "off";
 
+/** Which decks are active, over any chapter list that knows its stub status.
+    Done chapters are in; an explicit override always wins (§6). */
 export function activeChapterIds(
+  chapters: readonly { id: string; stub: boolean }[],
   doneIds: ReadonlySet<string>,
   overrides: Readonly<Record<string, DeckOverride>>,
 ): Set<string> {
   const active = new Set<string>();
-  for (const ch of CHAPTERS) {
-    if (isStub(ch)) continue;
+  for (const ch of chapters) {
+    if (ch.stub) continue;
     const ov = overrides[ch.id];
     if (ov === "off") continue;
     if (ov === "on" || doneIds.has(ch.id)) active.add(ch.id);
@@ -163,7 +140,8 @@ export function buildQueue(cards: SrsCard[], states: SrsStates, now: number): Sr
 
 export type DueSummary = { due: number; fresh: number; later: number; total: number };
 
-export function dueSummary(cards: SrsCard[], states: SrsStates, now: number): DueSummary {
+// CHANGED: S19 — counts only need ids, so the badge can run on meta cardIds.
+export function dueSummary(cards: readonly { id: string }[], states: SrsStates, now: number): DueSummary {
   let due = 0;
   let fresh = 0;
   let later = 0;

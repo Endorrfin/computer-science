@@ -13,12 +13,24 @@
 //     body prefix 1, summed over tokens, plus a small kind boost so
 //     chapters/parts surface above snippets. Ties break alphabetically.
 
-import { CHAPTERS, PARTS, isStub } from "../data/curriculum.ts";
-import { INTERVIEW } from "../data/interview.ts";
-import { KATAS } from "../data/katas.ts";
-import { BOSSES } from "../data/bosses.ts";
+// CHANGED: S19 (lazy-load split) — this module is now DATA-FREE: buildIndex
+// takes the content as an argument instead of importing ~1 MB of data modules
+// statically. The browser gets its index from searchClient.ts (dynamic
+// import, async singleton); the Node tests pass the data in directly.
+import type { BossDef, Chapter, InterviewQ, Part } from "./types.ts";
+import type { Kata } from "../data/katas.ts";
 
 export type SearchDocKind = "chapter" | "part" | "keypoint" | "interview" | "kata" | "sim" | "boss";
+
+/** Everything the index is built from (statically imported only by Node
+    tests and the qa gate; the browser dynamic-imports it in searchClient). */
+export type SearchData = {
+  parts: readonly Part[];
+  chapters: readonly Chapter[];
+  interview: readonly InterviewQ[];
+  katas: readonly Kata[];
+  bosses: readonly BossDef[];
+};
 
 export type SearchDoc = {
   id: string;
@@ -93,7 +105,11 @@ function doc(
   };
 }
 
-export function buildIndex(): SearchDoc[] {
+// CHANGED: S19 — a local stub check keeps this module free of curriculum imports.
+const isStubCh = (c: Chapter): boolean => c.sections.length === 0;
+
+export function buildIndex(data: SearchData): SearchDoc[] {
+  const { parts: PARTS, chapters: CHAPTERS, interview: INTERVIEW, katas: KATAS, bosses: BOSSES } = data;
   const docs: SearchDoc[] = [];
 
   for (const p of PARTS) {
@@ -101,7 +117,7 @@ export function buildIndex(): SearchDoc[] {
   }
 
   for (const ch of CHAPTERS) {
-    if (isStub(ch)) continue;
+    if (isStubCh(ch)) continue;
     const bodyParts: string[] = [ch.tagline, ch.mentalModel];
     if (ch.storyHook) bodyParts.push(ch.storyHook.md);
     for (const s of ch.sections) {
@@ -123,7 +139,7 @@ export function buildIndex(): SearchDoc[] {
   // (ram-grid & co.) reappear across chapters — the FIRST host wins the link
   const seenSims = new Set<string>();
   for (const ch of CHAPTERS) {
-    if (isStub(ch)) continue;
+    if (isStubCh(ch)) continue;
     for (const s of ch.sections) {
       if (s.kind !== "sim" && s.kind !== "figure") continue;
       const key = s.kind === "sim" ? s.sim : s.fig;
@@ -156,12 +172,6 @@ export function buildIndex(): SearchDoc[] {
   return docs;
 }
 
-let INDEX: SearchDoc[] | null = null;
-export function ensureIndex(): SearchDoc[] {
-  if (INDEX === null) INDEX = buildIndex();
-  return INDEX;
-}
-
 // ---------------------------------------------------------------------------
 // Query
 // ---------------------------------------------------------------------------
@@ -190,7 +200,9 @@ function tokenScore(qt: string, titleTokens: string[], bodyTokens: string[]): nu
   return best;
 }
 
-export function search(query: string, limit = 20): SearchHit[] {
+// CHANGED: S19 — renamed search → searchIn; the index is an explicit argument
+// (the browser owns an async singleton in searchClient.ts).
+export function searchIn(index: readonly SearchDoc[], query: string, limit = 20): SearchHit[] {
   const qTokens = tokenize(query);
   // stop-word-only queries ("the", "of") tokenize to [] — treat raw words as tokens then
   if (qTokens.length === 0) {
@@ -199,7 +211,7 @@ export function search(query: string, limit = 20): SearchHit[] {
     qTokens.push(...raw);
   }
   const hits: SearchHit[] = [];
-  for (const d of ensureIndex()) {
+  for (const d of index) {
     let score = 0;
     let all = true;
     for (const qt of qTokens) {

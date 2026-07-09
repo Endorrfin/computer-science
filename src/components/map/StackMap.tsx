@@ -2,12 +2,13 @@
 // silicon at the bottom, AI at the top. Parts expand to chapters; progress
 // rings and boss badges light up as you climb.
 import { useEffect, useRef, useState } from "react";
-import { CHAPTERS, PARTS, chaptersOfPart, isStub } from "../../data/curriculum.ts";
+// CHANGED: S19 — the landing renders from generated meta; the full curriculum
+// and quizzes modules no longer load with the first paint.
+import { CHAPTERS_META, PARTS_META, QUIZ_COUNT, chaptersMetaOfPart } from "../../data/curriculumMeta.gen.ts";
 import { BOSSES } from "../../data/bosses.ts";
 import { SIM_KEYS, FIG_KEYS } from "../../lib/registryKeys.ts";
-import { QUIZZES } from "../../data/quizzes.ts";
 import { useChallengesDone, useDoneSet } from "../../lib/progress.ts";
-import { activeChapterIds, chapterCards, dueSummary } from "../../lib/srs.ts"; // CHANGED: S18
+import { dueCount } from "../../lib/srsMeta.ts"; // CHANGED: S19 — content-free badge
 import { useDeckOverrides, useSrsCards } from "../../lib/srsStore.ts"; // CHANGED: S18
 import PartNode from "./PartNode.tsx";
 
@@ -17,14 +18,10 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
   );
   const done = useDoneSet();
   const challenges = useChallengesDone();
-  // CHANGED: S18 — due-cards count over the active SRS decks
+  // CHANGED: S19 — due-cards count from meta card ids (no content load)
   const overrides = useDeckOverrides();
   const srsStates = useSrsCards();
-  const srsDue = dueSummary(
-    [...activeChapterIds(done, overrides)].flatMap(chapterCards),
-    srsStates,
-    Date.now(),
-  ).due;
+  const srsDue = dueCount(done, overrides, srsStates, Date.now());
   const expandRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,12 +31,12 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
     }
   }, [expandPart]);
 
-  const liveChapters = CHAPTERS.filter((c) => !isStub(c)).length;
-  const interactives = SIM_KEYS.length + FIG_KEYS.length + QUIZZES.length;
+  const liveChapters = CHAPTERS_META.filter((c) => !c.stub).length; // CHANGED: S19
+  const interactives = SIM_KEYS.length + FIG_KEYS.length + QUIZ_COUNT; // CHANGED: S19
   const bossesCleared = BOSSES.filter((b) => challenges.has(b.id)).length;
 
   // top of the visual stack = top of the journey
-  const stacked = [...PARTS].sort((a, b) => b.order - a.order);
+  const stacked = [...PARTS_META].sort((a, b) => b.order - a.order); // CHANGED: S19
 
   return (
     <div className="container stackmap">
@@ -56,7 +53,7 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
         </p>
         <div className="map-stats">
           <span className="chip">
-            {done.size} / {CHAPTERS.length} chapters read
+            {done.size} / {CHAPTERS_META.length} chapters read
           </span>
           <span className="chip">
             {bossesCleared} / {BOSSES.length} boss badges
@@ -75,7 +72,7 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
       <div className="stack" role="list" aria-label="The journey, bottom (silicon) to top (AI)">
         <div className="stack-spine" aria-hidden="true" />
         {stacked.map((part) => {
-          const chapters = chaptersOfPart(part.id);
+          const chapters = chaptersMetaOfPart(part.id); // CHANGED: S19
           const boss = BOSSES.find((b) => b.part === part.id);
           return (
             <div key={part.id} ref={part.id === expandPart ? expandRef : undefined}>

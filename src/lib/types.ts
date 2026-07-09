@@ -55,6 +55,23 @@ export type Chapter = {
   sources: { title: string; url: string }[];
 };
 
+// CHANGED: S19 — light landing-path metadata (curriculumMeta.gen.ts). The
+// landing (TopBar/Footer/StackMap) renders from this instead of the full
+// curriculum, so the ~½ MB content module loads only when a chapter,
+// review, search or study page actually needs it.
+export type ChapterMeta = {
+  id: string;
+  part: string;
+  order: number;
+  title: string;
+  tagline: string;
+  stub: boolean;
+  plannedSession?: number;
+  /** SRS card ids of this chapter (keyPoints with a back + the :mm card) —
+      lets the due-badge count cards without loading chapter content. */
+  cardIds: string[];
+};
+
 export type QuizDef = {
   id: string;
   chapterId: string;
