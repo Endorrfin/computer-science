@@ -1,0 +1,185 @@
+/* ============================================================
+   Interview bank — S18 filter bar + reviewed toggle (.ivf-*).
+   The question list itself (.iv-group / .iv-q / .iv-a and the
+   .chip.level-* pills) stays styled in global.css — this file
+   only adds the new S18 chrome: the sticky-ish filter card, the
+   level/chapter filter chips, and the per-question ✓ button.
+   Dark tokens only; all controls keep ≥40px touch targets and
+   inherit the global :focus-visible outline.
+   ============================================================ */
+
+/* ---------- filter bar (sticky-ish card below the topbar) ---------- */
+.ivf-bar {
+  position: sticky;
+  top: 60px; /* clears the sticky .topbar */
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0 8px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ivf-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* part <select> + text <input> share the control look */
+.ivf-select,
+.ivf-search {
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--tx);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 8px 10px;
+  min-height: 40px;
+  transition: border-color 0.15s;
+}
+.ivf-select:hover,
+.ivf-search:hover {
+  border-color: var(--tx3);
+}
+.ivf-select {
+  cursor: pointer;
+}
+.ivf-search {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+.ivf-search::placeholder {
+  color: var(--tx3);
+}
+
+/* level toggles — reuse the .chip.level-* look; pressed = tinted pill,
+   unpressed = quiet gray (tx2 keeps AA on the dark surface) */
+.ivf-levels {
+  display: flex;
+  gap: 6px;
+}
+.ivf-bar .ivf-lvl {
+  cursor: pointer;
+  justify-content: center;
+  min-height: 40px;
+  min-width: 44px;
+  padding: 8px 14px;
+  font-size: 12px;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.ivf-lvl[aria-pressed="false"] {
+  color: var(--tx2);
+  background: transparent;
+  border-color: var(--line);
+}
+.ivf-lvl[aria-pressed="true"] {
+  /* currentColor = the .level-* accent, so one rule tints all three */
+  background: color-mix(in srgb, currentColor 14%, var(--s2));
+  border-color: color-mix(in srgb, currentColor 50%, var(--line));
+}
+.ivf-lvl[aria-pressed="false"]:hover {
+  border-color: var(--tx3);
+}
+
+/* dismissible "chapter: <title> ✕" chip (deep link from search) */
+.ivf-bar .ivf-chapchip {
+  cursor: pointer;
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--p7);
+  background: color-mix(in srgb, var(--p7) 10%, var(--s2));
+  border-color: color-mix(in srgb, var(--p7) 45%, var(--line));
+  transition: border-color 0.15s;
+}
+.ivf-chapchip:hover {
+  border-color: var(--p7);
+}
+.ivf-chapchip .ivf-x {
+  font-size: 13px;
+  line-height: 1;
+}
+
+/* count + clear row */
+.ivf-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+.ivf-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--tx2);
+}
+
+/* "clear filters" link-button (also reused by the empty state) */
+.ivf-clear {
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--p7);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 40px;
+  padding: 4px 8px;
+  margin: -4px 0;
+}
+.ivf-clear:hover {
+  color: color-mix(in srgb, var(--p7) 75%, white);
+}
+
+/* calm empty state when the filters hide everything */
+.ivf-empty {
+  margin: 28px 2px;
+  color: var(--tx2);
+  font-size: 14.5px;
+}
+
+/* ---------- per-question "reviewed" ✓ toggle ---------- */
+/* summary keeps global .iv-q styling; just reserve room on the right */
+.iv-q summary.ivf-sum {
+  position: relative;
+  padding-right: 62px;
+}
+.ivf-seen {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--tx2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ivf-seen:hover {
+  color: var(--tx);
+  border-color: var(--tx3);
+  background: var(--s2);
+}
+.ivf-seen[aria-pressed="true"] {
+  color: var(--sem-ok);
+  background: color-mix(in srgb, var(--sem-ok) 16%, var(--s2));
+  border-color: color-mix(in srgb, var(--sem-ok) 45%, var(--line));
+}
+.ivf-seen[aria-pressed="true"]:hover {
+  border-color: var(--sem-ok);
+}

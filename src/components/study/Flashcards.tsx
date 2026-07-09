@@ -1,7 +1,7 @@
 // Flashcards — auto-generated from a chapter's keyPoints ("front — back"
 // convention, types.ts). The SRS review hub (SM-2-lite, cross-chapter)
-// arrives in S18; per-chapter decks ship from S1 so every finished chapter
-// is immediately reviewable.
+// lives at #/review (S18); per-chapter decks ship from S1 so every finished
+// chapter is immediately reviewable.
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { cx, splitKeyPoint } from "../../lib/utils.ts";
@@ -30,7 +30,9 @@ export default function Flashcards({ keyPoints, accent }: { keyPoints: string[];
         <span className="fc-count">
           card {i + 1} / {cards.length}
         </span>
-        <span className="fc-note">full spaced-repetition hub → S18</span>
+        <span className="fc-note">
+          full spaced repetition <a href="#/review">in the review hub</a>
+        </span>
       </div>
       <button
         type="button"

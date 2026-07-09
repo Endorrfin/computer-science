@@ -1,0 +1,337 @@
+/* ============================================================
+   S18 · Global search — ⌘K overlay (.sov-*) + #/search page (.spg-*).
+   Dark tokens only. Overlay must float above .topbar (z-index 50
+   in global.css) → 200. Kind chips stay muted monochrome; the one
+   accent (host part color, via --accent) marks the active row only.
+   ============================================================ */
+
+/* ---------------- overlay ---------------- */
+.sov-root {
+  position: fixed;
+  inset: 0;
+  z-index: 200; /* .topbar sits at 50 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.sov-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62); /* plain fallback when backdrop-filter is unsupported */
+}
+@supports (backdrop-filter: blur(2px)) {
+  .sov-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+  }
+}
+
+.sov-panel {
+  position: relative;
+  width: min(640px, calc(100vw - 32px));
+  margin-top: 15vh;
+  max-height: 66vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: sov-in 0.14s ease-out;
+}
+@keyframes sov-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sov-input {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--tx);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 14px 18px;
+}
+.sov-input:focus,
+.sov-input:focus-visible {
+  outline: none; /* the palette itself is the focus context */
+}
+.sov-input::placeholder {
+  color: var(--tx3);
+}
+
+.sov-results,
+.sov-hints {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 8px 10px;
+}
+.sov-ghead {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--tx3);
+  padding: 10px 10px 4px;
+}
+
+.sov-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+.sov-row.active {
+  background: var(--s2);
+  border-left-color: var(--accent, var(--p7));
+}
+
+.sov-kind,
+.spg-kind {
+  flex: none;
+  width: 46px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--tx3);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px 0;
+}
+
+.sov-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sov-title {
+  font-size: 14px;
+  color: var(--tx);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sov-hl,
+.spg-hl {
+  /* matched prefix — no rainbow, no <mark> yellow: just weight + a quiet underline */
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--tx3);
+  text-underline-offset: 2px;
+}
+.sov-snippet {
+  font-size: 12px;
+  color: var(--tx3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sov-ch {
+  flex: none;
+  max-width: 150px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tx3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sov-empty {
+  margin: 0;
+  padding: 18px 16px 20px;
+  color: var(--tx2);
+  font-size: 14px;
+}
+
+.sov-hint {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--tx2);
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--r-s) var(--r-s) 0;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.sov-hint:hover {
+  background: var(--s2);
+  color: var(--tx);
+  border-left-color: var(--tx3);
+}
+
+.sov-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--s2);
+  font-size: 11.5px;
+  color: var(--tx3);
+}
+.sov-sep {
+  color: var(--line);
+  user-select: none;
+}
+.sov-foot kbd,
+.spg-tip kbd {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--tx2);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 5px;
+  margin: 0 1px;
+}
+
+@media (max-width: 560px) {
+  .sov-ch {
+    display: none;
+  }
+  .sov-panel {
+    margin-top: 9vh;
+    max-height: 76vh;
+  }
+}
+
+/* ---------------- #/search page ---------------- */
+.spg-input {
+  width: 100%;
+  max-width: 560px;
+  font-family: var(--font-body);
+  font-size: 15.5px;
+  color: var(--tx);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 10px 14px;
+  margin: 4px 0 8px;
+}
+.spg-input:focus,
+.spg-input:focus-visible {
+  outline: none;
+  border-color: var(--accent, var(--p7));
+}
+.spg-input::placeholder {
+  color: var(--tx3);
+}
+.spg-tip {
+  font-size: 13px;
+  color: var(--tx3);
+}
+.spg-try {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--tx3);
+}
+.spg-try .chip {
+  cursor: pointer;
+}
+.spg-try .chip:hover,
+.spg-try .chip:focus-visible {
+  color: var(--tx);
+  border-color: var(--tx3);
+}
+
+.spg-group {
+  margin: 24px 0;
+}
+.spg-ghead {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--tx3);
+  margin: 0 0 8px;
+}
+.spg-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  margin: 8px 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line);
+  border-radius: var(--r-s);
+  color: var(--tx);
+  transition: background 0.1s, border-color 0.1s;
+}
+.spg-row:hover,
+.spg-row:focus-visible {
+  text-decoration: none;
+  background: var(--s2);
+  border-left-color: var(--accent, var(--p7));
+}
+.spg-row .spg-kind {
+  margin-top: 3px;
+}
+.spg-main {
+  flex: 1;
+  min-width: 0;
+}
+.spg-title {
+  display: block;
+  font-weight: 600;
+  font-size: 15px;
+}
+.spg-snippet {
+  display: block;
+  font-size: 13px;
+  color: var(--tx2);
+  margin-top: 2px;
+}
+.spg-ch {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--tx3);
+  margin-top: 4px;
+}
+.spg-empty {
+  color: var(--tx2);
+  margin-top: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sov-panel {
+    animation: none;
+  }
+  .sov-row,
+  .sov-hint,
+  .spg-row {
+    transition: none;
+  }
+}

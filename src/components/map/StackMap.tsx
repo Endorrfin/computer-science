@@ -7,6 +7,8 @@ import { BOSSES } from "../../data/bosses.ts";
 import { SIM_KEYS, FIG_KEYS } from "../../lib/registryKeys.ts";
 import { QUIZZES } from "../../data/quizzes.ts";
 import { useChallengesDone, useDoneSet } from "../../lib/progress.ts";
+import { activeChapterIds, chapterCards, dueSummary } from "../../lib/srs.ts"; // CHANGED: S18
+import { useDeckOverrides, useSrsCards } from "../../lib/srsStore.ts"; // CHANGED: S18
 import PartNode from "./PartNode.tsx";
 
 export default function StackMap({ expandPart }: { expandPart?: string }) {
@@ -15,6 +17,14 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
   );
   const done = useDoneSet();
   const challenges = useChallengesDone();
+  // CHANGED: S18 — due-cards count over the active SRS decks
+  const overrides = useDeckOverrides();
+  const srsStates = useSrsCards();
+  const srsDue = dueSummary(
+    [...activeChapterIds(done, overrides)].flatMap(chapterCards),
+    srsStates,
+    Date.now(),
+  ).due;
   const expandRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,6 +63,12 @@ export default function StackMap({ expandPart }: { expandPart?: string }) {
           </span>
           <span className="chip">{interactives} interactives live · ~126 planned</span>
           <span className="chip">{liveChapters} of 37 units built — building in the open</span>
+          {/* CHANGED: S18 — §6: the landing shows how many cards are due today */}
+          {srsDue > 0 && (
+            <a className="chip chip-due" href="#/review">
+              {srsDue} {srsDue === 1 ? "card" : "cards"} due for review →
+            </a>
+          )}
         </div>
       </header>
 
